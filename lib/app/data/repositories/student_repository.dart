@@ -49,6 +49,9 @@ class StudentsListResult {
   final List<UserModel>? students;
   final PaginationInfo? pagination;
   final List<String>? errors;
+  // Nested relation objects aligned by students order
+  final List<Map<String, dynamic>?>? groups;
+  final List<Map<String, dynamic>?>? courses;
 
   StudentsListResult({
     required this.success,
@@ -56,18 +59,24 @@ class StudentsListResult {
     this.students,
     this.pagination,
     this.errors,
+    this.groups,
+    this.courses,
   });
 
   factory StudentsListResult.success({
     List<UserModel>? students,
     PaginationInfo? pagination,
     String? message,
+    List<Map<String, dynamic>?>? groups,
+    List<Map<String, dynamic>?>? courses,
   }) {
     return StudentsListResult(
       success: true,
       students: students,
       pagination: pagination,
       message: message,
+      groups: groups,
+      courses: courses,
     );
   }
 
@@ -133,6 +142,8 @@ class StudentRepository {
     required String password,
     required String email,
     required String fullName,
+    String? groupId,
+    String? courseId,
   }) async {
     try {
       final request = CreateStudentRequest(
@@ -140,6 +151,8 @@ class StudentRepository {
         password: password,
         email: email,
         fullName: fullName,
+        groupId: groupId,
+        courseId: courseId,
       );
 
       final response = await _apiService.createStudent(request);
@@ -181,11 +194,50 @@ class StudentRepository {
         sortOrder: sortOrder,
       );
 
+      // Additionally fetch raw JSON to extract nested group/course objects
+      List<Map<String, dynamic>?>? groups;
+      List<Map<String, dynamic>?>? courses;
+      try {
+        final raw = await DioClient.dio.get(
+          ApiEndpoints.students,
+          queryParameters: {
+            'page': page,
+            'limit': limit,
+            'search': search,
+            'status': status,
+            'sortBy': sortBy,
+            'sortOrder': sortOrder,
+          },
+        );
+        final data = raw.data as Map<String, dynamic>?;
+        final studentsList = data?['data']?['students'] as List<dynamic>?;
+        if (studentsList != null) {
+          final int n = studentsList.length;
+          groups = List<Map<String, dynamic>?>.filled(n, null, growable: false);
+          courses = List<Map<String, dynamic>?>.filled(n, null, growable: false);
+          for (int i = 0; i < n; i++) {
+            final s = studentsList[i] as Map<String, dynamic>;
+            final g = s['group'];
+            final c = s['course'];
+            if (g is Map<String, dynamic>) {
+              groups[i] = Map<String, dynamic>.from(g);
+            }
+            if (c is Map<String, dynamic>) {
+              courses[i] = Map<String, dynamic>.from(c);
+            }
+          }
+        }
+      } catch (_) {
+        // ignore relation extraction errors
+      }
+
       if (response.success) {
         return StudentsListResult.success(
           students: response.students ?? [],
           pagination: response.pagination,
           message: 'Students loaded successfully',
+          groups: groups,
+          courses: courses,
         );
       } else {
         return StudentsListResult.failure(

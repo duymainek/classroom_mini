@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:responsive_framework/responsive_framework.dart';
-// import 'package:data_table_2/data_table_2.dart';
 import '../../student_management/controllers/student_management_controller.dart';
 import '../views/student_import_page.dart';
 import '../../../routes/app_routes.dart';
@@ -13,324 +11,10 @@ class ResponsiveStudentManagementPage
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quản lý Sinh viên'),
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          if (ResponsiveBreakpoints.of(context).largerThan(TABLET)) {
-            return _DesktopView(controller: controller);
-          } else if (ResponsiveBreakpoints.of(context).largerThan(MOBILE)) {
-            return _TabletView(controller: controller);
-          } else {
-            return _MobileView(controller: controller);
-          }
-        },
-      ),
+      body: _MobileView(controller: controller),
       floatingActionButton: _FabActions(controller: controller),
     );
   }
-}
-
-class _DesktopView extends StatelessWidget {
-  final StudentManagementController controller;
-  const _DesktopView({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      if (controller.isLoading.value) {
-        return const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Đang tải dữ liệu...'),
-            ],
-          ),
-        );
-      }
-
-      final data = controller.filteredStudents;
-
-      return Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Search and Filter Section
-            Card(
-              elevation: 0,
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        onChanged: controller.setQuery,
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.search_rounded),
-                          hintText: 'Tìm theo họ tên, email hoặc username...',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
-                          fillColor: Theme.of(context).colorScheme.surface,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Data Table
-            Expanded(
-              child: Card(
-                elevation: 0,
-                color: Theme.of(context).colorScheme.surface,
-                child: data.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.school_outlined,
-                              size: 64,
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Không tìm thấy sinh viên phù hợp',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Hãy thử thay đổi từ khóa tìm kiếm hoặc thêm sinh viên mới',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: DataTable(
-                          columnSpacing: 12,
-                          horizontalMargin: 20,
-                          columns: [
-                            DataColumn(
-                              label: Text(
-                                'Sinh viên',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Username',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Email',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Trạng thái',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Hành động',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                              ),
-                            ),
-                          ],
-                          rows: data
-                              .map((s) => DataRow(
-                                    cells: [
-                                      DataCell(
-                                        Row(
-                                          children: [
-                                            CircleAvatar(
-                                              radius: 20,
-                                              backgroundColor: Theme.of(context)
-                                                  .colorScheme
-                                                  .primaryContainer,
-                                              child: Text(
-                                                _initials(s['fullName'] ??
-                                                    s['email'] ??
-                                                    ''),
-                                                style: TextStyle(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .onPrimaryContainer,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Text(
-                                                    s['fullName'] ?? '',
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyLarge
-                                                        ?.copyWith(
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                        ),
-                                                  ),
-                                                  Text(
-                                                    'ID: ${s['id']}',
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodySmall
-                                                        ?.copyWith(
-                                                          color: Theme.of(
-                                                                  context)
-                                                              .colorScheme
-                                                              .onSurfaceVariant,
-                                                        ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      DataCell(
-                                        Text(
-                                          s['username'] ?? '',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium,
-                                        ),
-                                      ),
-                                      DataCell(
-                                        Text(
-                                          s['email'] ?? '',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium,
-                                        ),
-                                      ),
-                                      DataCell(
-                                          _statusChip(s['isActive'] ?? true)),
-                                      DataCell(
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            IconButton(
-                                              tooltip: 'Xem chi tiết',
-                                              onPressed: () =>
-                                                  _showDetailSheet(context, s),
-                                              icon: const Icon(
-                                                  Icons.visibility_rounded),
-                                              style: IconButton.styleFrom(
-                                                foregroundColor:
-                                                    Theme.of(context)
-                                                        .colorScheme
-                                                        .primary,
-                                              ),
-                                            ),
-                                            IconButton(
-                                              tooltip: 'Chỉnh sửa',
-                                              onPressed: () =>
-                                                  _showEditNameSheet(
-                                                      context, controller, s),
-                                              icon: const Icon(
-                                                  Icons.edit_rounded),
-                                              style: IconButton.styleFrom(
-                                                foregroundColor:
-                                                    Theme.of(context)
-                                                        .colorScheme
-                                                        .secondary,
-                                              ),
-                                            ),
-                                            IconButton(
-                                              tooltip: 'Xoá',
-                                              onPressed: () =>
-                                                  _showDeleteDialog(
-                                                      context, controller, s),
-                                              icon: const Icon(
-                                                  Icons.delete_rounded),
-                                              style: IconButton.styleFrom(
-                                                foregroundColor:
-                                                    Theme.of(context)
-                                                        .colorScheme
-                                                        .error,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ))
-                              .toList(),
-                        ),
-                      ),
-              ),
-            ),
-          ],
-        ),
-      );
-    });
-  }
-}
-
-class _TabletView extends _DesktopView {
-  const _TabletView({required super.controller});
 }
 
 class _MobileView extends StatelessWidget {
@@ -359,45 +43,183 @@ class _MobileView extends StatelessWidget {
         onRefresh: controller.refreshStudents,
         child: CustomScrollView(
           slivers: [
+            // SliverAppBar per Material 3 guide
+            SliverAppBar(
+              expandedHeight: 120,
+              floating: false,
+              pinned: true,
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              surfaceTintColor: Theme.of(context).colorScheme.surfaceTint,
+              elevation: 0,
+              flexibleSpace: FlexibleSpaceBar(
+                title: const Text('Quản lý Sinh viên'),
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Theme.of(context)
+                            .colorScheme
+                            .primaryContainer
+                            .withOpacity(0.3),
+                        Theme.of(context)
+                            .colorScheme
+                            .secondaryContainer
+                            .withOpacity(0.1),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
             // Search Section
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               sliver: SliverToBoxAdapter(
+                child: TextField(
+                  onChanged: controller.setQuery,
+                  decoration: InputDecoration(
+                    labelText: 'Tìm kiếm sinh viên',
+                    hintText: 'Tìm theo tên, email hoặc username...',
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .outline
+                            .withOpacity(0.3),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2,
+                      ),
+                    ),
+                    filled: true,
+                    fillColor: Theme.of(context)
+                        .colorScheme
+                        .surfaceVariant
+                        .withOpacity(0.3),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
+                  ),
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ),
+            ),
+
+            // List Header Section (Material 3 section pattern)
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              sliver: SliverToBoxAdapter(
                 child: Container(
+                  margin: const EdgeInsets.only(bottom: 8),
                   decoration: BoxDecoration(
-                    color:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: Theme.of(context)
                           .colorScheme
                           .outline
-                          .withOpacity(0.1),
+                          .withOpacity(0.2),
                       width: 1,
                     ),
-                  ),
-                  child: TextField(
-                    onChanged: controller.setQuery,
-                    decoration: InputDecoration(
-                      prefixIcon: Icon(
-                        Icons.search_rounded,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                      hintText:
-                          'Tìm sinh viên theo tên, email hoặc username...',
-                      hintStyle: TextStyle(
+                    boxShadow: [
+                      BoxShadow(
                         color: Theme.of(context)
                             .colorScheme
-                            .onSurfaceVariant
-                            .withOpacity(0.7),
+                            .shadow
+                            .withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 16,
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primaryContainer
+                              .withOpacity(0.3),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(16),
+                            topRight: Radius.circular(16),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.school_rounded,
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Danh sách sinh viên',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleLarge
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    style: Theme.of(context).textTheme.bodyLarge,
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Tổng: ' + data.length.toString(),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                            ),
+                            const Spacer(),
+                            OutlinedButton.icon(
+                              onPressed: controller.refreshStudents,
+                              icon: const Icon(Icons.refresh_rounded, size: 18),
+                              label: const Text('Tải lại'),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 10),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -418,14 +240,24 @@ class _MobileView extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: Theme.of(context)
                                 .colorScheme
-                                .primaryContainer
+                                .surfaceVariant
                                 .withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .outline
+                                  .withOpacity(0.2),
+                              width: 1,
+                            ),
                           ),
                           child: Icon(
-                            Icons.school_outlined,
-                            size: 64,
-                            color: Theme.of(context).colorScheme.primary,
+                            Icons.inbox_outlined,
+                            size: 48,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant
+                                .withOpacity(0.6),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -433,7 +265,7 @@ class _MobileView extends StatelessWidget {
                           'Chưa có sinh viên nào',
                           style: Theme.of(context)
                               .textTheme
-                              .headlineSmall
+                              .titleMedium
                               ?.copyWith(
                                 color: Theme.of(context).colorScheme.onSurface,
                                 fontWeight: FontWeight.w600,
@@ -444,10 +276,11 @@ class _MobileView extends StatelessWidget {
                           'Hãy thêm sinh viên mới hoặc thử thay đổi từ khóa tìm kiếm',
                           textAlign: TextAlign.center,
                           style:
-                              Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
                                     color: Theme.of(context)
                                         .colorScheme
-                                        .onSurfaceVariant,
+                                        .onSurfaceVariant
+                                        .withOpacity(0.9),
                                     height: 1.5,
                                   ),
                         ),
@@ -508,13 +341,36 @@ class _StudentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Derive friendlier labels for group and course
+    final dynamic groupObj = student['group'];
+    final dynamic courseObj = student['course'];
+    String groupLabel = '-';
+    if (groupObj is Map<String, dynamic>) {
+      groupLabel = (groupObj['name'] ?? groupObj['id'] ?? '-').toString();
+    } else {
+      groupLabel = (student['groupId'] ?? '-').toString();
+    }
+    String courseLabel = '-';
+    if (courseObj is Map<String, dynamic>) {
+      final code = courseObj['code']?.toString();
+      final name = courseObj['name']?.toString();
+      if (code != null && name != null) {
+        courseLabel = code + ' - ' + name;
+      } else {
+        courseLabel =
+            (courseObj['name'] ?? courseObj['code'] ?? courseObj['id'] ?? '-')
+                .toString();
+      }
+    } else {
+      courseLabel = (student['courseId'] ?? '-').toString();
+    }
     return Card(
       elevation: 0,
       color: Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
           width: 1,
         ),
       ),
@@ -529,17 +385,29 @@ class _StudentCard extends StatelessWidget {
               // Primary Info Row: Avatar + Name + Status + Actions
               Row(
                 children: [
-                  // Avatar
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor:
-                        Theme.of(context).colorScheme.primaryContainer,
-                    child: Text(
-                      _initials(student['fullName'] ?? student['email'] ?? ''),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 18,
+                  // Avatar (Material 3 accent container)
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.all(6),
+                    child: CircleAvatar(
+                      radius: 22,
+                      backgroundColor:
+                          Theme.of(context).colorScheme.primaryContainer,
+                      child: Text(
+                        _initials(
+                            student['fullName'] ?? student['email'] ?? ''),
+                        style: TextStyle(
+                          color:
+                              Theme.of(context).colorScheme.onPrimaryContainer,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   ),
@@ -556,7 +424,6 @@ class _StudentCard extends StatelessWidget {
                           style:
                               Theme.of(context).textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w600,
-                                    fontSize: 16,
                                   ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -567,11 +434,10 @@ class _StudentCard extends StatelessWidget {
                         Text(
                           student['email'] ?? '',
                           style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: Theme.of(context)
                                         .colorScheme
                                         .onSurfaceVariant,
-                                    fontSize: 14,
                                   ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -659,14 +525,84 @@ class _StudentCard extends StatelessWidget {
                           color: Theme.of(context)
                               .colorScheme
                               .onSurfaceVariant
-                              .withOpacity(0.8),
+                              .withOpacity(0.85),
                           fontWeight: FontWeight.w500,
                         ),
                   ),
                   const Spacer(),
-                  _statusIndicator(student['isActive'] ?? true),
+                  _statusChip(student['isActive'] ?? true),
                 ],
               ),
+
+              const SizedBox(height: 8),
+
+              // Group/Course Info (two lines)
+              if (groupLabel != '-' || courseLabel != '-')
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (groupLabel != '-')
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.group_outlined,
+                            size: 14,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant
+                                .withOpacity(0.7),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Group: ' + groupLabel,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant
+                                        .withOpacity(0.9),
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    if (groupLabel != '-' && courseLabel != '-')
+                      const SizedBox(height: 6),
+                    if (courseLabel != '-')
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.school_outlined,
+                            size: 14,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant
+                                .withOpacity(0.7),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Course: ' + courseLabel,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant
+                                        .withOpacity(0.9),
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
             ],
           ),
         ),
@@ -731,7 +667,7 @@ class _FabActions extends StatelessWidget {
                         subtitle: const Text('Tạo sinh viên mới'),
                         onTap: () {
                           Navigator.pop(context);
-                          _showAddStudentSheet(context, controller);
+                          Get.toNamed(Routes.CREATE_STUDENT);
                         },
                       ),
                       ListTile(

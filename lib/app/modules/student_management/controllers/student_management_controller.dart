@@ -28,13 +28,30 @@ class StudentManagementController extends GetxController {
     try {
       final result = await _studentRepository.getStudents();
       if (result.success) {
-        students.assignAll((result.students ?? []).map((u) => {
-              'id': u.id,
-              'username': u.username,
-              'email': u.email,
-              'fullName': u.fullName,
-              'isActive': u.isActive,
-            }));
+        final List<Map<String, dynamic>> mapped = [];
+        final list = result.students ?? [];
+        final groups = result.groups;
+        final courses = result.courses;
+        for (int i = 0; i < list.length; i++) {
+          final u = list[i];
+          final map = <String, dynamic>{
+            'id': u.id,
+            'username': u.username,
+            'email': u.email,
+            'fullName': u.fullName,
+            'isActive': u.isActive,
+            'groupId': u.groupId,
+            'courseId': u.courseId,
+          };
+          if (groups != null && i < groups.length) {
+            map['group'] = groups[i];
+          }
+          if (courses != null && i < courses.length) {
+            map['course'] = courses[i];
+          }
+          mapped.add(map);
+        }
+        students.assignAll(mapped);
       }
     } finally {
       isLoading.value = false;
@@ -82,12 +99,16 @@ class StudentManagementController extends GetxController {
     required String password,
     required String email,
     required String fullName,
+    String? groupId,
+    String? courseId,
   }) async {
     final res = await _studentRepository.createStudent(
       username: username,
       password: password,
       email: email,
       fullName: fullName,
+      groupId: groupId,
+      courseId: courseId,
     );
     if (res.success && res.student != null) {
       final u = res.student!;
@@ -97,6 +118,8 @@ class StudentManagementController extends GetxController {
         'email': u.email,
         'fullName': u.fullName,
         'isActive': u.isActive,
+        'groupId': u.groupId,
+        'courseId': u.courseId,
       };
       students.insert(0, studentMap);
       return studentMap;
