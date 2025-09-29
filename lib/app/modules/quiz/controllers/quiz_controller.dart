@@ -2,15 +2,13 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import '../../../data/models/quiz_model.dart';
 import '../../../data/services/quiz_api_service.dart';
-import '../../../data/services/api_service.dart'; // For CourseInfo and GroupInfo
 import '../../../data/services/gemini_service.dart'; // Import GeminiService
 
 class QuizController extends GetxController {
   final QuizApiService _quizApiService;
-  final ApiService _apiService; // For fetching courses/groups for forms
   late final GeminiService _geminiService; // Instantiate GeminiService
 
-  QuizController(this._quizApiService, this._apiService);
+  QuizController(this._quizApiService);
 
   final RxList<Quiz> quizzes = <Quiz>[].obs;
   final RxBool isLoading = false.obs;
@@ -37,24 +35,52 @@ class QuizController extends GetxController {
   }
 
   // New method to generate quizzes using Gemini API
-  Future<List<QuestionCreateRequest>?> generateQuizQuestionsFromGemini(String prompt, int numberOfQuestions) async {
+  Future<List<QuestionCreateRequest>?> generateQuizQuestionsFromGemini(
+      String prompt, int numberOfQuestions) async {
     _isGeneratingQuiz.value = true;
     errorMessage.value = '';
-    String accumulatedResponse = '';
 
     try {
-      await for (final chunk in _geminiService.generateQuiz(prompt, numberOfQuestions)) {
-        accumulatedResponse += chunk;
+      // Gọi Gemini API và nhận response trực tiếp
+      final response =
+          await _geminiService.generateQuiz(prompt, numberOfQuestions);
+
+      // Extract JSON from markdown code block if present
+      String jsonString = response.trim();
+      if (jsonString.startsWith('```json')) {
+        // Remove markdown code block markers
+        jsonString = jsonString
+            .replaceFirst('```json', '')
+            .replaceFirst('```', '')
+            .trim();
+      } else if (jsonString.startsWith('```')) {
+        // Remove generic code block markers
+        jsonString =
+            jsonString.replaceFirst('```', '').replaceFirst('```', '').trim();
       }
 
-      // Parse the accumulated JSON response
-      final List<dynamic> jsonList = jsonDecode(accumulatedResponse);
-      final List<QuestionCreateRequest> generatedQuestions = jsonList.map((json) => QuestionCreateRequest.fromJson(json)).toList();
-      
-      Get.snackbar('Success', 'Quiz questions generated successfully by Gemini AI');
+      // Parse JSON response
+      final List<dynamic> jsonList = jsonDecode(jsonString);
+      final List<QuestionCreateRequest> generatedQuestions =
+          jsonList.map((json) {
+        final question = QuestionCreateRequest.fromJson(json);
+        // Set default points to 1 for all questions
+        return QuestionCreateRequest(
+          questionText: question.questionText,
+          questionType: question.questionType,
+          points: 1, // Default to 1 point
+          orderIndex: question.orderIndex,
+          isRequired: question.isRequired,
+          options: question.options,
+        );
+      }).toList();
+
+      Get.snackbar(
+          'Success', 'Quiz questions generated successfully by Gemini AI');
       return generatedQuestions;
     } catch (e) {
       errorMessage.value = 'Failed to generate quiz questions: $e';
+      print('Failed to generate quiz questions: $e');
       Get.snackbar('Error', errorMessage.value);
       return null;
     } finally {
@@ -86,12 +112,12 @@ class QuizController extends GetxController {
       );
 
       if (refresh) {
-        quizzes.assignAll(response.data);
+        quizzes.assignAll(response.data.quizzes);
       } else {
-        quizzes.addAll(response.data);
+        quizzes.addAll(response.data.quizzes);
       }
 
-      hasMore.value = currentPage.value < response.pagination.pages;
+      hasMore.value = currentPage.value < response.data.pagination.pages;
       currentPage.value++;
     } catch (e) {
       errorMessage.value = 'Failed to load quizzes: $e';
@@ -148,8 +174,8 @@ class QuizController extends GetxController {
       isLoading.value = true;
       final response = await _quizApiService.createQuiz(request);
       if (response.success) {
-        quizzes.insert(0, response.data);
-        Get.snackbar('Success', 'Quiz created successfully');
+        quizzes.insert(0, response.data.quiz);
+        Get.snackbar('Success', response.message);
         return true;
       } else {
         Get.snackbar('Error', 'Failed to create quiz');
@@ -226,10 +252,12 @@ class QuizController extends GetxController {
     }
   }
 
-  Future<bool> updateQuestion(String quizId, String questionId, QuestionUpdateRequest request) async {
+  Future<bool> updateQuestion(
+      String quizId, String questionId, QuestionUpdateRequest request) async {
     try {
       isLoading.value = true;
-      final response = await _quizApiService.updateQuestion(quizId, questionId, request);
+      final response =
+          await _quizApiService.updateQuestion(quizId, questionId, request);
       if (response.success) {
         // TODO: Update quiz questions list reactively
         Get.snackbar('Success', 'Question updated successfully');

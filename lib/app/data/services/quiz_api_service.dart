@@ -9,7 +9,7 @@ abstract class QuizApiService {
   factory QuizApiService(Dio dio, {String baseUrl}) = _QuizApiService;
 
   @POST('/quizzes')
-  Future<QuizSingleResponse> createQuiz(@Body() QuizCreateRequest request);
+  Future<QuizCreateResponse> createQuiz(@Body() QuizCreateRequest request);
 
   @GET('/quizzes')
   Future<QuizListResponse> getQuizzes({

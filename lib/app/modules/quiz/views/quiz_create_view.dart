@@ -10,10 +10,6 @@ class QuizCreateView extends GetView<QuizController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Quiz'),
-        centerTitle: true,
-      ),
       body: QuizForm(
         onSubmit: (formData) async {
           final request = QuizCreateRequest(
@@ -30,10 +26,11 @@ class QuizCreateView extends GetView<QuizController> {
             shuffleOptions: formData.shuffleOptions,
             showCorrectAnswers: formData.showCorrectAnswers,
             groupIds: formData.groupIds,
+            questions: formData.questions,
           );
           final success = await controller.createQuiz(request);
           if (success) {
-            Get.back();
+            Navigator.of(context).pop(true);
           }
         },
         onCancel: () => Get.back(),

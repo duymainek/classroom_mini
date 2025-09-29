@@ -150,6 +150,68 @@ class QuizController {
       }
     }
 
+    // If questions are provided in request, create them now
+    const { questions } = req.body || {};
+    if (Array.isArray(questions) && questions.length > 0) {
+      try {
+        let autoOrder = 1;
+        for (const q of questions) {
+          const incomingType = (q.question_type || q.questionType || '').toLowerCase();
+          const normalizedType = incomingType === 'text' ? 'essay' : incomingType; // map client 'text' -> 'essay'
+
+          const orderIndex = Number.isInteger(q.order_index) ? q.order_index : (Number.isInteger(q.orderIndex) ? q.orderIndex : autoOrder);
+
+          const { data: createdQuestion, error: createQErr } = await supabase
+            .from('quiz_questions')
+            .insert({
+              quiz_id: newQuiz.id,
+              question_text: q.question_text ?? q.questionText,
+              question_type: normalizedType,
+              points: q.points ?? 1,
+              order_index: orderIndex > 0 ? orderIndex : autoOrder,
+              is_required: q.is_required ?? q.isRequired ?? true
+            })
+            .select('id')
+            .single();
+
+          if (createQErr) {
+            throw createQErr;
+          }
+
+          autoOrder = Math.max(autoOrder + 1, (orderIndex || autoOrder) + 1);
+
+          // For multiple choice / true_false, create options if provided
+          const rawOptions = q.options;
+          if ((normalizedType === 'multiple_choice' || normalizedType === 'true_false') && Array.isArray(rawOptions) && rawOptions.length > 0) {
+            // default order_index for options
+            let optOrder = 1;
+            const optionRows = rawOptions.map(opt => ({
+              question_id: createdQuestion.id,
+              option_text: opt.option_text ?? opt.optionText,
+              is_correct: opt.is_correct ?? opt.isCorrect ?? false,
+              order_index: Number.isInteger(opt.order_index) ? opt.order_index : (Number.isInteger(opt.orderIndex) ? opt.orderIndex : optOrder++)
+            }));
+
+            const { error: optErr } = await supabase
+              .from('quiz_question_options')
+              .insert(optionRows);
+
+            if (optErr) {
+              throw optErr;
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Quiz questions creation error:', e);
+        // Best-effort rollback: delete created quiz (cascade will remove groups/questions/options)
+        await supabase
+          .from('quizzes')
+          .delete()
+          .eq('id', newQuiz.id);
+        throw new AppError('Failed to create quiz questions', 500, 'QUIZ_QUESTIONS_CREATION_FAILED');
+      }
+    }
+
     // Get quiz with groups for response
     const { data: quizWithGroups } = await supabase
       .from('quizzes')
@@ -161,6 +223,10 @@ class QuizController {
         courses!inner(code, name),
         quiz_groups(
           groups!inner(id, name)
+        ),
+        quiz_questions(
+          id, quiz_id, question_text, question_type, points, order_index, is_required,
+          quiz_question_options(id, question_id, option_text, is_correct, order_index)
         )
       `)
       .eq('id', newQuiz.id)
@@ -206,7 +272,8 @@ class QuizController {
         users!quizzes_instructor_id_fkey(full_name),
         quiz_groups(
           groups!inner(id, name)
-        )
+        ),
+        quiz_questions(id)
       `, { count: 'exact' });
 
     // Apply role-based filtering
@@ -224,7 +291,8 @@ class QuizController {
             groups!inner(
               student_enrollments!inner(student_id)
             )
-          )
+          ),
+          quiz_questions(id)
         `)
         .eq('quiz_groups.groups.student_enrollments.student_id', userId);
     } else {
@@ -277,10 +345,17 @@ class QuizController {
       throw new AppError('Failed to fetch quizzes', 500, 'GET_QUIZZES_FAILED');
     }
 
+    // Attach question_count and remove quiz_questions to keep payload lean
+    const quizzesWithCounts = (quizzes || []).map(q => {
+      const questionCount = Array.isArray(q.quiz_questions) ? q.quiz_questions.length : 0;
+      const { quiz_questions, ...rest } = q;
+      return { ...rest, question_count: questionCount };
+    });
+
     res.json({
       success: true,
       data: {
-        quizzes: quizzes || [],
+        quizzes: quizzesWithCounts,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
@@ -554,7 +629,7 @@ class QuizController {
       .select(`
         *,
         quiz_question_options(
-          id, option_text, is_correct, order_index
+          id, question_id, option_text, is_correct, order_index
         )
       `)
       .eq('id', newQuestion.id)
@@ -653,7 +728,7 @@ class QuizController {
       .select(`
         *,
         quiz_question_options(
-          id, option_text, is_correct, order_index
+          id, question_id, option_text, is_correct, order_index
         )
       `)
       .eq('id', questionId)

@@ -1,3 +1,142 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import '../controllers/quiz_controller.dart';
+import '../../../data/models/quiz_model.dart';
+import '../../../routes/app_routes.dart';
+import '../views/shared/question_form_dialog.dart';
+
+class QuizDetailView extends GetView<QuizController> {
+  final String quizId;
+  const QuizDetailView({Key? key, required this.quizId}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: FutureBuilder<Quiz?>(
+          future: controller.getQuizById(quizId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Text('Loading...');
+            }
+            if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+              return const Text('Quiz Details');
+            }
+            return Text(snapshot.data!.title);
+          },
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () => Get.toNamed(Routes.QUIZZES_EDIT, arguments: quizId),
+          ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'delete') {
+                _showDeleteDialog(context, quizId);
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'delete',
+                child: Text('Delete Quiz'),
+              ),
+            ],
+          ),
+        ],
+      ),
+      body: FutureBuilder<Quiz?>(
+        future: controller.getQuizById(quizId),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          if (!snapshot.hasData || snapshot.data == null) {
+            return const Center(child: Text('Quiz not found'));
+          }
+          final quiz = snapshot.data!;
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildOverviewCard(context, quiz),
+                const SizedBox(height: 24),
+                _buildQuestionsCard(context, quiz),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildOverviewCard(BuildContext context, Quiz quiz) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(quiz.title, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+            if (quiz.description != null && quiz.description!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(quiz.description!),
+              ),
+            const Divider(height: 24),
+            _buildInfoRow(context, Icons.book, 'Course', quiz.course?.name ?? 'N/A'),
+            _buildInfoRow(context, Icons.calendar_today, 'Start Date', DateFormat('yyyy-MM-dd HH:mm').format(quiz.startDate)),
+            _buildInfoRow(context, Icons.calendar_today, 'Due Date', DateFormat('yyyy-MM-dd HH:mm').format(quiz.dueDate)),
+            if (quiz.allowLateSubmission && quiz.lateDueDate != null)
+              _buildInfoRow(context, Icons.calendar_today, 'Late Due Date', DateFormat('yyyy-MM-dd HH:mm').format(quiz.lateDueDate!)),
+            _buildInfoRow(context, Icons.timer, 'Time Limit', quiz.timeLimit != null ? '${quiz.timeLimit} minutes' : 'No limit'),
+            _buildInfoRow(context, Icons.repeat, 'Max Attempts', quiz.maxAttempts.toString()),
+            _buildInfoRow(context, Icons.shuffle, 'Shuffle Questions', quiz.shuffleQuestions ? 'Yes' : 'No'),
+            _buildInfoRow(context, Icons.shuffle_on, 'Shuffle Options', quiz.shuffleOptions ? 'Yes' : 'No'),
+            _buildInfoRow(context, Icons.check_circle_outline, 'Show Correct Answers', quiz.showCorrectAnswers ? 'Yes' : 'No'),
+            _buildInfoRow(context, Icons.group, 'Assigned Groups', quiz.quizGroups?.map((qg) => qg.groups?.name ?? '').join(', ') ?? 'None'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(BuildContext context, IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Theme.of(context).primaryColor),
+          const SizedBox(width: 12),
+          Text('$label:', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(width: 8),
+          Expanded(child: Text(value, style: Theme.of(context).textTheme.bodyLarge)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuestionsCard(BuildContext context, Quiz quiz) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Questions', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+            const Divider(height: 24),
             if (quiz.questions == null || quiz.questions!.isEmpty)
               const Center(child: Text('No questions added yet.'))
             else

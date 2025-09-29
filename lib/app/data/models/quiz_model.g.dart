@@ -26,15 +26,16 @@ Quiz _$QuizFromJson(Map<String, dynamic> json) => Quiz(
       isActive: json['is_active'] as bool,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
-      course: json['course'] == null
+      course: json['courses'] == null
           ? null
-          : CourseInfo.fromJson(json['course'] as Map<String, dynamic>),
+          : CourseInfo.fromJson(json['courses'] as Map<String, dynamic>),
       quizGroups: (json['quiz_groups'] as List<dynamic>?)
           ?.map((e) => QuizGroup.fromJson(e as Map<String, dynamic>))
           .toList(),
       questions: (json['quiz_questions'] as List<dynamic>?)
           ?.map((e) => QuizQuestion.fromJson(e as Map<String, dynamic>))
           .toList(),
+      questionCount: (json['question_count'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$QuizToJson(Quiz instance) => <String, dynamic>{
@@ -58,12 +59,13 @@ Map<String, dynamic> _$QuizToJson(Quiz instance) => <String, dynamic>{
       'course': instance.course,
       'quiz_groups': instance.quizGroups,
       'quiz_questions': instance.questions,
+      'question_count': instance.questionCount,
     };
 
 QuizGroup _$QuizGroupFromJson(Map<String, dynamic> json) => QuizGroup(
-      id: json['id'] as String,
-      quizId: json['quiz_id'] as String,
-      groupId: json['group_id'] as String,
+      id: json['id'] as String?,
+      quizId: json['quiz_id'] as String?,
+      groupId: json['group_id'] as String?,
       groups: json['groups'] == null
           ? null
           : GroupInfo.fromJson(json['groups'] as Map<String, dynamic>),
@@ -123,20 +125,24 @@ QuizCreateRequest _$QuizCreateRequestFromJson(Map<String, dynamic> json) =>
     QuizCreateRequest(
       title: json['title'] as String,
       description: json['description'] as String?,
-      courseId: json['course_id'] as String,
-      startDate: DateTime.parse(json['start_date'] as String),
-      dueDate: DateTime.parse(json['due_date'] as String),
-      lateDueDate: json['late_due_date'] == null
+      courseId: json['courseId'] as String,
+      startDate: DateTime.parse(json['startDate'] as String),
+      dueDate: DateTime.parse(json['dueDate'] as String),
+      lateDueDate: json['lateDueDate'] == null
           ? null
-          : DateTime.parse(json['late_due_date'] as String),
-      allowLateSubmission: json['allow_late_submission'] as bool,
-      maxAttempts: (json['max_attempts'] as num).toInt(),
-      timeLimit: (json['time_limit'] as num?)?.toInt(),
-      shuffleQuestions: json['shuffle_questions'] as bool,
-      shuffleOptions: json['shuffle_options'] as bool,
-      showCorrectAnswers: json['show_correct_answers'] as bool,
-      groupIds: (json['group_ids'] as List<dynamic>?)
+          : DateTime.parse(json['lateDueDate'] as String),
+      allowLateSubmission: json['allowLateSubmission'] as bool,
+      maxAttempts: (json['maxAttempts'] as num).toInt(),
+      timeLimit: (json['timeLimit'] as num?)?.toInt(),
+      shuffleQuestions: json['shuffleQuestions'] as bool,
+      shuffleOptions: json['shuffleOptions'] as bool,
+      showCorrectAnswers: json['showCorrectAnswers'] as bool,
+      groupIds: (json['groupIds'] as List<dynamic>?)
           ?.map((e) => e as String)
+          .toList(),
+      questions: (json['questions'] as List<dynamic>?)
+          ?.map(
+              (e) => QuestionCreateRequest.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
 
@@ -144,17 +150,18 @@ Map<String, dynamic> _$QuizCreateRequestToJson(QuizCreateRequest instance) =>
     <String, dynamic>{
       'title': instance.title,
       'description': instance.description,
-      'course_id': instance.courseId,
-      'start_date': instance.startDate.toIso8601String(),
-      'due_date': instance.dueDate.toIso8601String(),
-      'late_due_date': instance.lateDueDate?.toIso8601String(),
-      'allow_late_submission': instance.allowLateSubmission,
-      'max_attempts': instance.maxAttempts,
-      'time_limit': instance.timeLimit,
-      'shuffle_questions': instance.shuffleQuestions,
-      'shuffle_options': instance.shuffleOptions,
-      'show_correct_answers': instance.showCorrectAnswers,
-      'group_ids': instance.groupIds,
+      'courseId': instance.courseId,
+      'startDate': instance.startDate.toIso8601String(),
+      'dueDate': instance.dueDate.toIso8601String(),
+      'lateDueDate': instance.lateDueDate?.toIso8601String(),
+      'allowLateSubmission': instance.allowLateSubmission,
+      'maxAttempts': instance.maxAttempts,
+      'timeLimit': instance.timeLimit,
+      'shuffleQuestions': instance.shuffleQuestions,
+      'shuffleOptions': instance.shuffleOptions,
+      'showCorrectAnswers': instance.showCorrectAnswers,
+      'groupIds': instance.groupIds,
+      'questions': instance.questions,
     };
 
 QuizUpdateRequest _$QuizUpdateRequestFromJson(Map<String, dynamic> json) =>
@@ -271,21 +278,30 @@ Map<String, dynamic> _$QuestionOptionCreateRequestToJson(
       'order_index': instance.orderIndex,
     };
 
-QuizListResponse _$QuizListResponseFromJson(Map<String, dynamic> json) =>
-    QuizListResponse(
-      success: json['success'] as bool,
-      data: (json['data'] as List<dynamic>)
+QuizListData _$QuizListDataFromJson(Map<String, dynamic> json) => QuizListData(
+      quizzes: (json['quizzes'] as List<dynamic>)
           .map((e) => Quiz.fromJson(e as Map<String, dynamic>))
           .toList(),
       pagination:
           Pagination.fromJson(json['pagination'] as Map<String, dynamic>),
     );
 
+Map<String, dynamic> _$QuizListDataToJson(QuizListData instance) =>
+    <String, dynamic>{
+      'quizzes': instance.quizzes,
+      'pagination': instance.pagination,
+    };
+
+QuizListResponse _$QuizListResponseFromJson(Map<String, dynamic> json) =>
+    QuizListResponse(
+      success: json['success'] as bool,
+      data: QuizListData.fromJson(json['data'] as Map<String, dynamic>),
+    );
+
 Map<String, dynamic> _$QuizListResponseToJson(QuizListResponse instance) =>
     <String, dynamic>{
       'success': instance.success,
       'data': instance.data,
-      'pagination': instance.pagination,
     };
 
 QuizSingleResponse _$QuizSingleResponseFromJson(Map<String, dynamic> json) =>
@@ -312,6 +328,30 @@ Map<String, dynamic> _$QuizQuestionSingleResponseToJson(
     <String, dynamic>{
       'success': instance.success,
       'data': instance.data,
+    };
+
+QuizCreateResponse _$QuizCreateResponseFromJson(Map<String, dynamic> json) =>
+    QuizCreateResponse(
+      success: json['success'] as bool,
+      message: json['message'] as String,
+      data: QuizCreateData.fromJson(json['data'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$QuizCreateResponseToJson(QuizCreateResponse instance) =>
+    <String, dynamic>{
+      'success': instance.success,
+      'message': instance.message,
+      'data': instance.data,
+    };
+
+QuizCreateData _$QuizCreateDataFromJson(Map<String, dynamic> json) =>
+    QuizCreateData(
+      quiz: Quiz.fromJson(json['quiz'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$QuizCreateDataToJson(QuizCreateData instance) =>
+    <String, dynamic>{
+      'quiz': instance.quiz,
     };
 
 Pagination _$PaginationFromJson(Map<String, dynamic> json) => Pagination(

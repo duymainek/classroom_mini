@@ -37,11 +37,14 @@ class Quiz {
   final DateTime createdAt;
   @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
-  final CourseInfo? course; // Nested course info
+  @JsonKey(name: 'courses')
+  final CourseInfo? course; // Nested course info (backend returns 'courses')
   @JsonKey(name: 'quiz_groups')
   final List<QuizGroup>? quizGroups; // Nested group info (via pivot table)
   @JsonKey(name: 'quiz_questions')
   final List<QuizQuestion>? questions; // Nested questions
+  @JsonKey(name: 'question_count')
+  final int? questionCount; // For list API where questions are omitted
 
   Quiz({
     required this.id,
@@ -64,6 +67,7 @@ class Quiz {
     this.course,
     this.quizGroups,
     this.questions,
+    this.questionCount,
   });
 
   factory Quiz.fromJson(Map<String, dynamic> json) => _$QuizFromJson(json);
@@ -73,21 +77,33 @@ class Quiz {
 // --- QuizGroup (Pivot table for Quiz-Group relationship) ---
 @JsonSerializable()
 class QuizGroup {
-  final String id;
+  final String? id;
   @JsonKey(name: 'quiz_id')
-  final String quizId;
+  final String? quizId;
   @JsonKey(name: 'group_id')
-  final String groupId;
+  final String? groupId;
   final GroupInfo? groups; // Nested group info
 
   QuizGroup({
-    required this.id,
-    required this.quizId,
-    required this.groupId,
+    this.id,
+    this.quizId,
+    this.groupId,
     this.groups,
   });
 
-  factory QuizGroup.fromJson(Map<String, dynamic> json) => _$QuizGroupFromJson(json);
+  factory QuizGroup.fromJson(Map<String, dynamic> json) {
+    // Handle the case where response only has nested groups object
+    if (json.containsKey('groups') && !json.containsKey('id')) {
+      return QuizGroup(
+        id: null,
+        quizId: null,
+        groupId: null,
+        groups: GroupInfo.fromJson(json['groups'] as Map<String, dynamic>),
+      );
+    }
+    return _$QuizGroupFromJson(json);
+  }
+
   Map<String, dynamic> toJson() => _$QuizGroupToJson(this);
 }
 
@@ -120,7 +136,8 @@ class QuizQuestion {
     this.options,
   });
 
-  factory QuizQuestion.fromJson(Map<String, dynamic> json) => _$QuizQuestionFromJson(json);
+  factory QuizQuestion.fromJson(Map<String, dynamic> json) =>
+      _$QuizQuestionFromJson(json);
   Map<String, dynamic> toJson() => _$QuizQuestionToJson(this);
 }
 
@@ -145,7 +162,8 @@ class QuizQuestionOption {
     required this.orderIndex,
   });
 
-  factory QuizQuestionOption.fromJson(Map<String, dynamic> json) => _$QuizQuestionOptionFromJson(json);
+  factory QuizQuestionOption.fromJson(Map<String, dynamic> json) =>
+      _$QuizQuestionOptionFromJson(json);
   Map<String, dynamic> toJson() => _$QuizQuestionOptionToJson(this);
 }
 
@@ -155,28 +173,18 @@ class QuizQuestionOption {
 class QuizCreateRequest {
   final String title;
   final String? description;
-  @JsonKey(name: 'course_id')
   final String courseId;
-  @JsonKey(name: 'start_date')
   final DateTime startDate;
-  @JsonKey(name: 'due_date')
   final DateTime dueDate;
-  @JsonKey(name: 'late_due_date')
   final DateTime? lateDueDate;
-  @JsonKey(name: 'allow_late_submission')
   final bool allowLateSubmission;
-  @JsonKey(name: 'max_attempts')
   final int maxAttempts;
-  @JsonKey(name: 'time_limit')
   final int? timeLimit;
-  @JsonKey(name: 'shuffle_questions')
   final bool shuffleQuestions;
-  @JsonKey(name: 'shuffle_options')
   final bool shuffleOptions;
-  @JsonKey(name: 'show_correct_answers')
   final bool showCorrectAnswers;
-  @JsonKey(name: 'group_ids')
   final List<String>? groupIds;
+  final List<QuestionCreateRequest>? questions;
 
   QuizCreateRequest({
     required this.title,
@@ -192,9 +200,11 @@ class QuizCreateRequest {
     required this.shuffleOptions,
     required this.showCorrectAnswers,
     this.groupIds,
+    this.questions,
   });
 
-  factory QuizCreateRequest.fromJson(Map<String, dynamic> json) => _$QuizCreateRequestFromJson(json);
+  factory QuizCreateRequest.fromJson(Map<String, dynamic> json) =>
+      _$QuizCreateRequestFromJson(json);
   Map<String, dynamic> toJson() => _$QuizCreateRequestToJson(this);
 }
 
@@ -246,7 +256,8 @@ class QuizUpdateRequest {
     this.groupIds,
   });
 
-  factory QuizUpdateRequest.fromJson(Map<String, dynamic> json) => _$QuizUpdateRequestFromJson(json);
+  factory QuizUpdateRequest.fromJson(Map<String, dynamic> json) =>
+      _$QuizUpdateRequestFromJson(json);
   Map<String, dynamic> toJson() => _$QuizUpdateRequestToJson(this);
 }
 
@@ -272,7 +283,8 @@ class QuestionCreateRequest {
     this.options,
   });
 
-  factory QuestionCreateRequest.fromJson(Map<String, dynamic> json) => _$QuestionCreateRequestFromJson(json);
+  factory QuestionCreateRequest.fromJson(Map<String, dynamic> json) =>
+      _$QuestionCreateRequestFromJson(json);
   Map<String, dynamic> toJson() => _$QuestionCreateRequestToJson(this);
 }
 
@@ -300,7 +312,8 @@ class QuestionUpdateRequest {
     this.options,
   });
 
-  factory QuestionUpdateRequest.fromJson(Map<String, dynamic> json) => _$QuestionUpdateRequestFromJson(json);
+  factory QuestionUpdateRequest.fromJson(Map<String, dynamic> json) =>
+      _$QuestionUpdateRequestFromJson(json);
   Map<String, dynamic> toJson() => _$QuestionUpdateRequestToJson(this);
 }
 
@@ -319,20 +332,33 @@ class QuestionOptionCreateRequest {
     this.orderIndex,
   });
 
-  factory QuestionOptionCreateRequest.fromJson(Map<String, dynamic> json) => _$QuestionOptionCreateRequestFromJson(json);
+  factory QuestionOptionCreateRequest.fromJson(Map<String, dynamic> json) =>
+      _$QuestionOptionCreateRequestFromJson(json);
   Map<String, dynamic> toJson() => _$QuestionOptionCreateRequestToJson(this);
 }
 
 // --- Response Models ---
 @JsonSerializable()
-class QuizListResponse {
-  final bool success;
-  final List<Quiz> data;
+class QuizListData {
+  final List<Quiz> quizzes;
   final Pagination pagination;
 
-  QuizListResponse({required this.success, required this.data, required this.pagination});
+  QuizListData({required this.quizzes, required this.pagination});
 
-  factory QuizListResponse.fromJson(Map<String, dynamic> json) => _$QuizListResponseFromJson(json);
+  factory QuizListData.fromJson(Map<String, dynamic> json) =>
+      _$QuizListDataFromJson(json);
+  Map<String, dynamic> toJson() => _$QuizListDataToJson(this);
+}
+
+@JsonSerializable()
+class QuizListResponse {
+  final bool success;
+  final QuizListData data;
+
+  QuizListResponse({required this.success, required this.data});
+
+  factory QuizListResponse.fromJson(Map<String, dynamic> json) =>
+      _$QuizListResponseFromJson(json);
   Map<String, dynamic> toJson() => _$QuizListResponseToJson(this);
 }
 
@@ -343,7 +369,8 @@ class QuizSingleResponse {
 
   QuizSingleResponse({required this.success, required this.data});
 
-  factory QuizSingleResponse.fromJson(Map<String, dynamic> json) => _$QuizSingleResponseFromJson(json);
+  factory QuizSingleResponse.fromJson(Map<String, dynamic> json) =>
+      _$QuizSingleResponseFromJson(json);
   Map<String, dynamic> toJson() => _$QuizSingleResponseToJson(this);
 }
 
@@ -354,8 +381,38 @@ class QuizQuestionSingleResponse {
 
   QuizQuestionSingleResponse({required this.success, required this.data});
 
-  factory QuizQuestionSingleResponse.fromJson(Map<String, dynamic> json) => _$QuizQuestionSingleResponseFromJson(json);
+  factory QuizQuestionSingleResponse.fromJson(Map<String, dynamic> json) =>
+      _$QuizQuestionSingleResponseFromJson(json);
   Map<String, dynamic> toJson() => _$QuizQuestionSingleResponseToJson(this);
+}
+
+// --- Quiz Create Response Model ---
+@JsonSerializable()
+class QuizCreateResponse {
+  final bool success;
+  final String message;
+  final QuizCreateData data;
+
+  QuizCreateResponse({
+    required this.success,
+    required this.message,
+    required this.data,
+  });
+
+  factory QuizCreateResponse.fromJson(Map<String, dynamic> json) =>
+      _$QuizCreateResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$QuizCreateResponseToJson(this);
+}
+
+@JsonSerializable()
+class QuizCreateData {
+  final Quiz quiz;
+
+  QuizCreateData({required this.quiz});
+
+  factory QuizCreateData.fromJson(Map<String, dynamic> json) =>
+      _$QuizCreateDataFromJson(json);
+  Map<String, dynamic> toJson() => _$QuizCreateDataToJson(this);
 }
 
 // --- Pagination (re-use if exists, otherwise define) ---
@@ -366,8 +423,13 @@ class Pagination {
   final int total;
   final int pages;
 
-  Pagination({required this.page, required this.limit, required this.total, required this.pages});
+  Pagination(
+      {required this.page,
+      required this.limit,
+      required this.total,
+      required this.pages});
 
-  factory Pagination.fromJson(Map<String, dynamic> json) => _$PaginationFromJson(json);
+  factory Pagination.fromJson(Map<String, dynamic> json) =>
+      _$PaginationFromJson(json);
   Map<String, dynamic> toJson() => _$PaginationToJson(this);
 }

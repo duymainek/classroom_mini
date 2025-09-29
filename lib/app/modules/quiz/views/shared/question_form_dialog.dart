@@ -1,12 +1,13 @@
+import 'package:classroom_mini/app/data/models/quiz_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../data/models/quiz_model.dart';
 
 class QuestionFormDialog extends StatefulWidget {
   final QuizQuestion? question;
   final Function(QuestionFormData) onSubmit;
 
-  const QuestionFormDialog({Key? key, this.question, required this.onSubmit}) : super(key: key);
+  const QuestionFormDialog({Key? key, this.question, required this.onSubmit})
+      : super(key: key);
 
   @override
   State<QuestionFormDialog> createState() => _QuestionFormDialogState();
@@ -30,7 +31,8 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
       _isRequired = widget.question!.isRequired;
       if (widget.question!.options != null) {
         _options = widget.question!.options!
-            .map((opt) => QuestionOptionFormData(optionText: opt.optionText, isCorrect: opt.isCorrect))
+            .map((opt) => QuestionOptionFormData(
+                optionText: opt.optionText, isCorrect: opt.isCorrect))
             .toList();
       }
     }
@@ -80,22 +82,28 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
             children: [
               TextFormField(
                 controller: _questionTextController,
-                decoration: const InputDecoration(labelText: 'Question Text', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                    labelText: 'Question Text', border: OutlineInputBorder()),
                 maxLines: 3,
-                validator: (value) => value == null || value.isEmpty ? 'Question text is required' : null,
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Question text is required'
+                    : null,
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: _questionType,
-                decoration: const InputDecoration(labelText: 'Question Type', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                    labelText: 'Question Type', border: OutlineInputBorder()),
                 items: const [
                   DropdownMenuItem(value: 'text', child: Text('Text Answer')),
-                  DropdownMenuItem(value: 'multiple_choice', child: Text('Multiple Choice')),
+                  DropdownMenuItem(
+                      value: 'multiple_choice', child: Text('Multiple Choice')),
                 ],
                 onChanged: (value) {
                   setState(() {
                     _questionType = value!;
-                    if (_questionType == 'multiple_choice' && _options.isEmpty) {
+                    if (_questionType == 'multiple_choice' &&
+                        _options.isEmpty) {
                       _addOption(); // Add at least one option for multiple choice
                     }
                   });
@@ -104,9 +112,14 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
               const SizedBox(height: 16),
               TextFormField(
                 initialValue: _points.toString(),
-                decoration: const InputDecoration(labelText: 'Points', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                    labelText: 'Points', border: OutlineInputBorder()),
                 keyboardType: TextInputType.number,
-                validator: (value) => value == null || int.tryParse(value) == null || int.parse(value) <= 0 ? 'Enter a valid number' : null,
+                validator: (value) => value == null ||
+                        int.tryParse(value) == null ||
+                        int.parse(value) <= 0
+                    ? 'Enter a valid number'
+                    : null,
                 onChanged: (value) => _points = int.tryParse(value) ?? 1,
               ),
               const SizedBox(height: 16),
@@ -117,7 +130,8 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
               ),
               if (_questionType == 'multiple_choice') ...[
                 const SizedBox(height: 24),
-                Text('Options', style: Theme.of(context).textTheme.headlineSmall),
+                Text('Options',
+                    style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 16),
                 ListView.builder(
                   shrinkWrap: true,
@@ -131,9 +145,15 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
                           Expanded(
                             child: TextFormField(
                               initialValue: _options[index].optionText,
-                              decoration: InputDecoration(labelText: 'Option ${index + 1}', border: const OutlineInputBorder()),
-                              validator: (value) => value == null || value.isEmpty ? 'Option text is required' : null,
-                              onChanged: (value) => _options[index].optionText = value,
+                              decoration: InputDecoration(
+                                  labelText: 'Option ${index + 1}',
+                                  border: const OutlineInputBorder()),
+                              validator: (value) =>
+                                  value == null || value.isEmpty
+                                      ? 'Option text is required'
+                                      : null,
+                              onChanged: (value) =>
+                                  _options[index].optionText = value,
                             ),
                           ),
                           Checkbox(

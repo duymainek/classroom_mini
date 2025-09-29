@@ -22,13 +22,13 @@ class _QuizApiService implements QuizApiService {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<QuizSingleResponse> createQuiz(QuizCreateRequest request) async {
+  Future<QuizCreateResponse> createQuiz(QuizCreateRequest request) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(request.toJson());
-    final _options = _setStreamType<QuizSingleResponse>(Options(
+    final _options = _setStreamType<QuizCreateResponse>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
@@ -45,9 +45,9 @@ class _QuizApiService implements QuizApiService {
           baseUrl,
         )));
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late QuizSingleResponse _value;
+    late QuizCreateResponse _value;
     try {
-      _value = QuizSingleResponse.fromJson(_result.data!);
+      _value = QuizCreateResponse.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;

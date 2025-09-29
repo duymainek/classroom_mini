@@ -148,7 +148,7 @@ class CourseInfo {
   final String name;
 
   CourseInfo({
-    required this.id,
+    this.id,
     required this.code,
     required this.name,
   });

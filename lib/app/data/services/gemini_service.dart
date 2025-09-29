@@ -1,4 +1,3 @@
-import 'dart:convert'; // Import for jsonDecode and LineSplitter
 import 'package:classroom_mini/app/core/utils/logger.dart';
 import 'package:flutter_gemini/flutter_gemini.dart'; // Import flutter_gemini
 
@@ -39,13 +38,12 @@ class GeminiService {
     }
   }
 
-  Stream<String> generateQuiz(String prompt, int numberOfQuestions) async* {
+  Future<String> generateQuiz(String prompt, int numberOfQuestions) async {
     AppLogger.info('Generating quiz questions with Gemini API...');
     try {
-      final responseStream = Gemini.instance.promptStream(
+      final response = await Gemini.instance.prompt(
         parts: [
-          Part.text(
-              'Generate $numberOfQuestions quiz questions based on the following topic: "$prompt". ' +
+          Part.text('Generate $numberOfQuestions quiz questions based on the following topic: "$prompt". ' +
               'Each question should be in JSON format, as an array of objects. ' +
               'Each question object must have: ' +
               '- `question_text`: string\n' +
@@ -87,19 +85,15 @@ class GeminiService {
         model: 'models/gemini-2.0-flash', // Specify the model
       );
 
-      await for (var candidate in responseStream) {
-        if (candidate?.output != null) {
-          yield candidate?.output ?? '';
-          AppLogger.debug('Streamed quiz chunk: ${candidate?.output}');
-        }
-      }
-
-      AppLogger.info('Gemini Quiz API stream completed.');
+      final result = response?.output ?? '';
+      AppLogger.info(
+          'Gemini Quiz API completed. Response length: ${result.length}');
+      return result;
     } catch (e, st) {
-      AppLogger.error('Error during Gemini Quiz API stream call',
+      AppLogger.error('Error during Gemini Quiz API call',
           error: e, stackTrace: st);
-      yield 'An unexpected error occurred during quiz generation: $e';
+      throw Exception(
+          'An unexpected error occurred during quiz generation: $e');
     }
   }
 }
-
