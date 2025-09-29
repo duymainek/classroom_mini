@@ -1,0 +1,31 @@
+[build]
+  functions = "netlify/functions"
+  publish = "dist"
+
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/health"
+  to = "/.netlify/functions/api/health"
+  status = 200
+
+[dev]
+  functions = "netlify/functions"
+  publish = "dist"
+  port = 3000
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Environment variables (set these in Netlify dashboard)
+# SUPABASE_URL = "https://jcarmifgsafuquvxddah.supabase.co"
+# SUPABASE_SERVICE_ROLE_KEY = "your_service_role_key"
+# JWT_SECRET = "your_jwt_secret"
+# JWT_REFRESH_SECRET = "your_refresh_secret"
+# ALLOWED_ORIGINS = "https://your-frontend-domain.com"

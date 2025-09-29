@@ -1,0 +1,1050 @@
+const { supabase } = require('../services/supabaseClient');
+const { 
+  validateQuizCreation, 
+  validateQuizUpdate,
+  validateQuestionCreation,
+  validateQuestionUpdate,
+  validateQuizSubmission,
+  validateGradeQuizSubmission,
+  calculateQuizSubmissionStatus,
+  formatQuizResponse,
+  formatQuestionResponse,
+  formatQuizSubmissionResponse
+} = require('../models/quiz');
+const { AppError, catchAsync } = require('../middleware/errorHandler');
+
+class QuizController {
+  /**
+   * Create new quiz
+   */
+  createQuiz = catchAsync(async (req, res) => {
+    const {
+      title,
+      description,
+      courseId,
+      startDate,
+      dueDate,
+      lateDueDate,
+      allowLateSubmission,
+      maxAttempts,
+      timeLimit,
+      shuffleQuestions,
+      shuffleOptions,
+      showCorrectAnswers,
+      groupIds
+    } = req.body;
+
+    const instructorId = req.user.id;
+
+    // Validate input
+    const validation = validateQuizCreation({
+      title,
+      description,
+      courseId,
+      startDate,
+      dueDate,
+      lateDueDate,
+      allowLateSubmission,
+      maxAttempts,
+      timeLimit,
+      shuffleQuestions,
+      shuffleOptions,
+      showCorrectAnswers,
+      groupIds
+    });
+
+    if (!validation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validation.errors
+      });
+    }
+
+    // Check if course exists and instructor has access
+    const { data: course } = await supabase
+      .from('courses')
+      .select('id, code, name')
+      .eq('id', courseId)
+      .eq('is_active', true)
+      .single();
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found or inactive',
+        code: 'COURSE_NOT_FOUND'
+      });
+    }
+
+    // Validate groups exist and belong to course
+    if (groupIds && groupIds.length > 0) {
+      const { data: groups } = await supabase
+        .from('groups')
+        .select('id')
+        .in('id', groupIds)
+        .eq('course_id', courseId)
+        .eq('is_active', true);
+
+      if (!groups || groups.length !== groupIds.length) {
+        return res.status(400).json({
+          success: false,
+          message: 'One or more groups not found or inactive',
+          code: 'INVALID_GROUPS'
+        });
+      }
+    }
+
+    // Create quiz
+    const { data: newQuiz, error: quizError } = await supabase
+      .from('quizzes')
+      .insert({
+        title: title.trim(),
+        description: description?.trim(),
+        course_id: courseId,
+        instructor_id: instructorId,
+        start_date: startDate,
+        due_date: dueDate,
+        late_due_date: lateDueDate,
+        allow_late_submission: allowLateSubmission || false,
+        max_attempts: maxAttempts || 1,
+        time_limit: timeLimit,
+        shuffle_questions: shuffleQuestions || false,
+        shuffle_options: shuffleOptions || false,
+        show_correct_answers: showCorrectAnswers || false
+      })
+      .select(`
+        id, title, description, course_id, instructor_id,
+        start_date, due_date, late_due_date, allow_late_submission,
+        max_attempts, time_limit, shuffle_questions, shuffle_options,
+        show_correct_answers, is_active, created_at, updated_at,
+        courses!inner(code, name)
+      `)
+      .single();
+
+    if (quizError) {
+      console.error('Quiz creation error:', quizError);
+      throw new AppError('Failed to create quiz', 500, 'QUIZ_CREATION_FAILED');
+    }
+
+    // Create quiz-group relationships
+    if (groupIds && groupIds.length > 0) {
+      const quizGroups = groupIds.map(groupId => ({
+        quiz_id: newQuiz.id,
+        group_id: groupId
+      }));
+
+      const { error: groupsError } = await supabase
+        .from('quiz_groups')
+        .insert(quizGroups);
+
+      if (groupsError) {
+        console.error('Quiz groups creation error:', groupsError);
+        // Rollback quiz creation
+        await supabase
+          .from('quizzes')
+          .delete()
+          .eq('id', newQuiz.id);
+        
+        throw new AppError('Failed to assign groups to quiz', 500, 'GROUP_QUIZ_FAILED');
+      }
+    }
+
+    // Get quiz with groups for response
+    const { data: quizWithGroups } = await supabase
+      .from('quizzes')
+      .select(`
+        id, title, description, course_id, instructor_id,
+        start_date, due_date, late_due_date, allow_late_submission,
+        max_attempts, time_limit, shuffle_questions, shuffle_options,
+        show_correct_answers, is_active, created_at, updated_at,
+        courses!inner(code, name),
+        quiz_groups(
+          groups!inner(id, name)
+        )
+      `)
+      .eq('id', newQuiz.id)
+      .single();
+
+    res.status(201).json({
+      success: true,
+      message: 'Quiz created successfully',
+      data: {
+        quiz: quizWithGroups
+      }
+    });
+  });
+
+  /**
+   * Get quizzes with pagination, search, and filters
+   */
+  getQuizzes = catchAsync(async (req, res) => {
+    const {
+      page = 1,
+      limit = 20,
+      search = '',
+      courseId = '',
+      semesterId = '',
+      status = 'all', // all, active, inactive, upcoming, past
+      sortBy = 'created_at',
+      sortOrder = 'desc'
+    } = req.query;
+
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    // Build query based on user role
+    let query = supabase
+      .from('quizzes')
+      .select(`
+        id, title, description, course_id, instructor_id,
+        start_date, due_date, late_due_date, allow_late_submission,
+        max_attempts, time_limit, shuffle_questions, shuffle_options,
+        show_correct_answers, is_active, created_at, updated_at,
+        courses!inner(code, name, semester_id),
+        users!quizzes_instructor_id_fkey(full_name),
+        quiz_groups(
+          groups!inner(id, name)
+        )
+      `, { count: 'exact' });
+
+    // Apply role-based filtering
+    if (userRole === 'student') {
+      // Students can only see quizzes assigned to their groups
+      query = query
+        .select(`
+          id, title, description, course_id, instructor_id,
+          start_date, due_date, late_due_date, allow_late_submission,
+          max_attempts, time_limit, shuffle_questions, shuffle_options,
+          show_correct_answers, is_active, created_at, updated_at,
+          courses!inner(code, name),
+          users!quizzes_instructor_id_fkey(full_name),
+          quiz_groups!inner(
+            groups!inner(
+              student_enrollments!inner(student_id)
+            )
+          )
+        `)
+        .eq('quiz_groups.groups.student_enrollments.student_id', userId);
+    } else {
+      // Instructors can see all quizzes
+      query = query.eq('instructor_id', userId);
+    }
+
+    // Apply search filter
+    if (search.trim()) {
+      query = query.or(`
+        title.ilike.%${search}%,
+        description.ilike.%${search}%,
+        courses.code.ilike.%${search}%,
+        courses.name.ilike.%${search}%
+      `);
+    }
+
+    // Apply course filter
+    if (courseId) {
+      query = query.eq('course_id', courseId);
+    }
+
+    // Apply semester filter
+    if (semesterId) {
+      query = query.eq('courses.semester_id', semesterId);
+    }
+
+    // Apply status filter
+    const now = new Date().toISOString();
+    if (status === 'active') {
+      query = query.eq('is_active', true);
+    } else if (status === 'inactive') {
+      query = query.eq('is_active', false);
+    } else if (status === 'upcoming') {
+      query = query.gte('start_date', now);
+    } else if (status === 'past') {
+      query = query.lt('due_date', now);
+    }
+
+    // Apply sorting
+    query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+
+    // Apply pagination
+    query = query.range(offset, offset + parseInt(limit) - 1);
+
+    const { data: quizzes, error, count } = await query;
+
+    if (error) {
+      console.error('Get quizzes error:', error);
+      throw new AppError('Failed to fetch quizzes', 500, 'GET_QUIZZES_FAILED');
+    }
+
+    res.json({
+      success: true,
+      data: {
+        quizzes: quizzes || [],
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: count || 0,
+          pages: Math.ceil((count || 0) / parseInt(limit))
+        }
+      }
+    });
+  });
+
+  /**
+   * Get quiz by ID with full details
+   */
+  getQuizById = catchAsync(async (req, res) => {
+    const { quizId } = req.params;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    // Build query with role-based access
+    let query = supabase
+      .from('quizzes')
+      .select(`
+        id, title, description, course_id, instructor_id,
+        start_date, due_date, late_due_date, allow_late_submission,
+        max_attempts, time_limit, shuffle_questions, shuffle_options,
+        show_correct_answers, is_active, created_at, updated_at,
+        courses!inner(code, name),
+        users!quizzes_instructor_id_fkey(full_name),
+        quiz_groups(
+          groups!inner(id, name)
+        ),
+        quiz_questions(
+          id, question_text, question_type, points, order_index, is_required,
+          quiz_question_options(
+            id, option_text, is_correct, order_index
+          )
+        )
+      `)
+      .eq('id', quizId);
+
+    // Apply role-based filtering
+    if (userRole === 'student') {
+      query = query
+        .select(`
+          id, title, description, course_id, instructor_id,
+          start_date, due_date, late_due_date, allow_late_submission,
+          max_attempts, time_limit, shuffle_questions, shuffle_options,
+          show_correct_answers, is_active, created_at, updated_at,
+          courses!inner(code, name),
+          users!quizzes_instructor_id_fkey(full_name),
+          quiz_groups!inner(
+            groups!inner(
+              student_enrollments!inner(student_id)
+            )
+          ),
+          quiz_questions(
+            id, question_text, question_type, points, order_index, is_required,
+            quiz_question_options(
+              id, option_text, is_correct, order_index
+            )
+          )
+        `)
+        .eq('quiz_groups.groups.student_enrollments.student_id', userId);
+    } else {
+      query = query.eq('instructor_id', userId);
+    }
+
+    const { data: quiz, error } = await query.single();
+
+    if (error || !quiz) {
+      throw new AppError('Quiz not found', 404, 'QUIZ_NOT_FOUND');
+    }
+
+    res.json({
+      success: true,
+      data: {
+        quiz
+      }
+    });
+  });
+
+  /**
+   * Update quiz
+   */
+  updateQuiz = catchAsync(async (req, res) => {
+    const { quizId } = req.params;
+    const instructorId = req.user.id;
+    const updateData = req.body;
+
+    // Validate input
+    const validation = validateQuizUpdate(updateData);
+    if (!validation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validation.errors
+      });
+    }
+
+    // Check if quiz exists and belongs to instructor
+    const { data: existingQuiz } = await supabase
+      .from('quizzes')
+      .select('id, instructor_id')
+      .eq('id', quizId)
+      .eq('instructor_id', instructorId)
+      .single();
+
+    if (!existingQuiz) {
+      throw new AppError('Quiz not found or access denied', 404, 'QUIZ_NOT_FOUND');
+    }
+
+    // Update quiz
+    const { data: updatedQuiz, error } = await supabase
+      .from('quizzes')
+      .update({
+        ...updateData,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', quizId)
+      .select(`
+        id, title, description, course_id, instructor_id,
+        start_date, due_date, late_due_date, allow_late_submission,
+        max_attempts, time_limit, shuffle_questions, shuffle_options,
+        show_correct_answers, is_active, created_at, updated_at,
+        courses!inner(code, name)
+      `)
+      .single();
+
+    if (error) {
+      console.error('Update quiz error:', error);
+      throw new AppError('Failed to update quiz', 500, 'UPDATE_QUIZ_FAILED');
+    }
+
+    res.json({
+      success: true,
+      message: 'Quiz updated successfully',
+      data: {
+        quiz: updatedQuiz
+      }
+    });
+  });
+
+  /**
+   * Delete quiz
+   */
+  deleteQuiz = catchAsync(async (req, res) => {
+    const { quizId } = req.params;
+    const instructorId = req.user.id;
+
+    // Check if quiz exists and belongs to instructor
+    const { data: existingQuiz } = await supabase
+      .from('quizzes')
+      .select('id, instructor_id')
+      .eq('id', quizId)
+      .eq('instructor_id', instructorId)
+      .single();
+
+    if (!existingQuiz) {
+      throw new AppError('Quiz not found or access denied', 404, 'QUIZ_NOT_FOUND');
+    }
+
+    // Check if quiz has submissions
+    const { data: submissions } = await supabase
+      .from('quiz_submissions')
+      .select('id')
+      .eq('quiz_id', quizId)
+      .limit(1);
+
+    if (submissions && submissions.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete quiz with existing submissions',
+        code: 'QUIZ_HAS_SUBMISSIONS'
+      });
+    }
+
+    // Delete quiz (cascade will handle related records)
+    const { error } = await supabase
+      .from('quizzes')
+      .delete()
+      .eq('id', quizId);
+
+    if (error) {
+      console.error('Delete quiz error:', error);
+      throw new AppError('Failed to delete quiz', 500, 'DELETE_QUIZ_FAILED');
+    }
+
+    res.json({
+      success: true,
+      message: 'Quiz deleted successfully'
+    });
+  });
+
+  /**
+   * Add question to quiz
+   */
+  addQuestion = catchAsync(async (req, res) => {
+    const { quizId } = req.params;
+    const instructorId = req.user.id;
+    const questionData = req.body;
+
+    // Validate input
+    const validation = validateQuestionCreation(questionData);
+    if (!validation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validation.errors
+      });
+    }
+
+    // Check if quiz exists and belongs to instructor
+    const { data: quiz } = await supabase
+      .from('quizzes')
+      .select('id, instructor_id')
+      .eq('id', quizId)
+      .eq('instructor_id', instructorId)
+      .single();
+
+    if (!quiz) {
+      throw new AppError('Quiz not found or access denied', 404, 'QUIZ_NOT_FOUND');
+    }
+
+    // Create question
+    const { data: newQuestion, error: questionError } = await supabase
+      .from('quiz_questions')
+      .insert({
+        quiz_id: quizId,
+        question_text: questionData.questionText,
+        question_type: questionData.questionType,
+        points: questionData.points || 1,
+        order_index: questionData.orderIndex,
+        is_required: questionData.isRequired !== false
+      })
+      .select('*')
+      .single();
+
+    if (questionError) {
+      console.error('Question creation error:', questionError);
+      throw new AppError('Failed to create question', 500, 'QUESTION_CREATION_FAILED');
+    }
+
+    // Create options for multiple choice questions
+    if (questionData.questionType === 'multiple_choice' && questionData.options) {
+      const options = questionData.options.map(option => ({
+        question_id: newQuestion.id,
+        option_text: option.optionText,
+        is_correct: option.isCorrect || false,
+        order_index: option.orderIndex
+      }));
+
+      const { error: optionsError } = await supabase
+        .from('quiz_question_options')
+        .insert(options);
+
+      if (optionsError) {
+        console.error('Options creation error:', optionsError);
+        // Rollback question creation
+        await supabase
+          .from('quiz_questions')
+          .delete()
+          .eq('id', newQuestion.id);
+        
+        throw new AppError('Failed to create question options', 500, 'OPTIONS_CREATION_FAILED');
+      }
+    }
+
+    // Get question with options
+    const { data: questionWithOptions } = await supabase
+      .from('quiz_questions')
+      .select(`
+        *,
+        quiz_question_options(
+          id, option_text, is_correct, order_index
+        )
+      `)
+      .eq('id', newQuestion.id)
+      .single();
+
+    res.status(201).json({
+      success: true,
+      message: 'Question added successfully',
+      data: {
+        question: questionWithOptions
+      }
+    });
+  });
+
+  /**
+   * Update question
+   */
+  updateQuestion = catchAsync(async (req, res) => {
+    const { quizId, questionId } = req.params;
+    const instructorId = req.user.id;
+    const updateData = req.body;
+
+    // Validate input
+    const validation = validateQuestionUpdate(updateData);
+    if (!validation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validation.errors
+      });
+    }
+
+    // Check if quiz and question exist and belong to instructor
+    const { data: question } = await supabase
+      .from('quiz_questions')
+      .select(`
+        id,
+        quizzes!inner(id, instructor_id)
+      `)
+      .eq('id', questionId)
+      .eq('quiz_id', quizId)
+      .eq('quizzes.instructor_id', instructorId)
+      .single();
+
+    if (!question) {
+      throw new AppError('Question not found or access denied', 404, 'QUESTION_NOT_FOUND');
+    }
+
+    // Update question
+    const { error } = await supabase
+      .from('quiz_questions')
+      .update({
+        question_text: updateData.questionText,
+        question_type: updateData.questionType,
+        points: updateData.points,
+        order_index: updateData.orderIndex,
+        is_required: updateData.isRequired,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', questionId);
+
+    if (error) {
+      console.error('Update question error:', error);
+      throw new AppError('Failed to update question', 500, 'UPDATE_QUESTION_FAILED');
+    }
+
+    // Update options if provided
+    if (updateData.options && updateData.questionType === 'multiple_choice') {
+      // Delete existing options
+      await supabase
+        .from('quiz_question_options')
+        .delete()
+        .eq('question_id', questionId);
+
+      // Create new options
+      const options = updateData.options.map(option => ({
+        question_id: questionId,
+        option_text: option.optionText,
+        is_correct: option.isCorrect || false,
+        order_index: option.orderIndex
+      }));
+
+      const { error: optionsError } = await supabase
+        .from('quiz_question_options')
+        .insert(options);
+
+      if (optionsError) {
+        console.error('Options update error:', optionsError);
+        throw new AppError('Failed to update question options', 500, 'OPTIONS_UPDATE_FAILED');
+      }
+    }
+
+    // Get question with options
+    const { data: questionWithOptions } = await supabase
+      .from('quiz_questions')
+      .select(`
+        *,
+        quiz_question_options(
+          id, option_text, is_correct, order_index
+        )
+      `)
+      .eq('id', questionId)
+      .single();
+
+    res.json({
+      success: true,
+      message: 'Question updated successfully',
+      data: {
+        question: questionWithOptions
+      }
+    });
+  });
+
+  /**
+   * Delete question
+   */
+  deleteQuestion = catchAsync(async (req, res) => {
+    const { quizId, questionId } = req.params;
+    const instructorId = req.user.id;
+
+    // Check if quiz and question exist and belong to instructor
+    const { data: question } = await supabase
+      .from('quiz_questions')
+      .select(`
+        id,
+        quizzes!inner(id, instructor_id)
+      `)
+      .eq('id', questionId)
+      .eq('quiz_id', quizId)
+      .eq('quizzes.instructor_id', instructorId)
+      .single();
+
+    if (!question) {
+      throw new AppError('Question not found or access denied', 404, 'QUESTION_NOT_FOUND');
+    }
+
+    // Delete question (cascade will handle options)
+    const { error } = await supabase
+      .from('quiz_questions')
+      .delete()
+      .eq('id', questionId);
+
+    if (error) {
+      console.error('Delete question error:', error);
+      throw new AppError('Failed to delete question', 500, 'DELETE_QUESTION_FAILED');
+    }
+
+    res.json({
+      success: true,
+      message: 'Question deleted successfully'
+    });
+  });
+
+  /**
+   * Submit quiz answers
+   */
+  submitQuiz = catchAsync(async (req, res) => {
+    const { quizId } = req.params;
+    const studentId = req.user.id;
+    const { answers } = req.body;
+
+    // Validate input
+    const validation = validateQuizSubmission({ quizId, answers });
+    if (!validation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validation.errors
+      });
+    }
+
+    // Check if quiz exists and is accessible to student
+    const { data: quiz } = await supabase
+      .from('quizzes')
+      .select(`
+        id, due_date, late_due_date, allow_late_submission, max_attempts,
+        quiz_groups!inner(
+          groups!inner(
+            student_enrollments!inner(student_id)
+          )
+        )
+      `)
+      .eq('id', quizId)
+      .eq('quiz_groups.groups.student_enrollments.student_id', studentId)
+      .single();
+
+    if (!quiz) {
+      throw new AppError('Quiz not found or access denied', 404, 'QUIZ_NOT_FOUND');
+    }
+
+    // Check if quiz is still open
+    const now = new Date();
+    const dueDate = new Date(quiz.due_date);
+    const lateDueDate = quiz.late_due_date ? new Date(quiz.late_due_date) : null;
+
+    if (now > dueDate && (!quiz.allow_late_submission || !lateDueDate || now > lateDueDate)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Quiz submission deadline has passed',
+        code: 'QUIZ_CLOSED'
+      });
+    }
+
+    // Check attempt limit
+    const { data: existingSubmissions } = await supabase
+      .from('quiz_submissions')
+      .select('attempt_number')
+      .eq('quiz_id', quizId)
+      .eq('student_id', studentId)
+      .order('attempt_number', { ascending: false });
+
+    const currentAttempt = existingSubmissions.length + 1;
+    if (currentAttempt > quiz.max_attempts) {
+      return res.status(400).json({
+        success: false,
+        message: 'Maximum attempts exceeded',
+        code: 'MAX_ATTEMPTS_EXCEEDED'
+      });
+    }
+
+    // Calculate submission status
+    const isLate = now > dueDate;
+    const submissionStatus = calculateQuizSubmissionStatus(now, dueDate, lateDueDate, quiz.allow_late_submission);
+
+    // Create submission
+    const { data: newSubmission, error: submissionError } = await supabase
+      .from('quiz_submissions')
+      .insert({
+        quiz_id: quizId,
+        student_id: studentId,
+        attempt_number: currentAttempt,
+        submitted_at: now.toISOString(),
+        is_late: isLate
+      })
+      .select('id')
+      .single();
+
+    if (submissionError) {
+      console.error('Submission creation error:', submissionError);
+      throw new AppError('Failed to create submission', 500, 'SUBMISSION_CREATION_FAILED');
+    }
+
+    // Create answers
+    const answerRecords = answers.map(answer => ({
+      submission_id: newSubmission.id,
+      question_id: answer.questionId,
+      answer_text: answer.answerText,
+      selected_option_id: answer.selectedOptionId
+    }));
+
+    const { error: answersError } = await supabase
+      .from('quiz_answers')
+      .insert(answerRecords);
+
+    if (answersError) {
+      console.error('Answers creation error:', answersError);
+      // Rollback submission
+      await supabase
+        .from('quiz_submissions')
+        .delete()
+        .eq('id', newSubmission.id);
+      
+      throw new AppError('Failed to save answers', 500, 'ANSWERS_SAVE_FAILED');
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Quiz submitted successfully',
+      data: {
+        submissionId: newSubmission.id,
+        attemptNumber: currentAttempt,
+        isLate,
+        status: submissionStatus
+      }
+    });
+  });
+
+  /**
+   * Get quiz submissions for instructor
+   */
+  getQuizSubmissions = catchAsync(async (req, res) => {
+    const { quizId } = req.params;
+    const {
+      page = 1,
+      limit = 20,
+      search = '',
+      status = 'all', // all, submitted, not_submitted, late
+      sortBy = 'submitted_at',
+      sortOrder = 'desc'
+    } = req.query;
+
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const instructorId = req.user.id;
+
+    // Verify quiz belongs to instructor
+    const { data: quiz } = await supabase
+      .from('quizzes')
+      .select('id, title, due_date, late_due_date')
+      .eq('id', quizId)
+      .eq('instructor_id', instructorId)
+      .single();
+
+    if (!quiz) {
+      throw new AppError('Quiz not found or access denied', 404, 'QUIZ_NOT_FOUND');
+    }
+
+    // Get all students in quiz groups
+    const { data: students } = await supabase
+      .from('quiz_groups')
+      .select(`
+        groups!inner(
+          student_enrollments!inner(
+            users!inner(id, username, full_name, email)
+          )
+        )
+      `)
+      .eq('quiz_id', quizId);
+
+    if (!students || students.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          submissions: [],
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total: 0,
+            pages: 0
+          }
+        }
+      });
+    }
+
+    // Flatten students data
+    const allStudents = students.flatMap(qg => 
+      qg.groups.student_enrollments.map(se => se.users)
+    );
+
+    // Get submissions for these students
+    const { data: submissions } = await supabase
+      .from('quiz_submissions')
+      .select(`
+        id, student_id, attempt_number, submitted_at, is_late, 
+        total_score, max_score, is_graded, grade, feedback, graded_at,
+        users!inner(id, username, full_name, email)
+      `)
+      .eq('quiz_id', quizId)
+      .in('student_id', allStudents.map(s => s.id));
+
+    // Create tracking data
+    const trackingData = allStudents.map(student => {
+      const studentSubmissions = submissions?.filter(sub => sub.student_id === student.id) || [];
+      const latestSubmission = studentSubmissions.length > 0 
+        ? studentSubmissions.toSorted((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))[0]
+        : null;
+
+      return {
+        studentId: student.id,
+        username: student.username,
+        fullName: student.full_name,
+        email: student.email,
+        totalSubmissions: studentSubmissions.length,
+        latestSubmission: latestSubmission ? {
+          id: latestSubmission.id,
+          attemptNumber: latestSubmission.attempt_number,
+          submittedAt: latestSubmission.submitted_at,
+          isLate: latestSubmission.is_late,
+          totalScore: latestSubmission.total_score,
+          maxScore: latestSubmission.max_score,
+          isGraded: latestSubmission.is_graded,
+          grade: latestSubmission.grade,
+          feedback: latestSubmission.feedback,
+          gradedAt: latestSubmission.graded_at
+        } : null,
+        status: (() => {
+          if (!latestSubmission) return 'not_submitted';
+          return latestSubmission.is_late ? 'late' : 'submitted';
+        })()
+      };
+    });
+
+    // Apply filters
+    let filteredData = trackingData;
+
+    if (search.trim()) {
+      filteredData = filteredData.filter(item => 
+        item.fullName.toLowerCase().includes(search.toLowerCase()) ||
+        item.username.toLowerCase().includes(search.toLowerCase()) ||
+        item.email.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    if (status !== 'all') {
+      filteredData = filteredData.filter(item => item.status === status);
+    }
+
+    // Apply sorting
+    filteredData.sort((a, b) => {
+      const aValue = a[sortBy] || '';
+      const bValue = b[sortBy] || '';
+      
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    // Apply pagination
+    const total = filteredData.length;
+    const paginatedData = filteredData.slice(offset, offset + parseInt(limit));
+
+    res.json({
+      success: true,
+      data: {
+        submissions: paginatedData,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / parseInt(limit))
+        }
+      }
+    });
+  });
+
+  /**
+   * Grade quiz submission
+   */
+  gradeQuizSubmission = catchAsync(async (req, res) => {
+    const { submissionId } = req.params;
+    const { grade, feedback } = req.body;
+    const instructorId = req.user.id;
+
+    // Validate grade
+    const validation = validateGradeQuizSubmission({ grade, feedback });
+    if (!validation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validation.errors
+      });
+    }
+
+    // Check if submission exists and instructor has access
+    const { data: submission } = await supabase
+      .from('quiz_submissions')
+      .select(`
+        id, quiz_id,
+        quizzes!inner(instructor_id)
+      `)
+      .eq('id', submissionId)
+      .eq('quizzes.instructor_id', instructorId)
+      .single();
+
+    if (!submission) {
+      throw new AppError('Submission not found or access denied', 404, 'SUBMISSION_NOT_FOUND');
+    }
+
+    // Update submission with grade
+    const { data: updatedSubmission, error } = await supabase
+      .from('quiz_submissions')
+      .update({
+        grade,
+        feedback,
+        graded_at: new Date().toISOString(),
+        graded_by: instructorId,
+        is_graded: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', submissionId)
+      .select(`
+        id, grade, feedback, graded_at, graded_by, is_graded,
+        users!inner(full_name)
+      `)
+      .single();
+
+    if (error) {
+      console.error('Grade submission error:', error);
+      throw new AppError('Failed to grade submission', 500, 'GRADE_SUBMISSION_FAILED');
+    }
+
+    res.json({
+      success: true,
+      message: 'Submission graded successfully',
+      data: {
+        submission: updatedSubmission
+      }
+    });
+  });
+}
+
+module.exports = new QuizController();

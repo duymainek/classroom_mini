@@ -1,0 +1,446 @@
+const { supabase } = require('../services/supabaseClient');
+const { validateCourseCreation, validateCourseUpdate } = require('../models/course');
+const { AppError, catchAsync } = require('../middleware/errorHandler');
+
+class CourseController {
+  /**
+   * Create new course
+   */
+  createCourse = catchAsync(async (req, res) => {
+    const { code, name, sessionCount, semesterId } = req.body;
+
+    // Validate input
+    const validation = validateCourseCreation({ code, name, sessionCount, semesterId });
+    if (!validation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validation.errors
+      });
+    }
+
+    // Check if semester exists
+    const { data: semester } = await supabase
+      .from('semesters')
+      .select('id, name')
+      .eq('id', semesterId)
+      .eq('is_active', true)
+      .single();
+
+    if (!semester) {
+      return res.status(404).json({
+        success: false,
+        message: 'Semester not found or inactive',
+        code: 'SEMESTER_NOT_FOUND'
+      });
+    }
+
+    // Check if course code already exists
+    const { data: existingCourse } = await supabase
+      .from('courses')
+      .select('id')
+      .eq('code', code)
+      .single();
+
+    if (existingCourse) {
+      return res.status(409).json({
+        success: false,
+        message: 'Course code already exists',
+        conflictField: 'code'
+      });
+    }
+
+    // Create course
+    const { data: newCourse, error } = await supabase
+      .from('courses')
+      .insert({
+        code: code.trim(),
+        name: name.trim(),
+        session_count: sessionCount,
+        semester_id: semesterId,
+        is_active: true
+      })
+      .select(`
+        id, code, name, session_count, semester_id, is_active, 
+        created_at, updated_at,
+        semesters!inner(code, name)
+      `)
+      .single();
+
+    if (error) {
+      console.error('Course creation error:', error);
+      throw new AppError('Failed to create course', 500, 'COURSE_CREATION_FAILED');
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Course created successfully',
+      data: {
+        course: {
+          id: newCourse.id,
+          code: newCourse.code,
+          name: newCourse.name,
+          sessionCount: newCourse.session_count,
+          semesterId: newCourse.semester_id,
+          isActive: newCourse.is_active,
+          createdAt: newCourse.created_at,
+          updatedAt: newCourse.updated_at,
+          semester: newCourse.semesters
+        }
+      }
+    });
+  });
+
+  /**
+   * Get all courses with pagination, search, and filters
+   */
+  getCourses = catchAsync(async (req, res) => {
+    const {
+      page = 1,
+      limit = 20,
+      search = '',
+      status = 'all', // all, active, inactive
+      semesterId = '', // filter by semester
+      sortBy = 'created_at',
+      sortOrder = 'desc'
+    } = req.query;
+
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    // Build query
+    let query = supabase
+      .from('courses')
+      .select(`
+        id, code, name, session_count, semester_id, is_active, 
+        created_at, updated_at,
+        semesters!inner(code, name)
+      `, { count: 'exact' });
+
+    // Apply search filter
+    if (search.trim()) {
+      query = query.or(`
+        code.ilike.%${search}%,
+        name.ilike.%${search}%,
+        semesters.code.ilike.%${search}%,
+        semesters.name.ilike.%${search}%
+      `);
+    }
+
+    // Apply status filter
+    if (status === 'active') {
+      query = query.eq('is_active', true);
+    } else if (status === 'inactive') {
+      query = query.eq('is_active', false);
+    }
+
+    // Apply semester filter
+    if (semesterId) {
+      query = query.eq('semester_id', semesterId);
+    }
+
+    // Apply sorting
+    query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+
+    // Apply pagination
+    query = query.range(offset, offset + parseInt(limit) - 1);
+
+    const { data: courses, error, count } = await query;
+
+    if (error) {
+      console.error('Get courses error:', error);
+      throw new AppError('Failed to fetch courses', 500, 'GET_COURSES_FAILED');
+    }
+
+    res.json({
+      success: true,
+      data: {
+        courses: courses || [],
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: count || 0,
+          pages: Math.ceil((count || 0) / parseInt(limit))
+        }
+      }
+    });
+  });
+
+  /**
+   * Get course by ID
+   */
+  getCourseById = catchAsync(async (req, res) => {
+    const { courseId } = req.params;
+
+    const { data: course, error } = await supabase
+      .from('courses')
+      .select(`
+        id, code, name, session_count, semester_id, is_active, 
+        created_at, updated_at,
+        semesters!inner(code, name)
+      `)
+      .eq('id', courseId)
+      .single();
+
+    if (error || !course) {
+      throw new AppError('Course not found', 404, 'COURSE_NOT_FOUND');
+    }
+
+    res.json({
+      success: true,
+      data: {
+        course
+      }
+    });
+  });
+
+  /**
+   * Update course
+   */
+  updateCourse = catchAsync(async (req, res) => {
+    const { courseId } = req.params;
+    const { code, name, sessionCount, semesterId, isActive } = req.body;
+
+    // Validate input
+    const validation = validateCourseUpdate(req.body);
+    if (!validation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validation.errors
+      });
+    }
+
+    // Check if course exists
+    const { data: existingCourse } = await supabase
+      .from('courses')
+      .select('id, code, semester_id')
+      .eq('id', courseId)
+      .single();
+
+    if (!existingCourse) {
+      throw new AppError('Course not found', 404, 'COURSE_NOT_FOUND');
+    }
+
+    // Check semester if changed
+    if (semesterId && semesterId !== existingCourse.semester_id) {
+      const { data: semester } = await supabase
+        .from('semesters')
+        .select('id')
+        .eq('id', semesterId)
+        .eq('is_active', true)
+        .single();
+
+      if (!semester) {
+        return res.status(404).json({
+          success: false,
+          message: 'Semester not found or inactive',
+          code: 'SEMESTER_NOT_FOUND'
+        });
+      }
+    }
+
+    // Check code uniqueness if changed
+    if (code && code !== existingCourse.code) {
+      const { data: codeExists } = await supabase
+        .from('courses')
+        .select('id')
+        .eq('code', code.trim())
+        .neq('id', courseId)
+        .single();
+
+      if (codeExists) {
+        return res.status(409).json({
+          success: false,
+          message: 'Course code already exists',
+          conflictField: 'code'
+        });
+      }
+    }
+
+    // Update course
+    const updateData = {};
+    if (code) updateData.code = code.trim();
+    if (name) updateData.name = name.trim();
+    if (sessionCount) updateData.session_count = sessionCount;
+    if (semesterId) updateData.semester_id = semesterId;
+    if (typeof isActive === 'boolean') updateData.is_active = isActive;
+
+    const { data: updatedCourse, error } = await supabase
+      .from('courses')
+      .update(updateData)
+      .eq('id', courseId)
+      .select(`
+        id, code, name, session_count, semester_id, is_active, 
+        created_at, updated_at,
+        semesters!inner(code, name)
+      `)
+      .single();
+
+    if (error) {
+      console.error('Update course error:', error);
+      throw new AppError('Failed to update course', 500, 'UPDATE_COURSE_FAILED');
+    }
+
+    res.json({
+      success: true,
+      message: 'Course updated successfully',
+      data: {
+        course: updatedCourse
+      }
+    });
+  });
+
+  /**
+   * Delete course
+   */
+  deleteCourse = catchAsync(async (req, res) => {
+    const { courseId } = req.params;
+
+    // Check if course exists
+    const { data: existingCourse } = await supabase
+      .from('courses')
+      .select('id, code')
+      .eq('id', courseId)
+      .single();
+
+    if (!existingCourse) {
+      throw new AppError('Course not found', 404, 'COURSE_NOT_FOUND');
+    }
+
+    // Check if course has groups
+    const { data: groups } = await supabase
+      .from('groups')
+      .select('id')
+      .eq('course_id', courseId)
+      .limit(1);
+
+    if (groups && groups.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete course with existing groups',
+        code: 'COURSE_HAS_GROUPS'
+      });
+    }
+
+    // Delete course
+    const { error } = await supabase
+      .from('courses')
+      .delete()
+      .eq('id', courseId);
+
+    if (error) {
+      console.error('Delete course error:', error);
+      throw new AppError('Failed to delete course', 500, 'DELETE_COURSE_FAILED');
+    }
+
+    res.json({
+      success: true,
+      message: 'Course deleted successfully'
+    });
+  });
+
+  /**
+   * Get courses by semester
+   */
+  getCoursesBySemester = catchAsync(async (req, res) => {
+    const { semesterId } = req.params;
+    const {
+      page = 1,
+      limit = 20,
+      search = '',
+      status = 'all'
+    } = req.query;
+
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    // Build query
+    let query = supabase
+      .from('courses')
+      .select(`
+        id, code, name, session_count, is_active, 
+        created_at, updated_at
+      `, { count: 'exact' })
+      .eq('semester_id', semesterId);
+
+    // Apply search filter
+    if (search.trim()) {
+      query = query.or(`
+        code.ilike.%${search}%,
+        name.ilike.%${search}%
+      `);
+    }
+
+    // Apply status filter
+    if (status === 'active') {
+      query = query.eq('is_active', true);
+    } else if (status === 'inactive') {
+      query = query.eq('is_active', false);
+    }
+
+    // Apply pagination
+    query = query.order('created_at', { ascending: false })
+      .range(offset, offset + parseInt(limit) - 1);
+
+    const { data: courses, error, count } = await query;
+
+    if (error) {
+      console.error('Get courses by semester error:', error);
+      throw new AppError('Failed to fetch courses', 500, 'GET_COURSES_FAILED');
+    }
+
+    res.json({
+      success: true,
+      data: {
+        courses: courses || [],
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: count || 0,
+          pages: Math.ceil((count || 0) / parseInt(limit))
+        }
+      }
+    });
+  });
+
+  /**
+   * Get course statistics
+   */
+  getCourseStatistics = catchAsync(async (req, res) => {
+    try {
+      // Get basic statistics
+      const { count: totalCount, error: totalError } = await supabase
+        .from('courses')
+        .select('*', { count: 'exact', head: true });
+
+      const { count: activeCount, error: activeError } = await supabase
+        .from('courses')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+
+      const { count: inactiveCount, error: inactiveError } = await supabase
+        .from('courses')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', false);
+
+      if (totalError || activeError || inactiveError) {
+        throw new AppError('Failed to get statistics', 500, 'STATISTICS_ERROR');
+      }
+
+      const statistics = {
+        total_courses: totalCount || 0,
+        active_courses: activeCount || 0,
+        inactive_courses: inactiveCount || 0
+      };
+
+      res.json({
+        success: true,
+        data: statistics
+      });
+    } catch (error) {
+      console.error('Get course statistics error:', error);
+      throw new AppError('Failed to get statistics', 500, 'GET_STATISTICS_FAILED');
+    }
+  });
+}
+
+module.exports = new CourseController();

@@ -1,0 +1,44 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../controllers/quiz_controller.dart';
+import '../views/shared/quiz_form.dart';
+import '../../../data/models/quiz_model.dart';
+
+class QuizCreateView extends GetView<QuizController> {
+  const QuizCreateView({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Create Quiz'),
+        centerTitle: true,
+      ),
+      body: QuizForm(
+        onSubmit: (formData) async {
+          final request = QuizCreateRequest(
+            title: formData.title,
+            description: formData.description,
+            courseId: formData.courseId,
+            startDate: formData.startDate,
+            dueDate: formData.dueDate,
+            lateDueDate: formData.lateDueDate,
+            allowLateSubmission: formData.allowLateSubmission,
+            maxAttempts: formData.maxAttempts,
+            timeLimit: formData.timeLimit,
+            shuffleQuestions: formData.shuffleQuestions,
+            shuffleOptions: formData.shuffleOptions,
+            showCorrectAnswers: formData.showCorrectAnswers,
+            groupIds: formData.groupIds,
+          );
+          final success = await controller.createQuiz(request);
+          if (success) {
+            Get.back();
+          }
+        },
+        onCancel: () => Get.back(),
+        isLoading: controller.isLoading.value,
+      ),
+    );
+  }
+}
