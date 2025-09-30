@@ -1,7 +1,7 @@
+import 'package:classroom_mini/app/data/models/response/assignment_response.dart';
 import 'package:get/get.dart';
 import 'package:dio/dio.dart';
 import 'api_service.dart';
-import '../models/assignment_model.dart';
 import 'storage_service.dart';
 
 /**

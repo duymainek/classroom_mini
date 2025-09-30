@@ -1,8 +1,7 @@
-import 'dart:convert';
+import 'package:classroom_mini/app/data/models/response/course_response.dart';
+import 'package:classroom_mini/app/data/models/response/group_response.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:csv/csv.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import '../../student_management/controllers/student_management_controller.dart';
 
@@ -14,379 +13,936 @@ class StudentImportPage extends StatefulWidget {
 }
 
 class _StudentImportPageState extends State<StudentImportPage> {
-  bool _isLoading = false;
-  List<Map<String, dynamic>> _rows = [];
-  Map<String, dynamic>? _summary;
-  List<Map<String, dynamic>> _results = [];
-  Map<int, Map<String, dynamic>> _rowResultByNumber = {};
+  late final StudentManagementController _controller;
 
-  void _removeAt(int index) {
-    if (index < 0 || index >= _rows.length) return;
-    setState(() {
-      _rows.removeAt(index);
-    });
-  }
-
-  Map<String, int> _computeStats() {
-    int ready = 0;
-    int errors = 0;
-    for (final r in _rows) {
-      final original = (r['_rowNumber'] as num?)?.toInt();
-      final res = original != null ? _rowResultByNumber[original] : null;
-      final status = (res?['status'] ?? '').toString().toUpperCase();
-      if (status == 'READY' || status == 'CREATED') {
-        ready++;
-      } else {
-        errors++;
-      }
-    }
-    return {
-      'ready': ready,
-      'errors': errors,
-      'total': _rows.length,
-    };
-  }
-
-  Future<void> _pickAndPreview() async {
-    try {
-      setState(() => _isLoading = true);
-      final res = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['csv'],
-        withData: true,
-      );
-      if (res == null || res.files.isEmpty) {
-        setState(() => _isLoading = false);
-        return;
-      }
-      final file = res.files.first;
-      final bytes = file.bytes;
-      if (bytes == null) {
-        setState(() => _isLoading = false);
-        return;
-      }
-      final content = utf8.decode(bytes);
-      final csvRows = const CsvToListConverter(eol: '\n').convert(content);
-      if (csvRows.isEmpty) {
-        setState(() => _isLoading = false);
-        return;
-      }
-      final headers = csvRows.first.map((e) => e.toString()).toList();
-      final requiredHeaders = {'username', 'email', 'fullName', 'isActive'};
-      final headerSet = headers.map((e) => e.trim()).toSet();
-      if (!headerSet.containsAll(requiredHeaders)) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text(
-                  'CSV thiếu cột bắt buộc: username, email, fullName, isActive')));
-        }
-        setState(() => _isLoading = false);
-        return;
-      }
-
-      final List<Map<String, dynamic>> records = [];
-      for (int i = 1; i < csvRows.length; i++) {
-        final row = csvRows[i];
-        if (row.isEmpty ||
-            row.every((c) => (c?.toString().trim().isEmpty ?? true))) {
-          continue;
-        }
-        final map = <String, dynamic>{};
-        for (int j = 0; j < headers.length && j < row.length; j++) {
-          map[headers[j].toString()] = row[j];
-        }
-        map['username'] = map['username']?.toString().trim();
-        map['email'] = map['email']?.toString().trim();
-        map['fullName'] = map['fullName']?.toString().trim();
-        final isActiveStr = map['isActive']?.toString().toLowerCase();
-        map['isActive'] = (isActiveStr == 'true' ||
-            isActiveStr == '1' ||
-            isActiveStr == 'yes');
-        map['_rowNumber'] = i; // track original row number
-        records.add(map);
-      }
-
-      final controller = Get.find<StudentManagementController>();
-      final detailed = await controller.previewImportDetailed(records);
-      if (!mounted) return;
-      if (detailed == null) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Xem trước thất bại')));
-        return;
-      }
-      setState(() {
-        _rows = records;
-        _summary = (detailed['summary'] as Map<String, dynamic>?) ?? {};
-        _results = List<Map<String, dynamic>>.from(detailed['results'] as List);
-        _rowResultByNumber = {
-          for (final r in _results)
-            if (r['rowNumber'] != null) (r['rowNumber'] as num).toInt(): r
-        };
-        _isLoading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Không đọc được tệp CSV')));
-    }
-  }
-
-  Future<void> _confirmImport() async {
-    final controller = Get.find<StudentManagementController>();
-    setState(() => _isLoading = true);
-    final detailed = await controller.confirmImportDetailed(_rows);
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-    if (detailed == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Import thất bại')));
-      return;
-    }
-    final summary = detailed['summary'] as Map<String, dynamic>?;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(
-          'Hoàn tất import: thêm ${summary?['created'] ?? 0}, bỏ qua ${summary?['skipped'] ?? 0}'),
-    ));
-    // ignore: discarded_futures
-    controller.refreshStudents();
-    if (mounted) Navigator.of(context).maybePop();
+  @override
+  void initState() {
+    super.initState();
+    _controller = Get.find<StudentManagementController>();
+    _controller.loadImportCoursesAndGroups();
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final isWide = ResponsiveBreakpoints.of(context).largerThan(TABLET);
-    final maxWidth = isWide ? 960.0 : 720.0;
-    final stats = _computeStats();
-    final hasError = stats['errors']! > 0 || _rows.isEmpty;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Import CSV sinh viên')),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxWidth),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: LayoutBuilder(builder: (context, constraints) {
-              return SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                        'Yêu cầu cột: username, email, fullName, isActive'),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        FilledButton.icon(
-                          onPressed: _isLoading ? null : _pickAndPreview,
-                          icon: const Icon(Icons.file_open),
-                          label: const Text('Chọn CSV'),
-                        ),
-                        FilledButton.icon(
-                          onPressed:
-                              _isLoading || hasError ? null : _confirmImport,
-                          icon: const Icon(Icons.cloud_upload),
-                          label: const Text('Xác nhận import'),
-                        ),
-                        if (_isLoading)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 8),
-                            child: SizedBox(
+
+    return Obx(() {
+      final stats = _controller.computeImportStats();
+      final hasError = stats['errors']! > 0 || _controller.importRows.isEmpty;
+
+      return Scaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 120,
+              floating: false,
+              pinned: true,
+              backgroundColor: colorScheme.surface,
+              surfaceTintColor: colorScheme.surfaceTint,
+              elevation: 0,
+              flexibleSpace: FlexibleSpaceBar(
+                title: const Text('Import CSV Sinh viên'),
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        colorScheme.primaryContainer.withOpacity(0.3),
+                        colorScheme.secondaryContainer.withOpacity(0.1),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.all(16),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  // File Selection Section
+                  _buildModernSection(
+                    context,
+                    title: 'Chọn tệp CSV',
+                    icon: Icons.file_upload_outlined,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: _controller.isImporting.value
+                                  ? null
+                                  : _controller.pickAndPreviewCsv,
+                              icon: const Icon(Icons.file_open),
+                              label: const Text('Chọn CSV'),
+                              style: FilledButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (_controller.isImporting.value) ...[
+                            const SizedBox(width: 16),
+                            const SizedBox(
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    if (_rows.isNotEmpty) ...[
-                      Text('Kết quả xem trước',
-                          style: Theme.of(context).textTheme.titleSmall),
-                      const SizedBox(height: 8),
-                      if (isWide)
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: DataTable(
-                            columns: const [
-                              DataColumn(label: Text('#')),
-                              DataColumn(label: Text('username')),
-                              DataColumn(label: Text('email')),
-                              DataColumn(label: Text('fullName')),
-                              DataColumn(label: Text('isActive')),
-                              DataColumn(label: Text('Trạng thái')),
-                              DataColumn(label: Text('')),
-                            ],
-                            rows: List<DataRow>.generate(_rows.length, (i) {
-                              final r = _rows[i];
-                              final original =
-                                  (r['_rowNumber'] as num?)?.toInt();
-                              final result = original != null
-                                  ? _rowResultByNumber[original]
-                                  : null;
-                              final status =
-                                  (result?['status'] ?? '').toString();
-                              final upper = status.toUpperCase();
-                              final isReady =
-                                  upper == 'READY' || upper == 'CREATED';
-                              final isError = !isReady;
-                              final Color color =
-                                  isError ? Colors.red : Colors.green;
-                              return DataRow(cells: [
-                                DataCell(Text('${i + 1}')),
-                                DataCell(Text('${r['username'] ?? ''}')),
-                                DataCell(Text('${r['email'] ?? ''}')),
-                                DataCell(Text('${r['fullName'] ?? ''}')),
-                                DataCell(Text('${r['isActive'] ?? ''}')),
-                                DataCell(
-                                  Text(isError
-                                      ? (status.isEmpty ? 'Lỗi' : status)
-                                      : 'Sẵn sàng'),
-                                ),
-                                DataCell(IconButton(
-                                  tooltip: 'Loại bỏ',
-                                  onPressed: () => _removeAt(i),
-                                  icon: const Icon(Icons.close),
-                                )),
-                              ]);
-                            }),
-                          ),
-                        )
-                      else
-                        ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemBuilder: (_, i) {
-                            final r = _rows[i];
-                            final original = (r['_rowNumber'] as num?)?.toInt();
-                            final result = original != null
-                                ? _rowResultByNumber[original]
-                                : null;
-                            final status = (result?['status'] ?? '').toString();
-                            final upper = status.toUpperCase();
-                            final isReady =
-                                upper == 'READY' || upper == 'CREATED';
-                            final isError = !isReady;
-                            final Color color =
-                                isError ? Colors.red : Colors.green;
-                            final String label = isError
-                                ? (status.isEmpty ? 'Lỗi' : status)
-                                : 'Sẵn sàng';
-                            return Dismissible(
-                              key: ValueKey(r['_rowNumber'] ?? i),
-                              direction: DismissDirection.endToStart,
-                              background: Container(
-                                alignment: Alignment.centerRight,
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 20),
-                                color: Colors.redAccent,
-                                child: const Icon(Icons.delete,
-                                    color: Colors.white),
-                              ),
-                              onDismissed: (direction) {
-                                _removeAt(i);
-                              },
-                              child: Card(
-                                shape: isError
-                                    ? RoundedRectangleBorder(
-                                        side: const BorderSide(
-                                            color: Colors.redAccent, width: 2),
-                                        borderRadius: BorderRadius.circular(8),
-                                      )
-                                    : null,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          CircleAvatar(child: Text('${i + 1}')),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text('${r['fullName'] ?? ''}',
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .titleSmall),
-                                                Text('${r['email'] ?? ''}'),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.person, size: 16),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                              'username: ${r['username'] ?? ''}'),
-                                          const SizedBox(width: 12),
-                                          const Icon(Icons.verified_user,
-                                              size: 16),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                              'active: ${r['isActive'] ?? ''}'),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        children: [
-                                          const Spacer(),
-                                          Text(label,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 8),
-                          itemCount: _rows.length,
-                        ),
-                    ],
-                    if (_rows.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      Text('Tổng kết xem trước',
-                          style: Theme.of(context).textTheme.titleSmall),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        children: [
-                          Chip(
-                            avatar: const Icon(Icons.add_circle,
-                                color: Colors.green),
-                            label: Text('Sẵn sàng: ${stats['ready']}'),
-                          ),
-                          Chip(
-                            avatar: const Icon(Icons.error, color: Colors.red),
-                            label: Text('Lỗi: ${stats['errors']}'),
-                          ),
-                          Chip(
-                            avatar:
-                                const Icon(Icons.summarize, color: Colors.blue),
-                            label: Text('Tổng: ${stats['total']}'),
-                          ),
+                          ],
                         ],
                       ),
                     ],
-                    const SizedBox(height: 24),
+                  ),
+
+                  // Assignment Settings Section
+                  if (_controller.importRows.isNotEmpty) ...[
+                    _buildModernSection(
+                      context,
+                      title: 'Cài đặt phân công',
+                      icon: Icons.assignment_outlined,
+                      children: [
+                        _buildModernSwitchTile(
+                          context,
+                          title: 'Gán tất cả cho cùng một khóa học/nhóm',
+                          subtitle:
+                              'Tất cả sinh viên sẽ được gán vào cùng một khóa học và nhóm',
+                          value: _controller.useGlobalAssignment.value,
+                          onChanged: (value) {
+                            _controller.setUseGlobalAssignment(value);
+                          },
+                          icon: Icons.group_work_outlined,
+                        ),
+                        if (_controller.useGlobalAssignment.value) ...[
+                          const SizedBox(height: 16),
+                          _buildModernDropdown<Course>(
+                            context,
+                            title: 'Chọn khóa học',
+                            value: _controller.selectedImportCourse.value,
+                            items: _controller.importCourses,
+                            onChanged: (course) {
+                              _controller.setImportCourse(course);
+                            },
+                            itemBuilder: (course) =>
+                                '${course.code} - ${course.name}',
+                            icon: Icons.school_outlined,
+                          ),
+                          if (_controller.selectedImportCourse.value !=
+                              null) ...[
+                            const SizedBox(height: 16),
+                            _buildModernDropdown<Group>(
+                              context,
+                              title: 'Chọn nhóm',
+                              value: _controller.selectedImportGroup.value,
+                              items: _controller.importGroups
+                                  .where((g) =>
+                                      g.courseId ==
+                                      _controller
+                                          .selectedImportCourse.value!.id)
+                                  .toList(),
+                              onChanged: (group) {
+                                _controller.setImportGroup(group);
+                              },
+                              itemBuilder: (group) => group.name,
+                              icon: Icons.group_outlined,
+                            ),
+                          ],
+                        ] else ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color:
+                                  colorScheme.surfaceVariant.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: colorScheme.outline.withOpacity(0.2),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.info_outline,
+                                        color: colorScheme.primary, size: 16),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Gán từng sinh viên riêng lẻ',
+                                      style:
+                                          theme.textTheme.titleSmall?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: colorScheme.onSurface,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Bạn có thể gán khóa học và nhóm cho từng sinh viên trong danh sách bên dưới.',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
+
+                  // Preview Results Section
+                  if (_controller.importRows.isNotEmpty) ...[
+                    _buildModernSection(
+                      context,
+                      title: 'Kết quả xem trước',
+                      icon: Icons.preview_outlined,
+                      children: [
+                        if (isWide)
+                          _buildWideDataTable(context)
+                        else
+                          _buildMobileListView(context),
+                      ],
+                    ),
+                  ],
+
+                  // Summary Section
+                  if (_controller.importRows.isNotEmpty) ...[
+                    _buildModernSection(
+                      context,
+                      title: 'Tổng kết',
+                      icon: Icons.summarize_outlined,
+                      children: [
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _buildSummaryChip(
+                              context,
+                              icon: Icons.check_circle_outline,
+                              label: 'Sẵn sàng',
+                              count: stats['ready']!,
+                              color: Colors.green,
+                            ),
+                            _buildSummaryChip(
+                              context,
+                              icon: Icons.error_outline,
+                              label: 'Lỗi',
+                              count: stats['errors']!,
+                              color: Colors.red,
+                            ),
+                            _buildSummaryChip(
+                              context,
+                              icon: Icons.summarize_outlined,
+                              label: 'Tổng',
+                              count: stats['total']!,
+                              color: Colors.blue,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  // Action Buttons
+                  if (_controller.importRows.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text('Hủy'),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          flex: 2,
+                          child: FilledButton(
+                            onPressed: _controller.isImporting.value || hasError
+                                ? null
+                                : _controller.confirmImport,
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: _controller.isImporting.value
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  )
+                                : const Text('Xác nhận Import'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  const SizedBox(height: 24),
+                ]),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  // Helper methods for Material 3 design
+  Widget _buildModernSection(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer.withOpacity(0.3),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: colorScheme.primary, size: 20),
                 ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(children: children),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernSwitchTile(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    required IconData icon,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.2),
+        ),
+      ),
+      child: SwitchListTile(
+        title: Text(
+          title,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        value: value,
+        onChanged: onChanged,
+        secondary: Icon(icon, color: colorScheme.primary),
+        activeColor: colorScheme.primary,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      ),
+    );
+  }
+
+  Widget _buildModernDropdown<T>(
+    BuildContext context, {
+    required String title,
+    required T? value,
+    required List<T> items,
+    required ValueChanged<T?> onChanged,
+    required String Function(T) itemBuilder,
+    required IconData icon,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.2),
+        ),
+      ),
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: colorScheme.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: colorScheme.primary, size: 20),
+        ),
+        title: Text(
+          title,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: value != null
+            ? Text(
+                itemBuilder(value),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              )
+            : Text(
+                'Chọn $title',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                ),
+              ),
+        trailing: const Icon(Icons.arrow_drop_down),
+        onTap: () => _showDropdownDialog<T>(
+          context,
+          title: title,
+          items: items,
+          currentValue: value,
+          onChanged: onChanged,
+          itemBuilder: itemBuilder,
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      ),
+    );
+  }
+
+  void _showDropdownDialog<T>(
+    BuildContext context, {
+    required String title,
+    required List<T> items,
+    required T? currentValue,
+    required ValueChanged<T?> onChanged,
+    required String Function(T) itemBuilder,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: items.length + 1, // +1 for "None" option
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return ListTile(
+                  title: const Text('Không chọn'),
+                  leading: const Icon(Icons.clear),
+                  selected: currentValue == null,
+                  onTap: () {
+                    onChanged(null);
+                    Navigator.of(context).pop();
+                  },
+                );
+              }
+              final item = items[index - 1];
+              return ListTile(
+                title: Text(itemBuilder(item)),
+                selected: currentValue == item,
+                onTap: () {
+                  onChanged(item);
+                  Navigator.of(context).pop();
+                },
               );
-            }),
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWideDataTable(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        columns: [
+          const DataColumn(label: Text('#')),
+          const DataColumn(label: Text('username')),
+          const DataColumn(label: Text('email')),
+          const DataColumn(label: Text('fullName')),
+          const DataColumn(label: Text('isActive')),
+          const DataColumn(label: Text('Trạng thái')),
+          const DataColumn(label: Text('Lỗi')),
+          if (!_controller.useGlobalAssignment.value) ...[
+            const DataColumn(label: Text('Khóa học')),
+            const DataColumn(label: Text('Nhóm')),
+          ],
+          const DataColumn(label: Text('')),
+        ],
+        rows: List<DataRow>.generate(_controller.importRows.length, (i) {
+          final r = _controller.importRows[i];
+          final original = (r['_rowNumber'] as num?)?.toInt();
+          final result =
+              original != null ? _controller.rowResultByNumber[original] : null;
+          final status = (result?['status'] ?? '').toString();
+          final upper = status.toUpperCase();
+          final isReady = upper == 'READY' || upper == 'CREATED';
+          final isError = !isReady;
+          final errors = result?['errors'] as List<dynamic>? ?? [];
+
+          return DataRow(
+            color: MaterialStateProperty.resolveWith<Color?>(
+              (states) => isError
+                  ? Colors.red.withOpacity(0.1)
+                  : Colors.green.withOpacity(0.1),
+            ),
+            cells: [
+              DataCell(Text('${i + 1}')),
+              DataCell(Text('${r['username'] ?? ''}')),
+              DataCell(Text('${r['email'] ?? ''}')),
+              DataCell(Text('${r['fullName'] ?? ''}')),
+              DataCell(Text('${r['isActive'] ?? ''}')),
+              DataCell(
+                Text(
+                  isError ? (status.isEmpty ? 'Lỗi' : status) : 'Sẵn sàng',
+                  style: TextStyle(
+                    color: isError ? Colors.red : Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              DataCell(
+                errors.isNotEmpty
+                    ? Tooltip(
+                        message: errors.join('\n'),
+                        child: Icon(
+                          Icons.error_outline,
+                          color: Colors.red,
+                          size: 16,
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+              if (!_controller.useGlobalAssignment.value) ...[
+                DataCell(
+                  _buildCompactDropdown<Course>(
+                    context,
+                    title: 'Khóa học',
+                    value: _controller.rowCourseAssignments[i],
+                    items: _controller.importCourses,
+                    onChanged: (course) =>
+                        _controller.updateRowCourseAssignment(i, course),
+                    itemBuilder: (course) => '${course.code} - ${course.name}',
+                  ),
+                ),
+                DataCell(
+                  _buildCompactDropdown<Group>(
+                    context,
+                    title: 'Nhóm',
+                    value: _controller.rowGroupAssignments[i],
+                    items: _controller.rowCourseAssignments[i] != null
+                        ? _controller.importGroups
+                            .where((g) =>
+                                g.courseId ==
+                                _controller.rowCourseAssignments[i]!.id)
+                            .toList()
+                        : _controller.importGroups,
+                    onChanged: (group) =>
+                        _controller.updateRowGroupAssignment(i, group),
+                    itemBuilder: (group) => group.name,
+                  ),
+                ),
+              ],
+              DataCell(
+                IconButton(
+                  tooltip: 'Loại bỏ',
+                  onPressed: () => _controller.removeImportRow(i),
+                  icon: const Icon(Icons.close),
+                ),
+              ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildMobileListView(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemBuilder: (_, i) {
+        final r = _controller.importRows[i];
+        final original = (r['_rowNumber'] as num?)?.toInt();
+        final result =
+            original != null ? _controller.rowResultByNumber[original] : null;
+        final status = (result?['status'] ?? '').toString();
+        final upper = status.toUpperCase();
+        final isReady = upper == 'READY' || upper == 'CREATED';
+        final isError = !isReady;
+        final errors = result?['errors'] as List<dynamic>? ?? [];
+        final String label =
+            isError ? (status.isEmpty ? 'Lỗi' : status) : 'Sẵn sàng';
+
+        return Dismissible(
+          key: ValueKey(r['_rowNumber'] ?? i),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            color: Colors.redAccent,
+            child: const Icon(Icons.delete, color: Colors.white),
+          ),
+          onDismissed: (direction) => _controller.removeImportRow(i),
+          child: Card(
+            shape: isError
+                ? RoundedRectangleBorder(
+                    side: const BorderSide(color: Colors.redAccent, width: 2),
+                    borderRadius: BorderRadius.circular(8),
+                  )
+                : null,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(child: Text('${i + 1}')),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${r['fullName'] ?? ''}',
+                              style: theme.textTheme.titleSmall,
+                            ),
+                            Text('${r['email'] ?? ''}'),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isError
+                              ? Colors.red.withOpacity(0.1)
+                              : Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            color: isError ? Colors.red : Colors.green,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.person, size: 16),
+                      const SizedBox(width: 6),
+                      Text('username: ${r['username'] ?? ''}'),
+                      const SizedBox(width: 12),
+                      const Icon(Icons.verified_user, size: 16),
+                      const SizedBox(width: 6),
+                      Text('active: ${r['isActive'] ?? ''}'),
+                    ],
+                  ),
+                  if (errors.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.withOpacity(0.3)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.error_outline,
+                                  color: Colors.red, size: 16),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Lỗi:',
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          ...errors.map((error) => Padding(
+                                padding:
+                                    const EdgeInsets.only(left: 20, top: 2),
+                                child: Text(
+                                  '• $error',
+                                  style: TextStyle(
+                                    color: Colors.red.shade700,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              )),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  // Individual assignment controls
+                  if (!_controller.useGlobalAssignment.value) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color:
+                            theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: theme.colorScheme.outline.withOpacity(0.2),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Phân công khóa học/nhóm',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildCompactDropdown<Course>(
+                                  context,
+                                  title: 'Khóa học',
+                                  value: _controller.rowCourseAssignments[i],
+                                  items: _controller.importCourses,
+                                  onChanged: (course) => _controller
+                                      .updateRowCourseAssignment(i, course),
+                                  itemBuilder: (course) =>
+                                      '${course.code} - ${course.name}',
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _buildCompactDropdown<Group>(
+                                  context,
+                                  title: 'Nhóm',
+                                  value: _controller.rowGroupAssignments[i],
+                                  items: _controller.rowCourseAssignments[i] !=
+                                          null
+                                      ? _controller.importGroups
+                                          .where((g) =>
+                                              g.courseId ==
+                                              _controller
+                                                  .rowCourseAssignments[i]!.id)
+                                          .toList()
+                                      : _controller.importGroups,
+                                  onChanged: (group) => _controller
+                                      .updateRowGroupAssignment(i, group),
+                                  itemBuilder: (group) => group.name,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemCount: _controller.importRows.length,
+    );
+  }
+
+  Widget _buildSummaryChip(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required int count,
+    required Color color,
+  }) {
+    return Chip(
+      avatar: Icon(icon, color: color, size: 16),
+      label: Text('$label: $count'),
+      backgroundColor: color.withOpacity(0.1),
+      side: BorderSide(color: color.withOpacity(0.3)),
+    );
+  }
+
+  Widget _buildCompactDropdown<T>(
+    BuildContext context, {
+    required String title,
+    required T? value,
+    required List<T> items,
+    required ValueChanged<T?> onChanged,
+    required String Function(T) itemBuilder,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.2),
+        ),
+      ),
+      child: ListTile(
+        dense: true,
+        title: Text(
+          title,
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: value != null
+            ? Text(
+                itemBuilder(value),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              )
+            : Text(
+                'Chọn $title',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                ),
+              ),
+        trailing: const Icon(Icons.arrow_drop_down, size: 16),
+        onTap: () => _showCompactDropdownDialog<T>(
+          context,
+          title: title,
+          items: items,
+          currentValue: value,
+          onChanged: onChanged,
+          itemBuilder: itemBuilder,
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      ),
+    );
+  }
+
+  void _showCompactDropdownDialog<T>(
+    BuildContext context, {
+    required String title,
+    required List<T> items,
+    required T? currentValue,
+    required ValueChanged<T?> onChanged,
+    required String Function(T) itemBuilder,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: items.length + 1, // +1 for "None" option
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return ListTile(
+                  dense: true,
+                  title: const Text('Không chọn'),
+                  leading: const Icon(Icons.clear, size: 16),
+                  selected: currentValue == null,
+                  onTap: () {
+                    onChanged(null);
+                    Navigator.of(context).pop();
+                  },
+                );
+              }
+              final item = items[index - 1];
+              return ListTile(
+                dense: true,
+                title: Text(itemBuilder(item)),
+                selected: currentValue == item,
+                onTap: () {
+                  onChanged(item);
+                  Navigator.of(context).pop();
+                },
+              );
+            },
           ),
         ),
       ),

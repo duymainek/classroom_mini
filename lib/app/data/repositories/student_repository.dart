@@ -1,11 +1,12 @@
 import 'dart:typed_data';
+import 'package:classroom_mini/app/data/models/request/auth_request.dart';
+import 'package:classroom_mini/app/data/models/response/auth_response.dart';
+import 'package:classroom_mini/app/data/models/response/semester_response.dart';
+import 'package:classroom_mini/app/data/models/response/user_response.dart';
 import 'package:dio/dio.dart';
 import '../services/api_service.dart';
 import '../../core/constants/api_endpoints.dart';
 import '../services/storage_service.dart';
-import '../models/request_models.dart';
-import '../models/response_models.dart';
-import '../models/user_model.dart';
 
 class StudentResult {
   final bool success;
@@ -194,50 +195,14 @@ class StudentRepository {
         sortOrder: sortOrder,
       );
 
-      // Additionally fetch raw JSON to extract nested group/course objects
-      List<Map<String, dynamic>?>? groups;
-      List<Map<String, dynamic>?>? courses;
-      try {
-        final raw = await DioClient.dio.get(
-          ApiEndpoints.students,
-          queryParameters: {
-            'page': page,
-            'limit': limit,
-            'search': search,
-            'status': status,
-            'sortBy': sortBy,
-            'sortOrder': sortOrder,
-          },
-        );
-        final data = raw.data as Map<String, dynamic>?;
-        final studentsList = data?['data']?['students'] as List<dynamic>?;
-        if (studentsList != null) {
-          final int n = studentsList.length;
-          groups = List<Map<String, dynamic>?>.filled(n, null, growable: false);
-          courses = List<Map<String, dynamic>?>.filled(n, null, growable: false);
-          for (int i = 0; i < n; i++) {
-            final s = studentsList[i] as Map<String, dynamic>;
-            final g = s['group'];
-            final c = s['course'];
-            if (g is Map<String, dynamic>) {
-              groups[i] = Map<String, dynamic>.from(g);
-            }
-            if (c is Map<String, dynamic>) {
-              courses[i] = Map<String, dynamic>.from(c);
-            }
-          }
-        }
-      } catch (_) {
-        // ignore relation extraction errors
-      }
+      // Group and course objects are now parsed directly in UserModel
+      // No need for additional extraction since UserModel.fromJson handles them
 
       if (response.success) {
         return StudentsListResult.success(
           students: response.students ?? [],
           pagination: response.pagination,
           message: 'Students loaded successfully',
-          groups: groups,
-          courses: courses,
         );
       } else {
         return StudentsListResult.failure(
@@ -492,13 +457,21 @@ class StudentRepository {
 
   // Import students (raw response: includes results per row)
   Future<ImportResponse> importStudentsRaw(List<Map<String, dynamic>> rows,
-      {String? idempotencyKey}) async {
+      [Map<String, dynamic>? assignmentData, String? idempotencyKey]) async {
     try {
-      final request = ImportStudentsRequest(
-        records: rows,
-        idempotencyKey: idempotencyKey,
-      );
-      final response = await _apiService.importStudents(request);
+      // Create request body with assignment data
+      final requestBody = {
+        'records': rows,
+        if (idempotencyKey != null) 'idempotencyKey': idempotencyKey,
+      };
+
+      // Add assignment data to request body
+      if (assignmentData != null) {
+        requestBody.addAll(assignmentData.cast<String, Object>());
+      }
+
+      final response =
+          await _apiService.importStudentsWithAssignments(requestBody);
       return response;
     } catch (e) {
       return ImportResponse(

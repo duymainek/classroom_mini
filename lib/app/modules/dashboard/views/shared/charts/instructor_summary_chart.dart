@@ -1,6 +1,6 @@
+import 'package:classroom_mini/app/data/models/response/dashboard_response.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import '../../../../../data/models/dashboard_model.dart';
 
 class InstructorSummaryChart extends StatelessWidget {
   final DashboardStats stats;
@@ -120,8 +120,10 @@ class InstructorSummaryChart extends StatelessWidget {
             barColor: Colors.green),
         makeGroupData(2, stats.totalStudents.toDouble() + 1,
             barColor: Colors.orange),
-    makeGroupData(3, stats.totalAssignments.toDouble() + 1, barColor: Colors.purple),
-    makeGroupData(4, stats.totalQuizzes.toDouble() + 1, barColor: Colors.red),
+        makeGroupData(3, stats.totalAssignments.toDouble() + 1,
+            barColor: Colors.purple),
+        makeGroupData(4, stats.totalQuizzes.toDouble() + 1,
+            barColor: Colors.red),
       ];
 
   Widget getTitles(double value, TitleMeta meta) {

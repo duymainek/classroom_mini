@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:classroom_mini/app/data/models/assignment_model.dart';
+import 'package:classroom_mini/app/data/models/response/assignment_response.dart';
 import 'package:classroom_mini/app/modules/assignments/controllers/assignment_controller.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-// Removed unused import of course_model
 
 class AssignmentForm extends StatefulWidget {
   final Assignment? assignment;
@@ -45,6 +44,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
   List<String> _fileFormats = [];
   int _maxFileSize = 10;
   List<String> _selectedGroupIds = [];
+  List<AssignmentAttachment> _attachments = [];
 
   final List<String> _availableFileFormats = [
     'pdf',
@@ -64,7 +64,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
     _initializeForm();
     // Initialize controller form state (courses/groups supplied by parent)
     final controller = Get.put(AssignmentController(), permanent: false);
-    controller.initFormState(courses: widget.courses, groups: widget.groups);
+    controller.initFormState(courses: const [], groups: const []);
     // Always refresh courses on entering the form to ensure latest data
     controller.loadCoursesForForm();
     // If editing existing assignment with a course, load groups for that course
@@ -99,6 +99,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
       _fileFormats = List.from(assignment.fileFormats);
       _maxFileSize = assignment.maxFileSize;
       _selectedGroupIds = assignment.groups.map((g) => g.id).toList();
+      _attachments = List.from(assignment.attachments);
 
       // Sync with controller state
       final controller = Get.find<AssignmentController>();
@@ -180,6 +181,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Form(
       key: _formKey,
@@ -189,13 +191,11 @@ class _AssignmentFormState extends State<AssignmentForm> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Title
-            TextFormField(
+            _buildModernTextField(
               controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Tiêu đề bài tập 1*',
-                hintText: 'Nhập tiêu đề bài tập',
-                border: OutlineInputBorder(),
-              ),
+              label: 'Tiêu đề bài tập *',
+              hint: 'Nhập tiêu đề bài tập',
+              prefixIcon: Icons.title,
               onChanged: (_) => setState(() {}),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
@@ -208,238 +208,325 @@ class _AssignmentFormState extends State<AssignmentForm> {
               },
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
             // Description + Gemini + Preview
-            Card(
-              elevation: 1,
-              margin: const EdgeInsets.only(bottom: 16),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            _buildModernSection(
+              context,
+              title: 'Mô tả bài tập',
+              icon: Icons.description,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Mô tả bài tập',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Row(children: [
-                          Tooltip(
-                            message: _isPreview
-                                ? 'Chuyển sang Soạn thảo'
-                                : 'Xem Preview',
-                            child: IconButton(
-                              icon: Icon(_isPreview
-                                  ? Icons.edit
-                                  : Icons.remove_red_eye),
-                              onPressed: () =>
-                                  setState(() => _isPreview = !_isPreview),
-                            ),
-                          ),
-                          Tooltip(
-                            message: 'Tạo bằng Gemini',
-                            child: Obx(() {
-                              final controller =
-                                  Get.find<AssignmentController>();
-                              return IconButton(
-                                icon: controller.isGeneratingDescription
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                            strokeWidth: 2),
-                                      )
-                                    : const Icon(Icons.auto_awesome),
-                                onPressed: controller.isGeneratingDescription
-                                    ? null
-                                    : _showGeminiPromptDialog,
-                              );
-                            }),
-                          ),
-                        ])
-                      ],
+                    Text(
+                      'Mô tả bài tập',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    if (!_isPreview)
-                      TextFormField(
-                        controller: _descriptionController,
-                        decoration: const InputDecoration(
-                          hintText: 'Hỗ trợ Markdown, tối đa 5000 ký tự',
-                          border: OutlineInputBorder(),
-                          alignLabelWithHint: true,
-                        ),
-                        minLines: 8,
-                        maxLines: 20,
-                        maxLength: 5000,
-                      )
-                    else
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: theme.dividerColor),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        constraints: const BoxConstraints(minHeight: 200),
-                        child: MarkdownBody(
-                          data: _descriptionController.text,
-                          shrinkWrap: true,
+                    Row(children: [
+                      Tooltip(
+                        message: _isPreview
+                            ? 'Chuyển sang Soạn thảo'
+                            : 'Xem Preview',
+                        child: IconButton(
+                          icon: Icon(
+                              _isPreview ? Icons.edit : Icons.remove_red_eye),
+                          onPressed: () =>
+                              setState(() => _isPreview = !_isPreview),
                         ),
                       ),
+                      Tooltip(
+                        message: 'Tạo bằng Gemini',
+                        child: Obx(() {
+                          final controller = Get.find<AssignmentController>();
+                          return IconButton(
+                            icon: controller.isGeneratingDescription
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.auto_awesome),
+                            onPressed: controller.isGeneratingDescription
+                                ? null
+                                : _showGeminiPromptDialog,
+                          );
+                        }),
+                      ),
+                    ])
                   ],
                 ),
-              ),
+                const SizedBox(height: 12),
+                if (!_isPreview)
+                  TextFormField(
+                    controller: _descriptionController,
+                    decoration: InputDecoration(
+                      hintText: 'Hỗ trợ Markdown, tối đa 5000 ký tự',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: colorScheme.outline.withOpacity(0.3),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: colorScheme.primary,
+                          width: 2,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                      alignLabelWithHint: true,
+                    ),
+                    minLines: 8,
+                    maxLines: 20,
+                    maxLength: 5000,
+                  )
+                else
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceVariant.withOpacity(0.3),
+                      border: Border.all(
+                        color: colorScheme.outline.withOpacity(0.2),
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    constraints: const BoxConstraints(minHeight: 200),
+                    child: MarkdownBody(
+                      data: _descriptionController.text,
+                      shrinkWrap: true,
+                    ),
+                  ),
+              ],
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
             // Course selection
-            DropdownButtonFormField<String>(
-              value: _selectedCourseId,
-              decoration: const InputDecoration(
-                labelText: 'Khóa học *',
-                border: OutlineInputBorder(),
+            _buildModernTextField(
+              controller: null,
+              label: 'Khóa học *',
+              hint: 'Chọn khóa học',
+              prefixIcon: Icons.school,
+              child: DropdownButtonFormField<String>(
+                value: _selectedCourseId,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: colorScheme.outline.withOpacity(0.3),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: colorScheme.primary,
+                      width: 2,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                ),
+                items: Get.find<AssignmentController>()
+                    .formState
+                    .value
+                    .courses
+                    .map((c) => DropdownMenuItem(
+                          value: c.id,
+                          child: Text('${c.code} - ${c.name}'),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedCourseId = value;
+                    _selectedGroupIds
+                        .clear(); // Clear groups when course changes
+                  });
+                  final controller = Get.find<AssignmentController>();
+                  controller.updateForm((s) => s.courseId = value);
+                  controller.clearSelectedGroupsForForm();
+                  if (value != null) {
+                    // Always load groups when course changes, even in edit mode
+                    controller.loadGroupsForForm(value);
+                  }
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Vui lòng chọn khóa học';
+                  }
+                  return null;
+                },
               ),
-              items: Get.find<AssignmentController>()
-                  .formState
-                  .value
-                  .courses
-                  .map((c) => DropdownMenuItem(
-                        value: c.id,
-                        child: Text('${c.code} - ${c.name}'),
-                      ))
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedCourseId = value;
-                  _selectedGroupIds.clear(); // Clear groups when course changes
-                });
-                final controller = Get.find<AssignmentController>();
-                controller.updateForm((s) => s.courseId = value);
-                controller.clearSelectedGroupsForForm();
-                if (value != null) {
-                  // Always load groups when course changes, even in edit mode
-                  controller.loadGroupsForForm(value);
-                }
-              },
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Vui lòng chọn khóa học';
-                }
-                return null;
-              },
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
             // Date and time section
-            _buildDateTimeSection(theme),
+            _buildDateTimeSection(context, theme),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
             // Submission settings
-            _buildSubmissionSettings(theme),
+            _buildSubmissionSettings(context, theme),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
             // File settings
-            _buildFileSettings(theme),
+            _buildFileSettings(context, theme),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
+
+            // Attachments
+            _buildAttachmentsSection(context, theme),
+
+            const SizedBox(height: 20),
 
             // Group selection
-            _buildGroupSelection(theme),
+            _buildGroupSelection(context, theme),
 
             const SizedBox(height: 24),
 
             // Action buttons
-            _buildActionButtons(theme),
+            _buildActionButtons(context, theme),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDateTimeSection(ThemeData theme) {
-    return Card(
-      elevation: 1,
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Thời gian',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Start date
-            _buildDateSelectionTile(
-              context,
-              icon: Icons.play_arrow,
-              title: 'Ngày bắt đầu *',
-              subtitle: _startDate != null
-                  ? _formatDateTime(_startDate!)
-                  : 'Chọn ngày bắt đầu',
-              onTap: () => _selectDate(context, (date) {
-                setState(() => _startDate = date);
-              }),
-            ),
-            const SizedBox(height: 8),
-
-            // Due date
-            _buildDateSelectionTile(
-              context,
-              icon: Icons.flag,
-              title: 'Hạn chót *',
-              subtitle: _dueDate != null
-                  ? _formatDateTime(_dueDate!)
-                  : 'Chọn hạn chót',
-              onTap: () => _selectDate(context, (date) {
-                setState(() => _dueDate = date);
-              }),
-            ),
-            const SizedBox(height: 8),
-
-            // Late submission toggle
-            SwitchListTile(
-              title: const Text('Cho phép nộp trễ'),
-              subtitle: const Text('Sinh viên có thể nộp bài sau hạn chót'),
-              value: _allowLateSubmission,
-              onChanged: (value) {
-                setState(() {
-                  _allowLateSubmission = value;
-                  if (!value) _lateDueDate = null;
-                });
-              },
-            ),
-
-            // Late due date
-            if (_allowLateSubmission)
-              _buildDateSelectionTile(
-                context,
-                icon: Icons.warning,
-                title: 'Hạn nộp trễ',
-                subtitle: _lateDueDate != null
-                    ? _formatDateTime(_lateDueDate!)
-                    : 'Chọn hạn nộp trễ',
-                iconColor: Colors.orange,
-                onTap: () => _selectDate(context, (date) {
-                  setState(() => _lateDueDate = date);
-                }),
-              ),
-          ],
+  Future<void> _pickFiles() async {
+    // TODO: Implement file picking and upload to Supabase storage
+    // For now, I will just add a dummy attachment
+    setState(() {
+      _attachments.add(
+        AssignmentAttachment(
+          id: 'temp_id_${DateTime.now().millisecondsSinceEpoch}',
+          fileName: 'dummy_file.pdf',
+          fileUrl: 'https://example.com/dummy_file.pdf',
+          fileSize: 12345,
+          fileType: 'application/pdf',
+          createdAt: DateTime.now(),
         ),
-      ),
+      );
+    });
+  }
+
+  Widget _buildAttachmentsSection(BuildContext context, ThemeData theme) {
+    final colorScheme = theme.colorScheme;
+
+    return _buildModernSection(
+      context,
+      title: 'Attachments',
+      icon: Icons.attachment,
+      children: [
+        // List of attachments
+        if (_attachments.isNotEmpty)
+          ..._attachments.map((att) => ListTile(
+                leading: Icon(Icons.insert_drive_file),
+                title: Text(att.fileName),
+                subtitle: Text('${(att.fileSize ?? 0) / 1024} KB'),
+                trailing: IconButton(
+                  icon: Icon(Icons.delete, color: colorScheme.error),
+                  onPressed: () {
+                    setState(() {
+                      _attachments.remove(att);
+                    });
+                  },
+                ),
+              )),
+
+        // Add attachment button
+        Center(
+          child: ElevatedButton.icon(
+            onPressed: _pickFiles,
+            icon: Icon(Icons.add),
+            label: Text('Add Attachment'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDateTimeSection(BuildContext context, ThemeData theme) {
+    return _buildModernSection(
+      context,
+      title: 'Thời gian',
+      icon: Icons.schedule,
+      children: [
+        // Start date
+        _buildModernDateTile(
+          context,
+          title: 'Ngày bắt đầu *',
+          subtitle: _startDate != null
+              ? _formatDateTime(_startDate!)
+              : 'Chọn ngày bắt đầu',
+          value: _startDate,
+          icon: Icons.play_arrow,
+          onTap: () => _selectDate(context, (date) {
+            setState(() => _startDate = date);
+          }),
+        ),
+        const SizedBox(height: 12),
+
+        // Due date
+        _buildModernDateTile(
+          context,
+          title: 'Hạn chót *',
+          subtitle:
+              _dueDate != null ? _formatDateTime(_dueDate!) : 'Chọn hạn chót',
+          value: _dueDate,
+          icon: Icons.flag,
+          onTap: () => _selectDate(context, (date) {
+            setState(() => _dueDate = date);
+          }),
+        ),
+        const SizedBox(height: 12),
+
+        // Late submission toggle
+        _buildModernSwitchTile(
+          context,
+          title: 'Cho phép nộp trễ',
+          subtitle: 'Sinh viên có thể nộp bài sau hạn chót',
+          value: _allowLateSubmission,
+          onChanged: (value) {
+            setState(() {
+              _allowLateSubmission = value;
+              if (!value) _lateDueDate = null;
+            });
+          },
+          icon: Icons.warning,
+        ),
+
+        // Late due date
+        if (_allowLateSubmission) ...[
+          const SizedBox(height: 12),
+          _buildModernDateTile(
+            context,
+            title: 'Hạn nộp trễ',
+            subtitle: _lateDueDate != null
+                ? _formatDateTime(_lateDueDate!)
+                : 'Chọn hạn nộp trễ',
+            value: _lateDueDate,
+            icon: Icons.warning,
+            onTap: () => _selectDate(context, (date) {
+              setState(() => _lateDueDate = date);
+            }),
+          ),
+        ],
+      ],
     );
   }
 
@@ -463,243 +550,301 @@ class _AssignmentFormState extends State<AssignmentForm> {
     );
   }
 
-  Widget _buildSubmissionSettings(ThemeData theme) {
-    return Card(
-      elevation: 1,
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Cài đặt nộp bài',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Max attempts
-            TextFormField(
-              initialValue: _maxAttempts.toString(),
-              decoration: const InputDecoration(
-                labelText: 'Số lần nộp tối đa',
-                hintText: 'Nhập số lần nộp tối đa',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              onChanged: (value) {
-                _maxAttempts = int.tryParse(value) ?? 1;
-              },
-              validator: (value) {
-                final attempts = int.tryParse(value ?? '');
-                if (attempts == null || attempts < 1 || attempts > 10) {
-                  return 'Số lần nộp phải từ 1 đến 10';
-                }
-                return null;
-              },
-            ),
-          ],
+  Widget _buildSubmissionSettings(BuildContext context, ThemeData theme) {
+    return _buildModernSection(
+      context,
+      title: 'Cài đặt nộp bài',
+      icon: Icons.settings,
+      children: [
+        _buildModernTextField(
+          controller: null,
+          initialValue: _maxAttempts.toString(),
+          label: 'Số lần nộp tối đa',
+          hint: 'Nhập số lần nộp tối đa',
+          prefixIcon: Icons.repeat,
+          keyboardType: TextInputType.number,
+          onChanged: (value) {
+            _maxAttempts = int.tryParse(value) ?? 1;
+          },
+          validator: (value) {
+            final attempts = int.tryParse(value ?? '');
+            if (attempts == null || attempts < 1 || attempts > 10) {
+              return 'Số lần nộp phải từ 1 đến 10';
+            }
+            return null;
+          },
         ),
-      ),
+      ],
     );
   }
 
-  Widget _buildFileSettings(ThemeData theme) {
-    return Card(
-      elevation: 1,
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Cài đặt file',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
+  Widget _buildFileSettings(BuildContext context, ThemeData theme) {
+    final colorScheme = theme.colorScheme;
 
-            // File formats
-            Text(
-              'Định dạng file cho phép:',
-              style: theme.textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _availableFileFormats.map((format) {
-                final isSelected = _fileFormats.contains(format);
-                return FilterChip(
-                  label: Text(format.toUpperCase()),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    setState(() {
-                      if (selected) {
-                        _fileFormats.add(format);
-                      } else {
-                        _fileFormats.remove(format);
-                      }
-                    });
-                  },
-                  selectedColor: theme.colorScheme.primaryContainer,
-                  checkmarkColor: theme.colorScheme.onPrimaryContainer,
-                  labelStyle: TextStyle(
-                      color: isSelected
-                          ? theme.colorScheme.onPrimaryContainer
-                          : theme.colorScheme.onSurface),
-                );
-              }).toList(),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Max file size
-            TextFormField(
-              initialValue: _maxFileSize.toString(),
-              decoration: const InputDecoration(
-                labelText: 'Kích thước file tối đa (MB)',
-                hintText: 'Nhập kích thước file tối đa',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              onChanged: (value) {
-                _maxFileSize = int.tryParse(value) ?? 10;
-              },
-              validator: (value) {
-                final size = int.tryParse(value ?? '');
-                if (size == null || size < 1 || size > 100) {
-                  return 'Kích thước file phải từ 1 đến 100 MB';
-                }
-                return null;
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGroupSelection(ThemeData theme) {
-    return Card(
-      elevation: 1,
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Container(
-        width: double.infinity,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Phân phối đến nhóm',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Chọn các nhóm sẽ nhận bài tập này',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Obx(() {
-                final controller = Get.find<AssignmentController>();
-                if (controller.isGroupsLoading) {
-                  return const Padding(
-                    padding: EdgeInsets.all(8),
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  );
-                }
-                if (_selectedCourseId == null) {
-                  return const Text('Vui lòng chọn khóa học trước');
-                }
-                final availableGroups = controller.formState.value.groups
-                    .where((_) => _selectedCourseId != null)
-                    .toList();
-                if (availableGroups.isEmpty) {
-                  return const Text('Không có nhóm nào trong khóa học đã chọn');
-                }
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Text(
-                        controller.selectedGroupIdsForFormRx.isEmpty
-                            ? 'Chưa chọn nhóm nào'
-                            : 'Đã chọn ${controller.selectedGroupIdsForFormRx.length} nhóm',
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: availableGroups.map((g) {
-                        final isSelected =
-                            controller.selectedGroupIdsForFormRx.contains(g.id);
-                        return FilterChip(
-                          label: Text(g.name),
-                          selected: isSelected,
-                          onSelected: (sel) => controller
-                              .toggleGroupSelectionForForm(g.id, selected: sel),
-                          selectedColor: theme.colorScheme.tertiaryContainer,
-                          checkmarkColor: theme.colorScheme.onTertiaryContainer,
-                          labelStyle: TextStyle(
-                              color: isSelected
-                                  ? theme.colorScheme.onTertiaryContainer
-                                  : theme.colorScheme.onSurface),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                );
-              }),
-            ],
+    return _buildModernSection(
+      context,
+      title: 'Cài đặt file',
+      icon: Icons.attach_file,
+      children: [
+        // File formats
+        Text(
+          'Định dạng file cho phép:',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w500,
+            color: colorScheme.onSurface,
           ),
         ),
-      ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _availableFileFormats.map((format) {
+            final isSelected = _fileFormats.contains(format);
+            return FilterChip(
+              label: Text(format.toUpperCase()),
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  if (selected) {
+                    _fileFormats.add(format);
+                  } else {
+                    _fileFormats.remove(format);
+                  }
+                });
+              },
+              selectedColor: colorScheme.primaryContainer,
+              checkmarkColor: colorScheme.onPrimaryContainer,
+              labelStyle: TextStyle(
+                color: isSelected
+                    ? colorScheme.onPrimaryContainer
+                    : colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
+              ),
+            );
+          }).toList(),
+        ),
+
+        const SizedBox(height: 20),
+
+        // Max file size
+        _buildModernTextField(
+          controller: null,
+          initialValue: _maxFileSize.toString(),
+          label: 'Kích thước file tối đa (MB)',
+          hint: 'Nhập kích thước file tối đa',
+          prefixIcon: Icons.storage,
+          keyboardType: TextInputType.number,
+          onChanged: (value) {
+            _maxFileSize = int.tryParse(value) ?? 10;
+          },
+          validator: (value) {
+            final size = int.tryParse(value ?? '');
+            if (size == null || size < 1 || size > 100) {
+              return 'Kích thước file phải từ 1 đến 100 MB';
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGroupSelection(BuildContext context, ThemeData theme) {
+    final colorScheme = theme.colorScheme;
+
+    return _buildModernSection(
+      context,
+      title: 'Phân phối đến nhóm',
+      icon: Icons.group,
+      children: [
+        Text(
+          'Chọn các nhóm sẽ nhận bài tập này',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Obx(() {
+          final controller = Get.find<AssignmentController>();
+          if (controller.isGroupsLoading) {
+            return Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: colorScheme.outline.withOpacity(0.2),
+                ),
+              ),
+              child: Column(
+                children: [
+                  CircularProgressIndicator(color: colorScheme.primary),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Đang tải nhóm...',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+          if (_selectedCourseId == null) {
+            return Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: colorScheme.outline.withOpacity(0.2),
+                ),
+              ),
+              child: Text(
+                'Vui lòng chọn khóa học trước',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            );
+          }
+          final availableGroups = controller.formState.value.groups
+              .where((_) => _selectedCourseId != null)
+              .toList();
+          if (availableGroups.isEmpty) {
+            return Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: colorScheme.outline.withOpacity(0.2),
+                ),
+              ),
+              child: Text(
+                'Không có nhóm nào trong khóa học đã chọn',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            );
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: colorScheme.primary.withOpacity(0.2),
+                  ),
+                ),
+                child: Text(
+                  controller.selectedGroupIdsForFormRx.isEmpty
+                      ? 'Chưa chọn nhóm nào'
+                      : 'Đã chọn ${controller.selectedGroupIdsForFormRx.length} nhóm',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: availableGroups.map((g) {
+                  final isSelected =
+                      controller.selectedGroupIdsForFormRx.contains(g.id);
+                  return FilterChip(
+                    label: Text(g.name),
+                    selected: isSelected,
+                    onSelected: (sel) => controller
+                        .toggleGroupSelectionForForm(g.id, selected: sel),
+                    selectedColor: colorScheme.tertiaryContainer,
+                    checkmarkColor: colorScheme.onTertiaryContainer,
+                    labelStyle: TextStyle(
+                      color: isSelected
+                          ? colorScheme.onTertiaryContainer
+                          : colorScheme.onSurface,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          );
+        }),
+      ],
     );
   }
 
   // Dialog chọn nhóm đã loại bỏ theo góp ý UX; sử dụng inline chips ở trên
 
-  Widget _buildActionButtons(ThemeData theme) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        if (widget.onCancel != null)
-          OutlinedButton(
-            onPressed: widget.isLoading ? null : widget.onCancel,
-            child: const Text('Hủy'),
-          ),
-        const SizedBox(width: 16),
-        FilledButton(
-          onPressed: _isSubmitEnabled() ? _handleSubmit : null,
-          child: widget.isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : Text(widget.assignment != null ? 'Cập nhật' : 'Tạo bài tập'),
+  Widget _buildActionButtons(BuildContext context, ThemeData theme) {
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.2),
+          width: 1,
         ),
-      ],
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          if (widget.onCancel != null) ...[
+            Expanded(
+              child: OutlinedButton(
+                onPressed: widget.isLoading ? null : widget.onCancel,
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Hủy'),
+              ),
+            ),
+            const SizedBox(width: 16),
+          ],
+          Expanded(
+            flex: 2,
+            child: FilledButton(
+              onPressed: _isSubmitEnabled() ? _handleSubmit : null,
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: widget.isLoading
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: colorScheme.onPrimary,
+                      ),
+                    )
+                  : Text(
+                      widget.assignment != null ? 'Cập nhật' : 'Tạo bài tập'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -792,6 +937,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
       fileFormats: _fileFormats,
       maxFileSize: _maxFileSize,
       groupIds: selectedGroupIds,
+      attachments: _attachments,
     );
 
     widget.onSubmit(formData);
@@ -799,6 +945,274 @@ class _AssignmentFormState extends State<AssignmentForm> {
 
   String _formatDateTime(DateTime dateTime) {
     return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildModernSection(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer.withOpacity(0.3),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: colorScheme.primary, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(children: children),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernTextField({
+    TextEditingController? controller,
+    String? initialValue,
+    required String label,
+    String? hint,
+    String? Function(String?)? validator,
+    void Function(String)? onChanged,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    IconData? prefixIcon,
+    Widget? child,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                if (prefixIcon != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child:
+                        Icon(prefixIcon, color: colorScheme.primary, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: Text(
+                    label,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (child != null)
+              child
+            else
+              TextFormField(
+                controller: controller,
+                initialValue: initialValue,
+                keyboardType: keyboardType,
+                maxLines: maxLines,
+                validator: validator,
+                onChanged: onChanged,
+                decoration: InputDecoration(
+                  labelText: label,
+                  hintText: hint,
+                  prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: colorScheme.outline.withOpacity(0.3),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: colorScheme.primary,
+                      width: 2,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernDateTile(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required DateTime? value,
+    required VoidCallback onTap,
+    required IconData icon,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.2),
+        ),
+      ),
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: colorScheme.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: colorScheme.primary, size: 20),
+        ),
+        title: Text(
+          title,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        trailing:
+            Icon(Icons.calendar_today_outlined, color: colorScheme.primary),
+        onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      ),
+    );
+  }
+
+  Widget _buildModernSwitchTile(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    required IconData icon,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.2),
+        ),
+      ),
+      child: SwitchListTile(
+        title: Text(
+          title,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        value: value,
+        onChanged: onChanged,
+        secondary: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: colorScheme.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: colorScheme.primary, size: 20),
+        ),
+        activeColor: colorScheme.primary,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      ),
+    );
   }
 }
 
@@ -814,6 +1228,7 @@ class AssignmentFormData {
   final List<String> fileFormats;
   final int maxFileSize;
   final List<String> groupIds;
+  final List<AssignmentAttachment> attachments;
 
   AssignmentFormData({
     required this.title,
@@ -827,5 +1242,6 @@ class AssignmentFormData {
     required this.fileFormats,
     required this.maxFileSize,
     required this.groupIds,
+    required this.attachments,
   });
 }

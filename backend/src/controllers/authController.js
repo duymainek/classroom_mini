@@ -8,6 +8,8 @@ const {
   sanitizeUserData 
 } = require('../utils/validators');
 const { AppError, catchAsync } = require('../middleware/errorHandler');
+const { buildResponse } = require('../utils/response');
+require('../types/auth.type');
 
 class AuthController {
   /**
@@ -77,10 +79,8 @@ class AuthController {
     // Store session (optional - could be implemented later)
     // await this.createSession(user.id, tokens.accessToken, tokens.refreshToken, req);
 
-    res.json({
-      success: true,
-      message: 'Login successful',
-      data: {
+    res.json(
+      buildResponse(true, 'Login successful', {
         user: {
           id: user.id,
           username: user.username,
@@ -93,8 +93,8 @@ class AuthController {
           avatar_url: user.avatar_url || null
         },
         tokens
-      }
-    });
+      })
+    );
   });
 
   /**
@@ -151,10 +151,8 @@ class AuthController {
       .update({ last_login_at: new Date().toISOString() })
       .eq('id', user.id);
 
-    res.json({
-      success: true,
-      message: 'Login successful',
-      data: {
+    res.json(
+      buildResponse(true, 'Login successful', {
         user: {
           id: user.id,
           username: user.username,
@@ -167,15 +165,15 @@ class AuthController {
           avatar_url: user.avatar_url || null
         },
         tokens
-      }
-    });
+      })
+    );
   });
 
   /**
    * Create student account (instructor only)
    */
   createStudent = catchAsync(async (req, res) => {
-    const { username, password, email, fullName } = req.body;
+    const { username, password, email, fullName, groupId, courseId } = req.body;
 
     // Validate input
     const validation = validateUserCreation({ username, password, email, fullName });
@@ -224,13 +222,81 @@ class AuthController {
       throw new AppError('Failed to create user account', 500, 'USER_CREATION_FAILED');
     }
 
-    res.status(201).json({
-      success: true,
-      message: 'Student account created successfully',
-      data: {
-        user: sanitizeUserData(newUser)
+    // Optional: create enrollment when groupId provided (and validate with courseId)
+    let assignedGroupId = null;
+    let resolvedCourseId = courseId || null;
+    if (groupId) {
+      // Validate group exists and resolve course
+      const { data: group } = await supabase
+        .from('groups')
+        .select('id, course_id')
+        .eq('id', groupId)
+        .single();
+
+      if (!group) {
+        // Cleanup created user to avoid dangling account
+        await supabase.from('users').delete().eq('id', newUser.id);
+        throw new AppError('Group not found', 400, 'GROUP_NOT_FOUND');
       }
-    });
+
+      if (resolvedCourseId && group.course_id && resolvedCourseId !== group.course_id) {
+        await supabase.from('users').delete().eq('id', newUser.id);
+        throw new AppError('Provided courseId does not match group course', 400, 'COURSE_GROUP_MISMATCH');
+      }
+      resolvedCourseId = group.course_id || resolvedCourseId;
+
+      // Remove existing enrollments in same course (safety)
+      if (resolvedCourseId) {
+        const { data: existingEnrollments } = await supabase
+          .from('student_enrollments')
+          .select('id, groups(course_id)')
+          .eq('student_id', newUser.id);
+        const idsToRemove = (existingEnrollments || [])
+          .filter(e => e.groups && e.groups.course_id === resolvedCourseId)
+          .map(e => e.id);
+        if (idsToRemove.length > 0) {
+          await supabase
+            .from('student_enrollments')
+            .delete()
+            .in('id', idsToRemove);
+        }
+      }
+
+      // Resolve semester from course
+      let semesterId = null;
+      if (resolvedCourseId) {
+        const { data: course } = await supabase
+          .from('courses')
+          .select('semester_id')
+          .eq('id', resolvedCourseId)
+          .single();
+        semesterId = course ? course.semester_id : null;
+      }
+
+      const { error: enrollErr } = await supabase
+        .from('student_enrollments')
+        .insert({
+          student_id: newUser.id,
+          group_id: groupId,
+          semester_id: semesterId,
+          is_active: true
+        });
+      if (enrollErr) {
+        console.error('Enrollment creation error (auth.createStudent):', enrollErr);
+        // Best-effort cleanup user to keep data consistent
+        await supabase.from('users').delete().eq('id', newUser.id);
+        throw new AppError('Failed to create student enrollment', 500, 'ENROLLMENT_CREATION_FAILED');
+      }
+      assignedGroupId = groupId;
+    }
+
+    res.status(201).json(
+      buildResponse(true, 'Student account created successfully', {
+        user: sanitizeUserData(newUser),
+        group_id: assignedGroupId,
+        course_id: resolvedCourseId || null
+      })
+    );
   });
 
   /**
@@ -250,9 +316,8 @@ class AuthController {
       throw new AppError('User not found', 404, 'USER_NOT_FOUND');
     }
 
-    res.json({
-      success: true,
-      data: {
+    res.json(
+      buildResponse(true, undefined, {
         user: {
           id: user.id,
           username: user.username,
@@ -264,8 +329,8 @@ class AuthController {
           role: user.role,
           avatar_url: user.avatar_url || null
         }
-      }
-    });
+      })
+    );
   });
 
   /**
@@ -318,13 +383,7 @@ class AuthController {
       username: user.username
     });
 
-    res.json({
-      success: true,
-      message: 'Tokens refreshed successfully',
-      data: {
-        tokens
-      }
-    });
+    res.json(buildResponse(true, 'Tokens refreshed successfully', { tokens }));
   });
 
   /**
@@ -338,10 +397,7 @@ class AuthController {
 
     // For now, we'll just return success
     // The client should clear tokens from local storage
-    res.json({
-      success: true,
-      message: 'Logged out successfully'
-    });
+    res.json(buildResponse(true, 'Logged out successfully'));
   });
 
   /**
@@ -378,13 +434,9 @@ class AuthController {
       throw new AppError('Failed to update profile', 500, 'PROFILE_UPDATE_FAILED');
     }
 
-    res.json({
-      success: true,
-      message: 'Profile updated successfully',
-      data: {
-        user: sanitizeUserData(updatedUser)
-      }
-    });
+    res.json(
+      buildResponse(true, 'Profile updated successfully', { user: sanitizeUserData(updatedUser) })
+    );
   });
 
   /**
@@ -402,12 +454,9 @@ class AuthController {
       throw new AppError('Failed to retrieve students', 500, 'GET_STUDENTS_FAILED');
     }
 
-    res.json({
-      success: true,
-      data: {
-        students: students.map(student => sanitizeUserData(student))
-      }
-    });
+    res.json(
+      buildResponse(true, undefined, { students: students.map(student => sanitizeUserData(student)) })
+    );
   });
 
   /**
@@ -433,13 +482,11 @@ class AuthController {
       throw new AppError('Student not found or update failed', 404, 'STUDENT_NOT_FOUND');
     }
 
-    res.json({
-      success: true,
-      message: `Student ${isActive ? 'activated' : 'deactivated'} successfully`,
-      data: {
+    res.json(
+      buildResponse(true, `Student ${isActive ? 'activated' : 'deactivated'} successfully`, {
         student: sanitizeUserData(updatedStudent)
-      }
-    });
+      })
+    );
   });
 }
 

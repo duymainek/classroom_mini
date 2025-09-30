@@ -1,6 +1,6 @@
+import 'package:classroom_mini/app/data/models/request/quiz_request.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../data/models/quiz_model.dart';
 
 class QuizAddQuestionDialog extends StatefulWidget {
   final Function(QuestionCreateRequest) onAdd;

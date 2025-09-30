@@ -1,6 +1,9 @@
 const { supabase } = require('../services/supabaseClient');
-const { validateAssignmentCreation, validateAssignmentUpdate } = require('../models/assignment');
+const { validate } = require('../utils/validators');
+const { createAssignmentSchema, updateAssignmentSchema } = require('../schemas/assignmentSchema');
 const { AppError, catchAsync } = require('../middleware/errorHandler');
+const { buildResponse } = require('../utils/response');
+require('../types/assignment.type');
 
 class AssignmentController {
   /**
@@ -18,25 +21,14 @@ class AssignmentController {
       maxAttempts,
       fileFormats,
       maxFileSize,
-      groupIds
+      groupIds,
+      attachments // new
     } = req.body;
 
     const instructorId = req.user.id;
 
     // Validate input
-    const validation = validateAssignmentCreation({
-      title,
-      description,
-      courseId,
-      startDate,
-      dueDate,
-      lateDueDate,
-      allowLateSubmission,
-      maxAttempts,
-      fileFormats,
-      maxFileSize,
-      groupIds
-    });
+    const validation = validate(createAssignmentSchema, req.body);
 
     if (!validation.isValid) {
       return res.status(400).json({
@@ -133,6 +125,30 @@ class AssignmentController {
       }
     }
 
+    // Create assignment attachments
+    if (attachments && attachments.length > 0) {
+      const attachmentRecords = attachments.map(att => ({
+        assignment_id: newAssignment.id,
+        file_name: att.fileName,
+        file_url: att.fileUrl,
+        file_size: att.fileSize,
+        file_type: att.fileType
+      }));
+
+      const { error: attachmentsError } = await supabase
+        .from('assignment_attachments')
+        .insert(attachmentRecords);
+
+      if (attachmentsError) {
+        console.error('Assignment attachments creation error:', attachmentsError);
+        // Rollback assignment and groups
+        await supabase.from('assignment_groups').delete().eq('assignment_id', newAssignment.id);
+        await supabase.from('assignments').delete().eq('id', newAssignment.id);
+        
+        throw new AppError('Failed to add attachments to assignment', 500, 'ATTACHMENT_ASSIGNMENT_FAILED');
+      }
+    }
+
     // Get assignment with groups for response
     const { data: assignmentWithGroups } = await supabase
       .from('assignments')
@@ -142,6 +158,7 @@ class AssignmentController {
         max_attempts, file_formats, max_file_size, is_active,
         created_at, updated_at,
         courses!inner(code, name),
+        assignment_attachments(id, file_name, file_url, file_size, file_type, created_at),
         assignment_groups(
           groups!inner(id, name)
         )
@@ -149,13 +166,9 @@ class AssignmentController {
       .eq('id', newAssignment.id)
       .single();
 
-    res.status(201).json({
-      success: true,
-      message: 'Assignment created successfully',
-      data: {
-        assignment: assignmentWithGroups
-      }
-    });
+    res.status(201).json(
+      buildResponse(true, 'Assignment created successfully', { assignment: assignmentWithGroups })
+    );
   });
 
   /**
@@ -260,9 +273,8 @@ class AssignmentController {
       throw new AppError('Failed to fetch assignments', 500, 'GET_ASSIGNMENTS_FAILED');
     }
 
-    res.json({
-      success: true,
-      data: {
+    res.json(
+      buildResponse(true, undefined, {
         assignments: assignments || [],
         pagination: {
           page: parseInt(page),
@@ -270,8 +282,8 @@ class AssignmentController {
           total: count || 0,
           pages: Math.ceil((count || 0) / parseInt(limit))
         }
-      }
-    });
+      })
+    );
   });
 
   /**
@@ -327,12 +339,7 @@ class AssignmentController {
       throw new AppError('Assignment not found', 404, 'ASSIGNMENT_NOT_FOUND');
     }
 
-    res.json({
-      success: true,
-      data: {
-        assignment
-      }
-    });
+    res.json(buildResponse(true, undefined, { assignment }));
   });
 
   /**
@@ -341,10 +348,10 @@ class AssignmentController {
   updateAssignment = catchAsync(async (req, res) => {
     const { assignmentId } = req.params;
     const instructorId = req.user.id;
-    const updateData = req.body;
+    const { attachments, ...updateData } = req.body; // separate attachments
 
     // Validate input
-    const validation = validateAssignmentUpdate(updateData);
+    const validation = validate(updateAssignmentSchema, updateData);
     if (!validation.isValid) {
       return res.status(400).json({
         success: false,
@@ -366,7 +373,7 @@ class AssignmentController {
     }
 
     // Update assignment
-    const { data: updatedAssignment, error } = await supabase
+    const { error } = await supabase
       .from('assignments')
       .update({
         ...updateData,
@@ -387,13 +394,55 @@ class AssignmentController {
       throw new AppError('Failed to update assignment', 500, 'UPDATE_ASSIGNMENT_FAILED');
     }
 
-    res.json({
-      success: true,
-      message: 'Assignment updated successfully',
-      data: {
-        assignment: updatedAssignment
+    // Handle attachments
+    if (attachments) {
+      // Delete existing attachments
+      await supabase
+        .from('assignment_attachments')
+        .delete()
+        .eq('assignment_id', assignmentId);
+
+      // Insert new attachments
+      if (attachments.length > 0) {
+        const attachmentRecords = attachments.map(att => ({
+          assignment_id: assignmentId,
+          file_name: att.fileName,
+          file_url: att.fileUrl,
+          file_size: att.fileSize,
+          file_type: att.fileType
+        }));
+
+        const { error: attachmentsError } = await supabase
+          .from('assignment_attachments')
+          .insert(attachmentRecords);
+
+        if (attachmentsError) {
+          console.error('Assignment attachments update error:', attachmentsError);
+          throw new AppError('Failed to update attachments for assignment', 500, 'ATTACHMENT_ASSIGNMENT_UPDATE_FAILED');
+        }
       }
-    });
+    }
+
+    // Get assignment with attachments for response
+    const { data: finalAssignment } = await supabase
+      .from('assignments')
+      .select(`
+        id, title, description, course_id, instructor_id,
+        start_date, due_date, late_due_date, allow_late_submission,
+        max_attempts, file_formats, max_file_size, is_active,
+        created_at, updated_at,
+        courses!inner(code, name),
+        assignment_attachments(id, file_name, file_url, file_size, file_type, created_at),
+        assignment_groups(
+          groups!inner(id, name)
+        )
+      `)
+      .eq('id', assignmentId)
+      .single();
+
+    res.json(
+      buildResponse(true, 'Assignment updated successfully', { assignment: finalAssignment })
+    );
   });
 
   /**
@@ -441,10 +490,7 @@ class AssignmentController {
       throw new AppError('Failed to delete assignment', 500, 'DELETE_ASSIGNMENT_FAILED');
     }
 
-    res.json({
-      success: true,
-      message: 'Assignment deleted successfully'
-    });
+    res.json(buildResponse(true, 'Assignment deleted successfully'));
   });
 
   /**
@@ -579,9 +625,8 @@ class AssignmentController {
     const total = filteredData.length;
     const paginatedData = filteredData.slice(offset, offset + parseInt(limit));
 
-    res.json({
-      success: true,
-      data: {
+    res.json(
+      buildResponse(true, undefined, {
         submissions: paginatedData,
         pagination: {
           page: parseInt(page),
@@ -589,8 +634,8 @@ class AssignmentController {
           total,
           pages: Math.ceil(total / parseInt(limit))
         }
-      }
-    });
+      })
+    );
   });
 
   /**
@@ -646,13 +691,9 @@ class AssignmentController {
       throw new AppError('Failed to grade submission', 500, 'GRADE_SUBMISSION_FAILED');
     }
 
-    res.json({
-      success: true,
-      message: 'Submission graded successfully',
-      data: {
-        submission: updatedSubmission
-      }
-    });
+    res.json(
+      buildResponse(true, 'Submission graded successfully', { submission: updatedSubmission })
+    );
   });
 
   /**

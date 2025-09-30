@@ -1,8 +1,9 @@
+import 'package:classroom_mini/app/data/models/request/quiz_request.dart';
+import 'package:classroom_mini/app/data/models/response/quiz_response.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/quiz_controller.dart';
 import '../views/shared/quiz_form.dart';
-import '../../../data/models/quiz_model.dart';
 
 class QuizEditView extends GetView<QuizController> {
   final String quizId;
@@ -11,10 +12,6 @@ class QuizEditView extends GetView<QuizController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Quiz'),
-        centerTitle: true,
-      ),
       body: FutureBuilder<Quiz?>(
         future: controller.getQuizById(quizId),
         builder: (context, snapshot) {
@@ -30,6 +27,8 @@ class QuizEditView extends GetView<QuizController> {
           final quiz = snapshot.data!;
           return QuizForm(
             quiz: quiz,
+            onlyView: false,
+            isUpdating: true,
             onSubmit: (formData) async {
               final request = QuizUpdateRequest(
                 id: quiz.id,

@@ -1,6 +1,9 @@
 const { supabase } = require('../services/supabaseClient');
-const { validateGroupCreation, validateGroupUpdate } = require('../models/group');
+const { validate } = require('../utils/validators');
+const { createGroupSchema, updateGroupSchema } = require('../schemas/groupSchema');
 const { AppError, catchAsync } = require('../middleware/errorHandler');
+const { buildResponse } = require('../utils/response');
+require('../types/group.type');
 
 class GroupController {
   /**
@@ -10,7 +13,7 @@ class GroupController {
     const { name, courseId } = req.body;
 
     // Validate input
-    const validation = validateGroupCreation({ name, courseId });
+    const validation = validate(createGroupSchema, req.body);
     if (!validation.isValid) {
       return res.status(400).json({
         success: false,
@@ -59,13 +62,9 @@ class GroupController {
       throw new AppError('Failed to create group', 500, 'GROUP_CREATION_FAILED');
     }
 
-    res.status(201).json({
-      success: true,
-      message: 'Group created successfully',
-      data: {
-        group: newGroup
-      }
-    });
+    res.status(201).json(
+      buildResponse(true, 'Group created successfully', { group: newGroup })
+    );
   });
 
   /**
@@ -130,9 +129,8 @@ class GroupController {
       throw new AppError('Failed to fetch groups', 500, 'GET_GROUPS_FAILED');
     }
 
-    res.json({
-      success: true,
-      data: {
+    res.json(
+      buildResponse(true, undefined, {
         groups: groups || [],
         pagination: {
           page: parseInt(page),
@@ -140,8 +138,8 @@ class GroupController {
           total: count || 0,
           pages: Math.ceil((count || 0) / parseInt(limit))
         }
-      }
-    });
+      })
+    );
   });
 
   /**
@@ -165,12 +163,7 @@ class GroupController {
       throw new AppError('Group not found', 404, 'GROUP_NOT_FOUND');
     }
 
-    res.json({
-      success: true,
-      data: {
-        group
-      }
-    });
+    res.json(buildResponse(true, undefined, { group }));
   });
 
   /**
@@ -181,7 +174,7 @@ class GroupController {
     const { name, courseId, isActive } = req.body;
 
     // Validate input
-    const validation = validateGroupUpdate(req.body);
+    const validation = validate(updateGroupSchema, req.body);
     if (!validation.isValid) {
       return res.status(400).json({
         success: false,
@@ -245,13 +238,9 @@ class GroupController {
       throw new AppError('Failed to update group', 500, 'UPDATE_GROUP_FAILED');
     }
 
-    res.json({
-      success: true,
-      message: 'Group updated successfully',
-      data: {
-        group: updatedGroup
-      }
-    });
+    res.json(
+      buildResponse(true, 'Group updated successfully', { group: updatedGroup })
+    );
   });
 
   /**
@@ -282,10 +271,7 @@ class GroupController {
       throw new AppError('Failed to delete group', 500, 'DELETE_GROUP_FAILED');
     }
 
-    res.json({
-      success: true,
-      message: 'Group deleted successfully'
-    });
+    res.json(buildResponse(true, 'Group deleted successfully'));
   });
 
   /**
@@ -333,9 +319,8 @@ class GroupController {
       throw new AppError('Failed to fetch groups', 500, 'GET_GROUPS_FAILED');
     }
 
-    res.json({
-      success: true,
-      data: {
+    res.json(
+      buildResponse(true, undefined, {
         groups: groups || [],
         pagination: {
           page: parseInt(page),
@@ -343,8 +328,8 @@ class GroupController {
           total: count || 0,
           pages: Math.ceil((count || 0) / parseInt(limit))
         }
-      }
-    });
+      })
+    );
   });
 
   /**
@@ -377,10 +362,7 @@ class GroupController {
         inactive_groups: inactiveCount || 0
       };
 
-      res.json({
-        success: true,
-        data: statistics
-      });
+      res.json(buildResponse(true, undefined, statistics));
     } catch (error) {
       console.error('Get group statistics error:', error);
       throw new AppError('Failed to get statistics', 500, 'GET_STATISTICS_FAILED');

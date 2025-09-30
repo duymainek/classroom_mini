@@ -6,13 +6,15 @@ const {
   validateBulkOperation 
 } = require('../utils/validators');
 const { AppError, catchAsync } = require('../middleware/errorHandler');
+const { buildResponse } = require('../utils/response');
+require('../types/student.type');
 
 class StudentController {
   /**
    * Create single student
    */
   createStudent = catchAsync(async (req, res) => {
-    const { username, password, email, fullName } = req.body;
+    const { username, password, email, fullName, groupId, courseId } = req.body;
 
     // Enhanced validation
     const validation = validateStudentCreation(req.body);
@@ -66,13 +68,80 @@ class StudentController {
       throw new AppError('Failed to create student account', 500, 'STUDENT_CREATION_FAILED');
     }
 
-    res.status(201).json({
-      success: true,
-      message: 'Student account created successfully',
-      data: {
-        student: newStudent
+    // Optionally assign to group (and validate with course if provided)
+    let assignedGroupId = null;
+    let resolvedCourseId = courseId || null;
+    if (groupId) {
+      const { data: group } = await supabase
+        .from('groups')
+        .select('id, course_id')
+        .eq('id', groupId)
+        .single();
+
+      if (!group) {
+        return res.status(400).json({
+          success: false,
+          message: 'Group not found',
+          errors: ['GROUP_NOT_FOUND']
+        });
       }
-    });
+      if (resolvedCourseId && group.course_id && resolvedCourseId !== group.course_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Provided courseId does not match group course',
+          errors: ['COURSE_GROUP_MISMATCH']
+        });
+      }
+      resolvedCourseId = group.course_id || resolvedCourseId;
+
+      // Ensure single active enrollment per course: remove enrollments in same course, then insert
+        if (resolvedCourseId) {
+          const { data: enrollmentsInCourse } = await supabase
+            .from('student_enrollments')
+            .select('id, group_id, groups(course_id)')
+            .eq('student_id', newStudent.id);
+
+          const enrollmentIdsToDelete = (enrollmentsInCourse || [])
+            .filter((e) => e.groups && e.groups.course_id === resolvedCourseId)
+            .map((e) => e.id);
+          if (enrollmentIdsToDelete.length > 0) {
+            await supabase
+              .from('student_enrollments')
+              .delete()
+              .in('id', enrollmentIdsToDelete);
+          }
+        }
+
+        // Resolve semester for the course
+        const { data: courseInfo } = await supabase
+          .from('courses')
+          .select('semester_id')
+          .eq('id', resolvedCourseId)
+          .single();
+
+        const { error: enrollErr } = await supabase
+          .from('student_enrollments')
+          .insert({ 
+            student_id: newStudent.id, 
+            group_id: groupId,
+            semester_id: courseInfo ? courseInfo.semester_id : null,
+            is_active: true
+          });
+        if (enrollErr) {
+          console.error('Create enrollment error:', enrollErr);
+          throw new AppError('Failed to create student enrollment', 500, 'ENROLLMENT_CREATION_FAILED');
+        }
+        assignedGroupId = groupId;
+      
+    }
+
+    res.status(201).json(
+      buildResponse(true, 'Student account created successfully', {
+        user: newStudent,
+        group_id: assignedGroupId,
+        course_id: resolvedCourseId || null
+      })
+    );
   });
 
   /**
@@ -94,8 +163,12 @@ class StudentController {
     let query = supabase
       .from('users')
       .select(`
-        id, username, email, full_name, is_active, 
-        last_login_at, created_at
+        id, username, email, full_name, is_active,
+        last_login_at, created_at,
+        student_enrollments(
+          group_id,
+          groups(id, course_id)
+        )
       `, { count: 'exact' })
       .eq('role', 'student');
 
@@ -121,25 +194,101 @@ class StudentController {
     // Apply pagination
     query = query.range(offset, offset + parseInt(limit) - 1);
 
-    const { data: students, error, count } = await query;
+    const { data: rawStudents, error, count } = await query;
 
     if (error) {
       console.error('Get students error:', error);
       throw new AppError('Failed to fetch students', 500, 'GET_STUDENTS_FAILED');
     }
 
-    res.json({
-      success: true,
-      data: {
-        students: students.map(student => student),
+    // Enrich with enrollment, group, and course details via dedicated queries
+    const userIds = (rawStudents || []).map(s => s.id);
+    let enrollMap = new Map();
+    let groupMap = new Map();
+    let courseMap = new Map();
+    
+    if (userIds.length > 0) {
+      // Get enrollments with group and course details
+      const { data: enrollments } = await supabase
+        .from('student_enrollments')
+        .select(`
+          student_id, 
+          group_id, 
+          groups(
+            id,
+            name,
+            course_id,
+            courses(
+              id,
+              code,
+              name,
+              session_count,
+              is_active
+            )
+          )
+        `) 
+        .in('student_id', userIds)
+        .order('created_at', { ascending: false });
+        
+      if (Array.isArray(enrollments)) {
+        for (const e of enrollments) {
+          if (!enrollMap.has(e.student_id)) {
+            enrollMap.set(e.student_id, e);
+          }
+          
+          // Store group details
+          if (e.groups) {
+            groupMap.set(e.groups.id, {
+              id: e.groups.id,
+              name: e.groups.name,
+              course_id: e.groups.course_id
+            });
+            
+            // Store course details
+            if (e.groups.courses) {
+              courseMap.set(e.groups.courses.id, {
+                id: e.groups.courses.id,
+                code: e.groups.courses.code,
+                name: e.groups.courses.name,
+                session_count: e.groups.courses.session_count,
+                is_active: e.groups.courses.is_active
+              });
+            }
+          }
+        }
+      }
+    }
+
+    const students = (rawStudents || []).map((s) => {
+      const enroll = enrollMap.get(s.id);
+      const groupId = enroll ? enroll.group_id || null : null;
+      const courseId = enroll && enroll.groups ? enroll.groups.course_id || null : null;
+      
+      // Get full group and course objects
+      const group = groupId ? groupMap.get(groupId) : null;
+      const course = courseId ? courseMap.get(courseId) : null;
+      
+      const { student_enrollments, ...rest } = s;
+      return { 
+        ...rest, 
+        group_id: groupId, 
+        course_id: courseId,
+        group: group,
+        course: course
+      };
+    });
+
+    res.json(
+      buildResponse(true, undefined, {
+        students: students,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
           total: count,
           pages: Math.ceil(count / parseInt(limit))
         }
-      }
-    });
+      })
+    );
   });
 
   /**
@@ -147,7 +296,7 @@ class StudentController {
    */
   updateStudent = catchAsync(async (req, res) => {
     const { studentId } = req.params;
-    const { email, fullName, isActive } = req.body;
+    const { email, fullName, isActive, groupId, courseId } = req.body;
 
     // Validate input
     const validation = validateStudentUpdate(req.body);
@@ -211,13 +360,98 @@ class StudentController {
       throw new AppError('Failed to update student', 500, 'UPDATE_STUDENT_FAILED');
     }
 
-    res.json({
-      success: true,
-      message: 'Student updated successfully',
-      data: {
-        student: updatedStudent
-      }
-    });
+    // Optionally update group membership
+    let newGroupId = null;
+    let resolvedCourseId = courseId || null;
+    if (typeof groupId !== 'undefined') {
+        if (groupId === null) {
+          // remove enrollments for this student (or by course if provided)
+          if (resolvedCourseId) {
+            const { data: enrollments } = await supabase
+              .from('student_enrollments')
+              .select('id, groups(course_id)')
+              .eq('student_id', studentId);
+            const idsToRemove = (enrollments || [])
+              .filter((m) => m.groups && m.groups.course_id === resolvedCourseId)
+              .map((m) => m.id);
+            if (idsToRemove.length > 0) {
+              await supabase
+                .from('student_enrollments')
+                .delete()
+                .in('id', idsToRemove);
+            }
+          } else {
+            await supabase
+              .from('student_enrollments')
+              .delete()
+              .eq('student_id', studentId);
+          }
+        } else if (groupId) {
+          const { data: group } = await supabase
+            .from('groups')
+            .select('id, course_id')
+            .eq('id', groupId)
+            .single();
+          if (!group) {
+            return res.status(400).json({
+              success: false,
+              message: 'Group not found',
+              errors: ['GROUP_NOT_FOUND']
+            });
+          }
+          if (resolvedCourseId && group.course_id && resolvedCourseId !== group.course_id) {
+            return res.status(400).json({
+              success: false,
+              message: 'Provided courseId does not match group course',
+              errors: ['COURSE_GROUP_MISMATCH']
+            });
+          }
+          resolvedCourseId = group.course_id || resolvedCourseId;
+
+          // remove existing enrollments in same course
+          if (resolvedCourseId) {
+            const { data: enrollments } = await supabase
+              .from('student_enrollments')
+              .select('id, groups(course_id)')
+              .eq('student_id', studentId);
+            const idsToRemove = (enrollments || [])
+              .filter((m) => m.groups && m.groups.course_id === resolvedCourseId)
+              .map((m) => m.id);
+            if (idsToRemove.length > 0) {
+              await supabase
+                .from('student_enrollments')
+                .delete()
+                .in('id', idsToRemove);
+            }
+          }
+          const { data: courseInfo } = await supabase
+            .from('courses')
+            .select('semester_id')
+            .eq('id', resolvedCourseId)
+            .single();
+          const { error: enrollErr } = await supabase
+            .from('student_enrollments')
+            .insert({ 
+              student_id: studentId, 
+              group_id: groupId,
+              semester_id: courseInfo ? courseInfo.semester_id : null,
+              is_active: true
+            });
+          if (enrollErr) {
+            console.error('Update enrollment error:', enrollErr);
+            throw new AppError('Failed to update student enrollment', 500, 'ENROLLMENT_UPDATE_FAILED');
+          }
+          newGroupId = groupId;
+        }
+    }
+
+    res.json(
+      buildResponse(true, 'Student updated successfully', {
+        student: updatedStudent,
+        groupId: typeof groupId !== 'undefined' ? newGroupId : undefined,
+        courseId: resolvedCourseId || null
+      })
+    );
   });
 
   /**
@@ -249,10 +483,7 @@ class StudentController {
       throw new AppError('Failed to delete student', 500, 'DELETE_STUDENT_FAILED');
     }
 
-    res.json({
-      success: true,
-      message: 'Student deleted successfully'
-    });
+    res.json(buildResponse(true, 'Student deleted successfully'));
   });
 
   /**
@@ -306,11 +537,9 @@ class StudentController {
       throw new AppError('Failed to perform bulk operation', 500, 'BULK_OPERATION_FAILED');
     }
 
-    res.json({
-      success: true,
-      message: `Bulk ${action} completed successfully`,
-      affectedCount: result.count || studentIds.length
-    });
+    res.json(
+      buildResponse(true, `Bulk ${action} completed successfully`, undefined, { affectedCount: result.count || studentIds.length })
+    );
   });
 
   /**
@@ -365,10 +594,7 @@ class StudentController {
         students_never_logged_in: neverLoggedInCount || 0
       };
 
-      res.json({
-        success: true,
-        data: statistics
-      });
+    res.json(buildResponse(true, undefined, statistics));
     } catch (error) {
       console.error('Get statistics error:', error);
       throw new AppError('Failed to get statistics', 500, 'GET_STATISTICS_FAILED');
@@ -422,10 +648,7 @@ class StudentController {
 
     // Note: Session invalidation will be implemented when user_sessions table is added
 
-    res.json({
-      success: true,
-      message: 'Password reset successfully'
-    });
+    res.json(buildResponse(true, 'Password reset successfully'));
   });
 
   /**
@@ -561,7 +784,7 @@ class StudentController {
    * Import students: create accounts for valid rows, return per-row results
    */
   importStudents = catchAsync(async (req, res) => {
-    const { records } = req.body || {};
+    const { records, globalCourseId, globalGroupId, assignments } = req.body || {};
     if (!Array.isArray(records) || records.length === 0) {
       return res.status(400).json({
         success: false,
@@ -670,6 +893,9 @@ class StudentController {
           const rowNumber = chunkIndexMap.get(k);
           results.push({ rowNumber, status: 'CREATED', studentId: inserted[k].id });
         }
+        
+        // Handle course/group assignments for created students
+        await this.handleStudentAssignments(inserted, chunkIndexMap, globalCourseId, globalGroupId, assignments);
       } else {
         // Fallback per-row to isolate errors
         for (let k = 0; k < rowsToInsert.length; k++) {
@@ -686,6 +912,9 @@ class StudentController {
           } else {
             results.push({ rowNumber, status: 'CREATED', studentId: single.id });
             created++;
+            
+            // Handle course/group assignment for single student
+            await this.handleStudentAssignments([single], new Map([[0, rowNumber]]), globalCourseId, globalGroupId, assignments);
           }
         }
       }
@@ -709,6 +938,105 @@ class StudentController {
     res.setHeader('Content-Disposition', 'attachment; filename="student_template.csv"');
     res.send(csv);
   });
+
+  /**
+   * Handle course/group assignments for imported students
+   */
+  handleStudentAssignments = async (students, chunkIndexMap, globalCourseId, globalGroupId, assignments) => {
+    if (!students || students.length === 0) return;
+
+    for (let i = 0; i < students.length; i++) {
+      const student = students[i];
+      const rowNumber = chunkIndexMap.get(i);
+      
+      // Determine course and group for this student
+      let courseId = globalCourseId;
+      let groupId = globalGroupId;
+      
+      // Check for individual assignment
+      if (assignments && assignments[rowNumber]) {
+        const assignment = assignments[rowNumber];
+        if (assignment.courseId) courseId = assignment.courseId;
+        if (assignment.groupId) groupId = assignment.groupId;
+      }
+      
+      // Skip if no assignment provided
+      if (!courseId && !groupId) continue;
+      
+      try {
+        // If only courseId provided, we need to find a default group or create one
+        if (courseId && !groupId) {
+          const { data: defaultGroup } = await supabase
+            .from('groups')
+            .select('id')
+            .eq('course_id', courseId)
+            .eq('is_active', true)
+            .limit(1)
+            .single();
+          
+          if (defaultGroup) {
+            groupId = defaultGroup.id;
+          }
+        }
+        
+        // If only groupId provided, get courseId from group
+        if (groupId && !courseId) {
+          const { data: group } = await supabase
+            .from('groups')
+            .select('course_id')
+            .eq('id', groupId)
+            .single();
+          
+          if (group) {
+            courseId = group.course_id;
+          }
+        }
+        
+        // Create enrollment if we have both courseId and groupId
+        if (courseId && groupId) {
+          // Get semester_id from course
+          const { data: courseInfo } = await supabase
+            .from('courses')
+            .select('semester_id')
+            .eq('id', courseId)
+            .single();
+          
+          // Remove existing enrollments in same course
+          const { data: existingEnrollments } = await supabase
+            .from('student_enrollments')
+            .select('id, groups(course_id)')
+            .eq('student_id', student.id);
+          
+          const enrollmentIdsToDelete = (existingEnrollments || [])
+            .filter((e) => e.groups && e.groups.course_id === courseId)
+            .map((e) => e.id);
+          
+          if (enrollmentIdsToDelete.length > 0) {
+            await supabase
+              .from('student_enrollments')
+              .delete()
+              .in('id', enrollmentIdsToDelete);
+          }
+          
+          // Create new enrollment
+          const { error: enrollError } = await supabase
+            .from('student_enrollments')
+            .insert({
+              student_id: student.id,
+              group_id: groupId,
+              semester_id: courseInfo ? courseInfo.semester_id : null,
+              is_active: true
+            });
+          
+          if (enrollError) {
+            console.error('Enrollment creation error for student', student.id, ':', enrollError);
+          }
+        }
+      } catch (error) {
+        console.error('Assignment error for student', student.id, ':', error);
+      }
+    }
+  };
 }
 
 module.exports = new StudentController();

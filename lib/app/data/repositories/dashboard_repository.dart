@@ -1,6 +1,6 @@
-import 'package:classroom_mini/app/data/models/semester_model.dart';
+import 'package:classroom_mini/app/data/models/response/dashboard_response.dart';
+import 'package:classroom_mini/app/data/models/response/semester_response.dart';
 import 'package:dio/dio.dart';
-import '../models/dashboard_model.dart';
 import '../services/api_service.dart';
 import '../exceptions/api_exceptions.dart';
 

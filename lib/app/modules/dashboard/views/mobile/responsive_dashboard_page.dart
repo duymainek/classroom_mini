@@ -1,10 +1,12 @@
+import 'package:classroom_mini/app/data/models/response/assignment_response.dart';
+import 'package:classroom_mini/app/data/models/response/dashboard_response.dart';
+
 import '../shared/charts/student_progress_chart.dart';
 import '../shared/charts/instructor_summary_chart.dart';
 import 'package:classroom_mini/app/modules/dashboard/controllers/dashboard_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../shared/semester_selector_widget.dart';
-import '../../../../data/models/dashboard_model.dart';
 import '../../../../routes/app_routes.dart';
 
 class ResponsiveDashboardPage extends StatelessWidget {
@@ -396,7 +398,8 @@ class ResponsiveDashboardPage extends StatelessWidget {
         const SizedBox(height: 24),
 
         // Chart Section
-        _buildSectionHeader(context, 'Biểu đồ tổng quan', Icons.bar_chart_outlined),
+        _buildSectionHeader(
+            context, 'Biểu đồ tổng quan', Icons.bar_chart_outlined),
         const SizedBox(height: 16),
         InstructorSummaryChart(stats: data.statistics),
         const SizedBox(height: 24),
@@ -503,6 +506,19 @@ class ResponsiveDashboardPage extends StatelessWidget {
                   Colors.purple,
                   () {
                     Get.toNamed(Routes.ASSIGNMENTS_LIST);
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildMobileStatCard(
+                  context,
+                  'Quiz',
+                  stats.totalQuizzes.toString(),
+                  Icons.quiz_outlined,
+                  Colors.red,
+                  () {
+                    Get.toNamed(Routes.QUIZZES_LIST);
                   },
                 ),
               ),
@@ -1064,7 +1080,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          assignment.course.name,
+                          assignment.course?.name ?? '',
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: Colors.grey.shade600,

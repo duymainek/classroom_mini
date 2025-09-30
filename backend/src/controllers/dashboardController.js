@@ -1,5 +1,7 @@
 const { supabase } = require('../services/supabaseClient');
 const { AppError, catchAsync } = require('../middleware/errorHandler');
+const { buildResponse } = require('../utils/response');
+require('../types/dashboard.type');
 
 class DashboardController {
   /**
@@ -41,9 +43,8 @@ class DashboardController {
       }
 
       if (!currentSemester) {
-        return res.json({
-          success: true,
-          data: {
+        return res.json(
+          buildResponse(true, undefined, {
             currentSemester: null,
             statistics: {
               totalCourses: 0,
@@ -53,8 +54,8 @@ class DashboardController {
               totalQuizzes: 0
             },
             recentActivity: []
-          }
-        });
+          })
+        );
       }
 
       // Get statistics for current semester
@@ -112,14 +113,13 @@ class DashboardController {
         .order('created_at', { ascending: false })
         .limit(10);
 
-      res.json({
-        success: true,
-        data: {
+      res.json(
+        buildResponse(true, undefined, {
           currentSemester,
           statistics,
           recentActivity: recentActivity || []
-        }
-      });
+        })
+      );
     } catch (error) {
       console.error('Get instructor dashboard error:', error);
       throw new AppError('Failed to get dashboard data', 500, 'DASHBOARD_ERROR');
@@ -143,15 +143,14 @@ class DashboardController {
         .single();
 
       if (!currentSemester) {
-        return res.json({
-          success: true,
-          data: {
+        return res.json(
+          buildResponse(true, undefined, {
             currentSemester: null,
             enrolledCourses: [],
             upcomingAssignments: [],
             recentSubmissions: []
-          }
-        });
+          })
+        );
       }
 
       // Get student's enrolled courses for current semester
@@ -200,15 +199,14 @@ class DashboardController {
         .order('submitted_at', { ascending: false })
         .limit(10);
 
-      res.json({
-        success: true,
-        data: {
+      res.json(
+        buildResponse(true, undefined, {
           currentSemester,
           enrolledCourses: enrolledCourses || [],
           upcomingAssignments: upcomingAssignments || [],
           recentSubmissions: recentSubmissions || []
-        }
-      });
+        })
+      );
     } catch (error) {
       console.error('Get student dashboard error:', error);
       throw new AppError('Failed to get dashboard data', 500, 'DASHBOARD_ERROR');
@@ -228,12 +226,7 @@ class DashboardController {
         .limit(1)
         .single();
 
-      res.json({
-        success: true,
-        data: {
-          currentSemester
-        }
-      });
+      res.json(buildResponse(true, undefined, { currentSemester }));
     } catch (error) {
       console.error('Get current semester error:', error);
       throw new AppError('Failed to get current semester', 500, 'CURRENT_SEMESTER_ERROR');
@@ -265,13 +258,9 @@ class DashboardController {
         .update({ current_semester_id: semesterId })
         .eq('id', userId);
 
-      res.json({
-        success: true,
-        message: 'Semester context switched successfully',
-        data: {
-          semester
-        }
-      });
+      res.json(
+        buildResponse(true, 'Semester context switched successfully', { semester })
+      );
     } catch (error) {
       console.error('Switch semester error:', error);
       throw new AppError('Failed to switch semester', 500, 'SWITCH_SEMESTER_ERROR');

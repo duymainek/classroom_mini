@@ -1,12 +1,12 @@
 import 'package:classroom_mini/app/core/utils/semester_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:classroom_mini/app/data/models/assignment_model.dart';
+import 'package:classroom_mini/app/data/models/response/assignment_response.dart';
+import 'package:classroom_mini/app/data/models/request/assignment_request.dart';
 import 'assignment_list_view.dart';
 import 'assignment_detail_view.dart';
 import 'package:get/get.dart';
 import '../shared/widgets/assignment_form.dart';
 import '../../controllers/assignment_controller.dart';
-import 'package:classroom_mini/app/data/models/assignment_request_models.dart';
 
 class AssignmentListPage extends StatelessWidget {
   const AssignmentListPage({super.key});
@@ -22,50 +22,84 @@ class AssignmentCreatePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return GetBuilder<AssignmentController>(
       init: AssignmentController(),
       builder: (controller) {
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Tạo bài tập'),
-          ),
-          body: SafeArea(
-            child: AssignmentForm(
-              courses: const [],
-              groups: const [],
-              isLoading: controller.isLoading,
-              onCancel: () => Get.back(),
-              onSubmit: (form) async {
-                final req = AssignmentCreateRequest(
-                  title: form.title,
-                  description:
-                      form.description.isEmpty ? null : form.description,
-                  courseId: form.courseId,
-                  startDate: form.startDate,
-                  dueDate: form.dueDate,
-                  lateDueDate: form.lateDueDate,
-                  allowLateSubmission: form.allowLateSubmission,
-                  maxAttempts: form.maxAttempts,
-                  fileFormats: form.fileFormats,
-                  maxFileSize: form.maxFileSize,
-                  groupIds: form.groupIds.isEmpty ? null : form.groupIds,
-                  semesterId: SemesterHelper.getCurrentSemesterId(),
-                );
-                final ok = await controller.createAssignment(req);
-                if (ok) {
-                  Navigator.pop(context, true);
-                  Get.snackbar(
-                    'Thành công',
-                    'Đã tạo bài tập "${form.title}" thành công',
-                    snackPosition: SnackPosition.TOP,
-                    backgroundColor: Colors.green,
-                    colorText: Colors.white,
-                    duration: const Duration(seconds: 3),
-                    icon: const Icon(Icons.check_circle, color: Colors.white),
-                  );
-                }
-              },
-            ),
+          body: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 120,
+                floating: false,
+                pinned: true,
+                backgroundColor: colorScheme.surface,
+                surfaceTintColor: colorScheme.surfaceTint,
+                elevation: 0,
+                flexibleSpace: FlexibleSpaceBar(
+                  title: Text(
+                    'Tạo bài tập',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  background: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          colorScheme.primaryContainer.withOpacity(0.3),
+                          colorScheme.secondaryContainer.withOpacity(0.1),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              SliverFillRemaining(
+                child: SafeArea(
+                  child: AssignmentForm(
+                    courses: const [],
+                    groups: const [],
+                    isLoading: controller.isLoading,
+                    onCancel: () => Get.back(),
+                    onSubmit: (form) async {
+                      final req = AssignmentCreateRequest(
+                        title: form.title,
+                        description:
+                            form.description.isEmpty ? null : form.description,
+                        courseId: form.courseId,
+                        startDate: form.startDate,
+                        dueDate: form.dueDate,
+                        lateDueDate: form.lateDueDate,
+                        allowLateSubmission: form.allowLateSubmission,
+                        maxAttempts: form.maxAttempts,
+                        fileFormats: form.fileFormats,
+                        maxFileSize: form.maxFileSize,
+                        groupIds: form.groupIds.isEmpty ? null : form.groupIds,
+                        semesterId: SemesterHelper.getCurrentSemesterId(),
+                      );
+                      final ok = await controller.createAssignment(req);
+                      if (ok) {
+                        Navigator.pop(context, true);
+                        Get.snackbar(
+                          'Thành công',
+                          'Đã tạo bài tập "${form.title}" thành công',
+                          snackPosition: SnackPosition.TOP,
+                          backgroundColor: colorScheme.primary,
+                          colorText: colorScheme.onPrimary,
+                          duration: const Duration(seconds: 3),
+                          icon: Icon(Icons.check_circle,
+                              color: colorScheme.onPrimary),
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       },
@@ -101,12 +135,16 @@ class _AssignmentEditPageState extends State<AssignmentEditPage> {
     try {
       // Load courses
       await controller.loadCoursesForForm();
-      courses = controller.formState.value.courses;
+      courses = controller.formState.value.courses
+          .map((c) => CourseInfo(id: c.id, code: c.code, name: c.name))
+          .toList();
 
       // Load groups for the assignment's course
       if (widget.assignment.courseId.isNotEmpty) {
         await controller.loadGroupsForForm(widget.assignment.courseId);
-        groups = controller.formState.value.groups;
+        groups = controller.formState.value.groups
+            .map((g) => GroupInfo(id: g.id, name: g.name))
+            .toList();
       }
 
       // Set selected groups for the form after groups are loaded
@@ -129,62 +167,114 @@ class _AssignmentEditPageState extends State<AssignmentEditPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return GetBuilder<AssignmentController>(
       builder: (controller) {
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Chỉnh sửa bài tập'),
-          ),
-          body: SafeArea(
-            child: isLoadingMeta
-                ? const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 16),
-                        Text('Đang tải dữ liệu...'),
-                      ],
+          body: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 120,
+                floating: false,
+                pinned: true,
+                backgroundColor: colorScheme.surface,
+                surfaceTintColor: colorScheme.surfaceTint,
+                elevation: 0,
+                flexibleSpace: FlexibleSpaceBar(
+                  title: Text(
+                    'Chỉnh sửa bài tập',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
                     ),
-                  )
-                : AssignmentForm(
-                    assignment: widget.assignment,
-                    courses: courses,
-                    groups: groups,
-                    isLoading: controller.isLoading,
-                    onCancel: () => Get.back(),
-                    onSubmit: (form) async {
-                      final req = AssignmentUpdateRequest(
-                        id: widget.assignment.id,
-                        title: form.title,
-                        description:
-                            form.description.isEmpty ? null : form.description,
-                        courseId: form.courseId,
-                        startDate: form.startDate,
-                        dueDate: form.dueDate,
-                        lateDueDate: form.lateDueDate,
-                        allowLateSubmission: form.allowLateSubmission,
-                        maxAttempts: form.maxAttempts,
-                        fileFormats: form.fileFormats,
-                        maxFileSize: form.maxFileSize,
-                        groupIds: form.groupIds.isEmpty ? null : form.groupIds,
-                      );
-                      final ok = await controller.updateAssignment(req);
-                      if (ok) {
-                        Get.back(result: true);
-                        Get.snackbar(
-                          'Thành công',
-                          'Đã cập nhật bài tập "${form.title}" thành công',
-                          snackPosition: SnackPosition.TOP,
-                          backgroundColor: Colors.green,
-                          colorText: Colors.white,
-                          duration: const Duration(seconds: 3),
-                          icon: const Icon(Icons.check_circle,
-                              color: Colors.white),
-                        );
-                      }
-                    },
                   ),
+                  background: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          colorScheme.primaryContainer.withOpacity(0.3),
+                          colorScheme.secondaryContainer.withOpacity(0.1),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              SliverFillRemaining(
+                child: SafeArea(
+                  child: isLoadingMeta
+                      ? Center(
+                          child: Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color:
+                                  colorScheme.surfaceVariant.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: colorScheme.outline.withOpacity(0.2),
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircularProgressIndicator(
+                                    color: colorScheme.primary),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Đang tải dữ liệu...',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : AssignmentForm(
+                          assignment: widget.assignment,
+                          courses: courses,
+                          groups: groups,
+                          isLoading: controller.isLoading,
+                          onCancel: () => Get.back(),
+                          onSubmit: (form) async {
+                            final req = AssignmentUpdateRequest(
+                              id: widget.assignment.id,
+                              title: form.title,
+                              description: form.description.isEmpty
+                                  ? null
+                                  : form.description,
+                              courseId: form.courseId,
+                              startDate: form.startDate,
+                              dueDate: form.dueDate,
+                              lateDueDate: form.lateDueDate,
+                              allowLateSubmission: form.allowLateSubmission,
+                              maxAttempts: form.maxAttempts,
+                              fileFormats: form.fileFormats,
+                              maxFileSize: form.maxFileSize,
+                              groupIds:
+                                  form.groupIds.isEmpty ? null : form.groupIds,
+                            );
+                            final ok = await controller.updateAssignment(req);
+                            if (ok) {
+                              Get.back(result: true);
+                              Get.snackbar(
+                                'Thành công',
+                                'Đã cập nhật bài tập "${form.title}" thành công',
+                                snackPosition: SnackPosition.TOP,
+                                backgroundColor: colorScheme.primary,
+                                colorText: colorScheme.onPrimary,
+                                duration: const Duration(seconds: 3),
+                                icon: Icon(Icons.check_circle,
+                                    color: colorScheme.onPrimary),
+                              );
+                            }
+                          },
+                        ),
+                ),
+              ),
+            ],
           ),
         );
       },

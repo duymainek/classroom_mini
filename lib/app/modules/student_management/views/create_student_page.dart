@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../student_management/controllers/student_management_controller.dart';
-import '../../../data/repositories/course_repository.dart';
-import '../../../data/repositories/group_repository.dart';
-import '../../../data/repositories/semester_repository.dart';
-import '../../../data/services/api_service.dart';
 import '../../../core/app_config.dart';
 
 class CreateStudentPage extends StatefulWidget {
@@ -21,143 +17,13 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
   final _usernameCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
 
-  bool _submitting = false;
-  int _currentStep = 0;
-  bool _isLoadingCourses = false;
-  bool _isLoadingGroups = false;
-
-  // Reactive mirrors to ensure UI updates instantly via Obx
-  final RxList<Map<String, String>> _coursesRx = <Map<String, String>>[].obs;
-  final RxList<Map<String, String>> _groupsRx = <Map<String, String>>[].obs;
-  final RxBool _isLoadingCoursesRx = false.obs;
-  final RxBool _isLoadingGroupsRx = false.obs;
-
-  void _log(String msg) {
-    // Simple namespaced logger for this page
-    // ignore: avoid_print
-    print('[CreateStudent] ' + msg);
-  }
-
-  String? _selectedSemesterId;
-  String? _selectedCourseId;
-  String? _selectedGroupId;
-
-  List<({String id, String label})> _courses = [];
-  List<({String id, String label})> _groups = [];
-
-  late final SemesterRepository _semesterRepo;
-  late final CourseRepository _courseRepo;
-  late final GroupRepository _groupRepo;
+  late final StudentManagementController _controller;
 
   @override
   void initState() {
     super.initState();
-    final api = Get.find<ApiService>();
-    _semesterRepo = SemesterRepository(api);
-    _courseRepo = CourseRepository(api);
-    _groupRepo = GroupRepository(api);
-    _ensureSemesterContext();
-  }
-
-  Future<void> _ensureSemesterContext() async {
-    final cfg = AppConfig.instance;
-    if (cfg.hasSelectedSemester()) {
-      _log('AppConfig semester: id=' +
-          cfg.selectedSemesterId +
-          ' name=' +
-          cfg.selectedSemesterName);
-      _selectedSemesterId = cfg.selectedSemesterId;
-      await _loadCourses(cfg.selectedSemesterId);
-      return;
-    }
-    try {
-      // Fallback: fetch current semester and set AppConfig
-      _log('No semester in AppConfig. Fetching current semester...');
-      final current = await Get.find<ApiService>().getCurrentSemester();
-      if (current.success && current.data?.currentSemester != null) {
-        final s = current.data!.currentSemester!;
-        _log('Fetched current semester: id=' + s.id + ' name=' + s.name);
-        AppConfig.instance.setSelectedSemester(
-          semesterId: s.id,
-          semesterName: s.name,
-          semesterCode: s.code,
-        );
-        setState(() {
-          _selectedSemesterId = s.id;
-        });
-        await _loadCourses(s.id);
-      }
-    } catch (_) {
-      // ignore, UI will show fallback text
-    }
-  }
-
-  Future<void> _loadCourses(String semesterId) async {
-    try {
-      setState(() => _isLoadingCourses = true);
-      _isLoadingCoursesRx.value = true;
-      _log('Loading courses for semester=' +
-          semesterId +
-          ' (via /courses?semesterId=...) ...');
-      // Use generic /courses?semesterId= to ensure semester_id is present for parsing
-      final res = await _courseRepo.getCourses(
-        page: 1,
-        limit: 100,
-        search: '',
-        status: 'active',
-        semesterId: semesterId,
-      );
-      setState(() {
-        _courses =
-            (res.data.courses).map((c) => (id: c.id, label: c.name)).toList();
-        _coursesRx.assignAll(
-          res.data.courses.map((c) => {'id': c.id, 'label': c.name}).toList(),
-        );
-        if (_selectedCourseId == null && _coursesRx.length == 1) {
-          _selectedCourseId = _coursesRx.first['id'];
-          _log('Auto-selected single course: ' + (_selectedCourseId ?? 'null'));
-          // ignore: discarded_futures
-          _loadGroups(_selectedCourseId!);
-        }
-      });
-      _log('Courses loaded: count=' +
-          _coursesRx.length.toString() +
-          ' ids=[' +
-          _coursesRx.map((e) => e['id']).join(',') +
-          ']');
-    } catch (_) {
-      _log('Error loading courses');
-    } finally {
-      if (mounted) setState(() => _isLoadingCourses = false);
-      _isLoadingCoursesRx.value = false;
-    }
-  }
-
-  Future<void> _loadGroups(String courseId) async {
-    try {
-      setState(() => _isLoadingGroups = true);
-      _isLoadingGroupsRx.value = true;
-      _log('Loading groups for course=' + courseId + ' ...');
-      final res = await _groupRepo.getGroupsByCourse(courseId,
-          limit: 100, status: 'active');
-      setState(() {
-        _groups =
-            (res.data.groups).map((g) => (id: g.id, label: g.name)).toList();
-        _groupsRx.assignAll(
-          res.data.groups.map((g) => {'id': g.id, 'label': g.name}).toList(),
-        );
-      });
-      _log('Groups loaded: count=' +
-          _groupsRx.length.toString() +
-          ' ids=[' +
-          _groupsRx.map((e) => e['id']).join(',') +
-          ']');
-    } catch (_) {
-      _log('Error loading groups');
-    } finally {
-      if (mounted) setState(() => _isLoadingGroups = false);
-      _isLoadingGroupsRx.value = false;
-    }
+    _controller = Get.find<StudentManagementController>();
+    _controller.initializeCreateStudentForm();
   }
 
   @override
@@ -199,8 +65,8 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                   const SizedBox(height: 16),
                   Form(
                     key: _formKey,
-                    child: Builder(builder: (context) {
-                      if (_submitting) {
+                    child: Obx(() {
+                      if (_controller.isCreatingStudent.value) {
                         return const Center(
                           child: Padding(
                             padding: EdgeInsets.all(20),
@@ -208,7 +74,7 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                           ),
                         );
                       }
-                      if (_currentStep == 0) {
+                      if (_controller.currentStep.value == 0) {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
@@ -271,13 +137,7 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                                   child: FilledButton(
                                     onPressed: () {
                                       if (_formKey.currentState!.validate()) {
-                                        setState(() => _currentStep = 1);
-                                        if (_courses.isEmpty &&
-                                            _selectedSemesterId != null) {
-                                          // Ensure courses are loaded when moving to step 2
-                                          // ignore: discarded_futures
-                                          _loadCourses(_selectedSemesterId!);
-                                        }
+                                        _controller.nextStep();
                                       }
                                     },
                                     child: const Text('Tiếp theo'),
@@ -306,12 +166,10 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                               ),
                               const SizedBox(height: 12),
                               Obx(() {
-                                final items = _coursesRx.isNotEmpty
-                                    ? _coursesRx
-                                        .map((e) =>
-                                            (id: e['id']!, label: e['label']!))
-                                        .toList()
-                                    : _courses;
+                                final items = _controller.courses
+                                    .map((e) =>
+                                        (id: e['id']!, label: e['label']!))
+                                    .toList();
                                 return Column(
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
@@ -319,19 +177,14 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                                     _buildDropdown(
                                       context,
                                       label: 'Khoá học',
-                                      value: _selectedCourseId,
+                                      value: _controller
+                                              .selectedCourseId.value.isEmpty
+                                          ? null
+                                          : _controller.selectedCourseId.value,
                                       items: items,
-                                      onChanged: (v) {
-                                        setState(() {
-                                          _selectedCourseId = v;
-                                          _selectedGroupId = null;
-                                          _groups = [];
-                                          _groupsRx.clear();
-                                        });
-                                        if (v != null) _loadGroups(v);
-                                      },
+                                      onChanged: _controller.onCourseChanged,
                                     ),
-                                    if (_isLoadingCoursesRx.value)
+                                    if (_controller.isLoadingCourses.value)
                                       const Padding(
                                         padding: EdgeInsets.only(top: 8),
                                         child: LinearProgressIndicator(
@@ -342,12 +195,10 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                               }),
                               const SizedBox(height: 12),
                               Obx(() {
-                                final items = _groupsRx.isNotEmpty
-                                    ? _groupsRx
-                                        .map((e) =>
-                                            (id: e['id']!, label: e['label']!))
-                                        .toList()
-                                    : _groups;
+                                final items = _controller.groups
+                                    .map((e) =>
+                                        (id: e['id']!, label: e['label']!))
+                                    .toList();
                                 return Column(
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
@@ -355,15 +206,14 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                                     _buildDropdown(
                                       context,
                                       label: 'Nhóm',
-                                      value: _selectedGroupId,
+                                      value: _controller
+                                              .selectedGroupId.value.isEmpty
+                                          ? null
+                                          : _controller.selectedGroupId.value,
                                       items: items,
-                                      onChanged: (v) {
-                                        setState(() {
-                                          _selectedGroupId = v;
-                                        });
-                                      },
+                                      onChanged: _controller.onGroupChanged,
                                     ),
-                                    if (_isLoadingGroupsRx.value)
+                                    if (_controller.isLoadingGroups.value)
                                       const Padding(
                                         padding: EdgeInsets.only(top: 8),
                                         child: LinearProgressIndicator(
@@ -390,8 +240,7 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                             children: [
                               Expanded(
                                 child: OutlinedButton(
-                                  onPressed: () =>
-                                      setState(() => _currentStep = 0),
+                                  onPressed: _controller.previousStep,
                                   child: const Text('Quay lại'),
                                 ),
                               ),
@@ -421,60 +270,64 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
   Widget _buildProgressHeader(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final percent = _currentStep == 0 ? 0.5 : 1.0;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            _buildStepChip(context, 0, 'Thông tin', Icons.person),
-            Expanded(
-              child: Container(
-                height: 2,
-                margin: const EdgeInsets.symmetric(horizontal: 8),
-                color: colorScheme.outline.withOpacity(0.3),
+    return Obx(() {
+      final percent = _controller.currentStep.value == 0 ? 0.5 : 1.0;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              _buildStepChip(context, 0, 'Thông tin', Icons.person),
+              Expanded(
+                child: Container(
+                  height: 2,
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  color: colorScheme.outline.withOpacity(0.3),
+                ),
               ),
-            ),
-            _buildStepChip(context, 1, 'Gán nhóm', Icons.school),
-          ],
-        ),
-        const SizedBox(height: 8),
-        LinearProgressIndicator(
-          value: percent,
-          color: colorScheme.primary,
-          backgroundColor: colorScheme.surfaceVariant.withOpacity(0.5),
-          minHeight: 4,
-        ),
-      ],
-    );
+              _buildStepChip(context, 1, 'Gán nhóm', Icons.school),
+            ],
+          ),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(
+            value: percent,
+            color: colorScheme.primary,
+            backgroundColor: colorScheme.surfaceVariant.withOpacity(0.5),
+            minHeight: 4,
+          ),
+        ],
+      );
+    });
   }
 
   Widget _buildStepChip(
       BuildContext context, int step, String label, IconData icon) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isActive = _currentStep == step;
-    final isDone = _currentStep > step;
-    final bg = isActive
-        ? colorScheme.primary.withOpacity(0.12)
-        : colorScheme.surfaceVariant.withOpacity(0.4);
-    final fg = isActive ? colorScheme.primary : colorScheme.onSurfaceVariant;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: fg.withOpacity(0.4)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(isDone ? Icons.check_circle : icon, size: 16, color: fg),
-          const SizedBox(width: 6),
-          Text(label, style: theme.textTheme.bodyMedium?.copyWith(color: fg)),
-        ],
-      ),
-    );
+    return Obx(() {
+      final isActive = _controller.currentStep.value == step;
+      final isDone = _controller.currentStep.value > step;
+      final bg = isActive
+          ? colorScheme.primary.withOpacity(0.12)
+          : colorScheme.surfaceVariant.withOpacity(0.4);
+      final fg = isActive ? colorScheme.primary : colorScheme.onSurfaceVariant;
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: fg.withOpacity(0.4)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(isDone ? Icons.check_circle : icon, size: 16, color: fg),
+            const SizedBox(width: 6),
+            Text(label, style: theme.textTheme.bodyMedium?.copyWith(color: fg)),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildSection(BuildContext context,
@@ -634,50 +487,15 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _submitting = true);
+    final created = await _controller.createStudentWithForm(
+      username: _usernameCtrl.text.trim(),
+      password: _passwordCtrl.text,
+      email: _emailCtrl.text.trim(),
+      fullName: _fullNameCtrl.text.trim(),
+    );
 
-    try {
-      final controller = Get.find<StudentManagementController>();
-      // Require course and group selection before creating, so we can attach during creation
-      if (_selectedCourseId == null || _selectedGroupId == null) {
-        setState(() => _submitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Chọn khoá và nhóm để gán')),
-        );
-        return;
-      }
-
-      // Create student with selected course/group
-      final created = await controller.createStudent(
-        username: _usernameCtrl.text.trim(),
-        password: _passwordCtrl.text,
-        email: _emailCtrl.text.trim(),
-        fullName: _fullNameCtrl.text.trim(),
-        groupId: _selectedGroupId,
-        courseId: _selectedCourseId,
-      );
-
-      if (!mounted) return;
-      if (created == null) {
-        setState(() => _submitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tạo tài khoản thất bại')),
-        );
-        return;
-      }
-
-      setState(() => _submitting = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã tạo sinh viên và gán nhóm/khoá.')),
-        );
-        Get.back();
-      }
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _submitting = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Có lỗi xảy ra')));
+    if (created != null && mounted) {
+      Navigator.pop(context);
     }
   }
 }

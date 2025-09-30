@@ -159,12 +159,12 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<AuthResponse> refreshToken(Map<String, String> request) async {
+  Future<AuthResponse> refreshToken(RefreshTokenRequest request) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
-    _data.addAll(request);
+    _data.addAll(request.toJson());
     final _options = _setStreamType<AuthResponse>(Options(
       method: 'POST',
       headers: _headers,
@@ -193,12 +193,12 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<UserModel> getCurrentUser() async {
+  Future<UserSingleResponse> getCurrentUser() async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<UserModel>(Options(
+    final _options = _setStreamType<UserSingleResponse>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
@@ -215,9 +215,9 @@ class _ApiService implements ApiService {
           baseUrl,
         )));
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late UserModel _value;
+    late UserSingleResponse _value;
     try {
-      _value = UserModel.fromJson(_result.data!);
+      _value = UserSingleResponse.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
@@ -226,13 +226,14 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<UserModel> updateProfile(UpdateProfileRequest profileData) async {
+  Future<ProfileResponse> updateProfile(
+      UpdateProfileRequest profileData) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(profileData.toJson());
-    final _options = _setStreamType<UserModel>(Options(
+    final _options = _setStreamType<ProfileResponse>(Options(
       method: 'PUT',
       headers: _headers,
       extra: _extra,
@@ -249,9 +250,9 @@ class _ApiService implements ApiService {
           baseUrl,
         )));
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late UserModel _value;
+    late ProfileResponse _value;
     try {
-      _value = UserModel.fromJson(_result.data!);
+      _value = ProfileResponse.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
@@ -556,6 +557,41 @@ class _ApiService implements ApiService {
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(body.toJson());
+    final _options = _setStreamType<ImportResponse>(Options(
+      method: 'POST',
+      headers: _headers,
+      extra: _extra,
+    )
+        .compose(
+          _dio.options,
+          '/students/import',
+          queryParameters: queryParameters,
+          data: _data,
+        )
+        .copyWith(
+            baseUrl: _combineBaseUrls(
+          _dio.options.baseUrl,
+          baseUrl,
+        )));
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late ImportResponse _value;
+    try {
+      _value = ImportResponse.fromJson(_result.data!);
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
+  Future<ImportResponse> importStudentsWithAssignments(
+      Map<String, dynamic> body) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(body);
     final _options = _setStreamType<ImportResponse>(Options(
       method: 'POST',
       headers: _headers,

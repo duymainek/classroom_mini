@@ -221,7 +221,6 @@ class QuizListView extends GetView<QuizController> {
     final int? questionCount = quiz.questionCount ?? quiz.questions?.length;
     final String questionCountText =
         questionCount != null ? '$questionCount' : '—';
-    quiz.questions?.fold<int>(0, (sum, q) => sum + (q.points ?? 0)) ?? 0;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),

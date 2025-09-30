@@ -1,11 +1,11 @@
+import 'package:classroom_mini/app/data/models/response/dashboard_response.dart';
+import 'package:classroom_mini/app/data/models/response/semester_response.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/repositories/dashboard_repository.dart';
 import '../../../data/repositories/semester_repository.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/services/storage_service.dart';
-import '../../../data/models/dashboard_model.dart';
-import '../../../data/models/semester_model.dart';
 import '../../../core/utils/logger.dart';
 import '../../../core/app_config.dart';
 

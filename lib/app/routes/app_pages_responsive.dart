@@ -12,16 +12,14 @@ import '../modules/auth/views/responsive_login_page.dart';
 import '../modules/auth/bindings/auth_binding.dart';
 import '../modules/core_management/views/responsive_core_management_page.dart';
 import '../modules/core_management/bindings/core_management_binding.dart';
-import '../modules/dashboard/views/responsive_dashboard_page.dart';
-import '../modules/dashboard/bindings/dashboard_binding.dart';
 import '../modules/student_management/views/responsive_student_management_page.dart';
 import '../modules/student_management/views/student_detail_page.dart';
+import '../modules/student_management/views/create_student_page.dart';
 import '../modules/student_management/bindings/student_management_binding.dart';
 
 import 'package:responsive_framework/responsive_framework.dart';
-import 'package:classroom_mini/app/data/models/assignment_model.dart';
+import 'package:classroom_mini/app/data/models/response/assignment_response.dart';
 import '../modules/assignments/views/mobile/assignment_list_view.dart';
-import '../modules/assignments/views/desktop/assignment_list_view.dart';
 import '../modules/assignments/views/responsive/assignment_pages.dart';
 
 class AppPages {
@@ -41,6 +39,13 @@ class AppPages {
       binding: AuthBinding(),
     ),
 
+    // Student Management Routes
+    GetPage(
+      name: Routes.STUDENTS_LIST,
+      page: () => const ResponsiveStudentManagementPage(),
+      binding: StudentManagementBinding(),
+    ),
+
     GetPage(
       name: Routes.STUDENT_DETAILS,
       page: () {
@@ -52,7 +57,7 @@ class AppPages {
 
     GetPage(
       name: Routes.CREATE_STUDENT,
-      page: () => const PlaceholderPage(title: 'Create Student'),
+      page: () => const CreateStudentPage(),
       binding: StudentManagementBinding(),
     ),
 
@@ -183,7 +188,7 @@ class AppPages {
     return Builder(
       builder: (context) {
         if (ResponsiveBreakpoints.of(context).isDesktop) {
-          return const DesktopAssignmentListView();
+          return const MobileAssignmentListView();
         } else if (ResponsiveBreakpoints.of(context).isTablet) {
           return const MobileAssignmentListView();
         } else {

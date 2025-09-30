@@ -1,17 +1,25 @@
 import 'dart:convert';
-import 'package:classroom_mini/app/data/models/assignment_response_models.dart';
-import 'package:classroom_mini/app/data/models/assignment_request_models.dart';
-import 'package:classroom_mini/app/data/models/dashboard_model.dart';
+import 'package:classroom_mini/app/data/models/response/assignment_response.dart';
+import 'package:classroom_mini/app/data/models/request/assignment_request.dart';
+import 'package:classroom_mini/app/data/models/response/dashboard_response.dart';
+import 'package:classroom_mini/app/data/models/response/submission_response.dart';
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 import '../../core/constants/api_endpoints.dart';
 import '../../core/utils/logger.dart';
-import '../models/request_models.dart';
-import '../models/response_models.dart';
-import '../models/user_model.dart';
-import '../models/course_model.dart';
-import '../models/group_model.dart';
-import '../models/semester_model.dart';
+import 'package:classroom_mini/app/data/models/request/auth_request.dart';
+import 'package:classroom_mini/app/data/models/request/course_request.dart';
+import 'package:classroom_mini/app/data/models/request/group_request.dart';
+import 'package:classroom_mini/app/data/models/request/semester_request.dart';
+import 'package:classroom_mini/app/data/models/request/profile_request.dart'
+    as profile_req;
+
+import 'package:classroom_mini/app/data/models/response/auth_response.dart';
+import 'package:classroom_mini/app/data/models/response/course_response.dart';
+import 'package:classroom_mini/app/data/models/response/group_response.dart';
+import 'package:classroom_mini/app/data/models/response/semester_response.dart';
+import 'package:classroom_mini/app/data/models/response/user_response.dart';
+import 'package:classroom_mini/app/data/models/response/profile_response.dart';
 import 'storage_service.dart';
 
 import 'package:awesome_dio_interceptor/awesome_dio_interceptor.dart';
@@ -35,14 +43,15 @@ abstract class ApiService {
   Future<LogoutResponse> logout();
 
   @POST(ApiEndpoints.refreshToken)
-  Future<AuthResponse> refreshToken(@Body() Map<String, String> request);
+  Future<AuthResponse> refreshToken(@Body() RefreshTokenRequest request);
 
   @GET(ApiEndpoints.currentUser)
-  Future<UserModel> getCurrentUser();
+  Future<UserSingleResponse> getCurrentUser();
 
   // Profile management
   @PUT(ApiEndpoints.updateProfile)
-  Future<UserModel> updateProfile(@Body() UpdateProfileRequest profileData);
+  Future<ProfileResponse> updateProfile(
+      @Body() profile_req.UpdateProfileRequest profileData);
 
   // Enhanced Student Management endpoints
   @GET(ApiEndpoints.students)
@@ -90,6 +99,10 @@ abstract class ApiService {
 
   @POST(ApiEndpoints.studentsImport)
   Future<ImportResponse> importStudents(@Body() ImportStudentsRequest body);
+
+  @POST(ApiEndpoints.studentsImport)
+  Future<ImportResponse> importStudentsWithAssignments(
+      @Body() Map<String, dynamic> body);
 
   @GET(ApiEndpoints.studentsImportTemplate)
   Future<String> getStudentsImportTemplate();

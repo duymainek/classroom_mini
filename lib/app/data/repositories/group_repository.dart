@@ -1,5 +1,6 @@
+import 'package:classroom_mini/app/data/models/request/group_request.dart';
+import 'package:classroom_mini/app/data/models/response/group_response.dart';
 import 'package:dio/dio.dart';
-import '../models/group_model.dart';
 import '../services/api_service.dart';
 import '../exceptions/api_exceptions.dart';
 

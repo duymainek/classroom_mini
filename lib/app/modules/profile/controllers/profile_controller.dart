@@ -1,9 +1,9 @@
 import 'dart:io';
+import 'package:classroom_mini/app/data/models/request/profile_request.dart';
+import 'package:classroom_mini/app/data/models/response/user_response.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../data/models/user_model.dart';
 import '../../../data/services/profile_api_service.dart';
-import '../../../data/models/profile_model.dart';
 
 class ProfileController extends GetxController {
   final ProfileApiService _apiService;

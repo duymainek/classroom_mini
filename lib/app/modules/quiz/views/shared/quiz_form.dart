@@ -1,5 +1,6 @@
-import 'package:classroom_mini/app/data/models/quiz_model.dart';
-import 'package:classroom_mini/app/data/models/assignment_model.dart';
+import 'package:classroom_mini/app/data/models/request/quiz_request.dart';
+import 'package:classroom_mini/app/data/models/response/quiz_response.dart';
+import 'package:classroom_mini/app/data/models/response/assignment_response.dart';
 import 'package:classroom_mini/app/data/services/metadata_service.dart';
 import 'package:classroom_mini/app/modules/quiz/controllers/quiz_controller.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +14,11 @@ class QuizForm extends StatefulWidget {
   final Function(QuizFormData) onSubmit;
   final VoidCallback? onCancel;
   final bool isLoading;
+  final bool onlyView;
+  final bool isUpdating;
+  final List<Widget>? appBarActions;
+  final VoidCallback? onEditPressed;
+  final VoidCallback? onDeletePressed;
 
   const QuizForm({
     Key? key,
@@ -20,6 +26,11 @@ class QuizForm extends StatefulWidget {
     required this.onSubmit,
     this.onCancel,
     this.isLoading = false,
+    this.onlyView = false,
+    this.isUpdating = false,
+    this.appBarActions,
+    this.onEditPressed,
+    this.onDeletePressed,
   }) : super(key: key);
 
   @override
@@ -76,8 +87,38 @@ class _QuizFormState extends State<QuizForm> {
       _shuffleQuestions = quiz.shuffleQuestions;
       _shuffleOptions = quiz.shuffleOptions;
       _showCorrectAnswers = quiz.showCorrectAnswers;
-      _selectedGroupIds =
-          quiz.quizGroups?.map((qg) => qg.groupId ?? '').toList() ?? [];
+      _selectedGroupIds = (quiz.quizGroups
+              ?.map((qg) => qg.groupId)
+              .whereType<String>()
+              .where((id) => id.isNotEmpty)
+              .toSet()
+              .toList()) ??
+          [];
+
+      // If viewing an existing quiz, pre-populate the local questions list
+      // so the Questions section can render them in view-only mode.
+      if (quiz.questions != null && quiz.questions!.isNotEmpty) {
+        _generatedQuestions = quiz.questions!
+            .map(
+              (q) => QuestionCreateRequest(
+                questionText: q.questionText,
+                questionType: q.questionType,
+                points: q.points,
+                orderIndex: q.orderIndex,
+                isRequired: q.isRequired,
+                options: q.options
+                    ?.map(
+                      (o) => QuestionOptionCreateRequest(
+                        optionText: o.optionText,
+                        isCorrect: o.isCorrect,
+                        orderIndex: o.orderIndex,
+                      ),
+                    )
+                    .toList(),
+              ),
+            )
+            .toList();
+      }
     }
   }
 
@@ -120,6 +161,8 @@ class _QuizFormState extends State<QuizForm> {
     super.dispose();
   }
 
+  bool get _isEditable => !widget.onlyView || widget.isUpdating;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -137,9 +180,18 @@ class _QuizFormState extends State<QuizForm> {
             backgroundColor: colorScheme.surface,
             surfaceTintColor: colorScheme.surfaceTint,
             elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Get.back(),
+            ),
+            actions: widget.appBarActions,
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
-                widget.quiz != null ? 'Edit Quiz' : 'Create Quiz',
+                widget.onlyView
+                    ? 'Quiz Details'
+                    : widget.quiz != null
+                        ? 'Edit Quiz'
+                        : 'Create Quiz',
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onSurface,
@@ -530,6 +582,7 @@ class _QuizFormState extends State<QuizForm> {
       maxLines: maxLines,
       validator: validator,
       onChanged: onChanged,
+      enabled: _isEditable,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
@@ -571,10 +624,18 @@ class _QuizFormState extends State<QuizForm> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: _isEditable
+            ? colorScheme.surfaceVariant.withOpacity(0.3)
+            : value
+                ? colorScheme.primaryContainer.withOpacity(0.3)
+                : colorScheme.surfaceVariant.withOpacity(0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: _isEditable
+              ? colorScheme.outline.withOpacity(0.2)
+              : value
+                  ? colorScheme.primary.withOpacity(0.3)
+                  : colorScheme.outline.withOpacity(0.2),
         ),
       ),
       child: SwitchListTile(
@@ -582,19 +643,24 @@ class _QuizFormState extends State<QuizForm> {
           title,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
+            color: _isEditable ? null : (value ? colorScheme.primary : null),
           ),
         ),
         subtitle: Text(
           subtitle,
           style: theme.textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurfaceVariant,
+            color: _isEditable
+                ? colorScheme.onSurfaceVariant
+                : (value ? colorScheme.primary : colorScheme.onSurfaceVariant),
           ),
         ),
         value: value,
-        onChanged: onChanged,
+        onChanged: _isEditable ? onChanged : null,
         secondary: Icon(
           icon,
-          color: colorScheme.primary,
+          color: _isEditable
+              ? colorScheme.primary
+              : (value ? colorScheme.primary : colorScheme.onSurfaceVariant),
         ),
         activeColor: colorScheme.primary,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -660,54 +726,55 @@ class _QuizFormState extends State<QuizForm> {
                     ),
                   ),
                 ),
-                // Action Buttons trong Header
-                Row(
-                  children: [
-                    // Add Question Button
-                    IconButton(
-                      onPressed: () => _showAddQuestionDialog(context),
-                      icon: Icon(
-                        Icons.add_rounded,
-                        color: colorScheme.primary,
-                      ),
-                      tooltip: 'Add Question',
-                      style: IconButton.styleFrom(
-                        backgroundColor: colorScheme.primary.withOpacity(0.1),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                // Action Buttons trong Header - chỉ hiển thị khi có thể edit
+                if (_isEditable)
+                  Row(
+                    children: [
+                      // Add Question Button
+                      IconButton(
+                        onPressed: () => _showAddQuestionDialog(context),
+                        icon: Icon(
+                          Icons.add_rounded,
+                          color: colorScheme.primary,
+                        ),
+                        tooltip: 'Add Question',
+                        style: IconButton.styleFrom(
+                          backgroundColor: colorScheme.primary.withOpacity(0.1),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Generate with AI Button
-                    Obx(() => IconButton(
-                          onPressed: controller.isGeneratingQuiz
-                              ? null
-                              : () => _showGeminiGenerationDialog(context),
-                          icon: controller.isGeneratingQuiz
-                              ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: colorScheme.primary,
+                      const SizedBox(width: 8),
+                      // Generate with AI Button
+                      Obx(() => IconButton(
+                            onPressed: controller.isGeneratingQuiz
+                                ? null
+                                : () => _showGeminiGenerationDialog(context),
+                            icon: controller.isGeneratingQuiz
+                                ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: colorScheme.primary,
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.auto_awesome_rounded,
+                                    color: colorScheme.secondary,
                                   ),
-                                )
-                              : Icon(
-                                  Icons.auto_awesome_rounded,
-                                  color: colorScheme.secondary,
-                                ),
-                          tooltip: 'Generate with AI',
-                          style: IconButton.styleFrom(
-                            backgroundColor:
-                                colorScheme.secondary.withOpacity(0.1),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                            tooltip: 'Generate with AI',
+                            style: IconButton.styleFrom(
+                              backgroundColor:
+                                  colorScheme.secondary.withOpacity(0.1),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                             ),
-                          ),
-                        )),
-                  ],
-                ),
+                          )),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -774,6 +841,11 @@ class _QuizFormState extends State<QuizForm> {
   }
 
   Widget _buildBottomActionButtons(BuildContext context) {
+    // Chỉ hiển thị action buttons khi không ở chế độ onlyView
+    if (widget.onlyView && !widget.isUpdating) {
+      return const SizedBox.shrink();
+    }
+
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -820,7 +892,7 @@ class _QuizFormState extends State<QuizForm> {
                       width: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Save Quiz'),
+                  : Text(widget.quiz != null ? 'Update Quiz' : 'Create Quiz'),
             ),
           ),
         ],
@@ -834,6 +906,19 @@ class _QuizFormState extends State<QuizForm> {
 
     return DropdownButtonFormField<String>(
       value: _selectedCourseId,
+      onChanged: _isEditable
+          ? (value) async {
+              setState(() {
+                _selectedCourseId = value;
+                _selectedGroupIds.clear(); // Clear groups when course changes
+              });
+
+              // Load groups for the new course
+              if (value != null && value.isNotEmpty) {
+                await _loadGroupsForCourse(value);
+              }
+            }
+          : null,
       decoration: InputDecoration(
         labelText: 'Course',
         hintText: 'Select a course for this quiz',
@@ -866,17 +951,6 @@ class _QuizFormState extends State<QuizForm> {
                 ),
               ))
           .toList(),
-      onChanged: (value) async {
-        setState(() {
-          _selectedCourseId = value;
-          _selectedGroupIds.clear(); // Clear groups when course changes
-        });
-
-        // Load groups for the new course
-        if (value != null && value.isNotEmpty) {
-          await _loadGroupsForCourse(value);
-        }
-      },
       validator: (value) =>
           value == null || value.isEmpty ? 'Course is required' : null,
     );
@@ -974,7 +1048,7 @@ class _QuizFormState extends State<QuizForm> {
           Icons.calendar_today_outlined,
           color: colorScheme.primary,
         ),
-        onTap: onTap,
+        onTap: _isEditable ? onTap : null,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
     );
@@ -1055,7 +1129,7 @@ class _QuizFormState extends State<QuizForm> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No groups available',
+              _isEditable ? 'No groups available' : 'No groups assigned',
               style: theme.textTheme.titleMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w600,
@@ -1063,7 +1137,9 @@ class _QuizFormState extends State<QuizForm> {
             ),
             const SizedBox(height: 8),
             Text(
-              'No groups are available for the selected course.',
+              _isEditable
+                  ? 'No groups are available for the selected course.'
+                  : 'This quiz is not assigned to any groups.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant.withOpacity(0.8),
               ),
@@ -1078,7 +1154,9 @@ class _QuizFormState extends State<QuizForm> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Select groups to assign this quiz to:',
+          _isEditable
+              ? 'Select groups to assign this quiz to:'
+              : 'Assigned groups:',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: colorScheme.onSurfaceVariant,
           ),
@@ -1092,15 +1170,19 @@ class _QuizFormState extends State<QuizForm> {
             return FilterChip(
               label: Text(group.name),
               selected: isSelected,
-              onSelected: (selected) {
-                setState(() {
-                  if (selected) {
-                    _selectedGroupIds.add(group.id);
-                  } else {
-                    _selectedGroupIds.remove(group.id);
-                  }
-                });
-              },
+              onSelected: _isEditable
+                  ? (selected) {
+                      setState(() {
+                        if (selected) {
+                          if (!_selectedGroupIds.contains(group.id)) {
+                            _selectedGroupIds.add(group.id);
+                          }
+                        } else {
+                          _selectedGroupIds.remove(group.id);
+                        }
+                      });
+                    }
+                  : null,
               selectedColor: colorScheme.primaryContainer,
               checkmarkColor: colorScheme.onPrimaryContainer,
               labelStyle: TextStyle(
@@ -1138,7 +1220,9 @@ class _QuizFormState extends State<QuizForm> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '${_selectedGroupIds.length} group${_selectedGroupIds.length > 1 ? 's' : ''} selected',
+                  _isEditable
+                      ? '${_selectedGroupIds.length} group${_selectedGroupIds.length > 1 ? 's' : ''} selected'
+                      : '${_selectedGroupIds.length} group${_selectedGroupIds.length > 1 ? 's' : ''} assigned',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: colorScheme.primary,
                     fontWeight: FontWeight.w600,
@@ -1204,7 +1288,8 @@ class _QuizFormState extends State<QuizForm> {
 
     return Dismissible(
       key: Key('question_${question.questionText}_$index'),
-      direction: DismissDirection.endToStart,
+      direction:
+          _isEditable ? DismissDirection.endToStart : DismissDirection.none,
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
@@ -1331,17 +1416,18 @@ class _QuizFormState extends State<QuizForm> {
                       ),
                     ),
                   ),
-                  IconButton(
-                    onPressed: () => _showEditQuestionDialog(context, index),
-                    icon: Icon(
-                      Icons.edit_outlined,
-                      color: colorScheme.primary,
+                  if (_isEditable)
+                    IconButton(
+                      onPressed: () => _showEditQuestionDialog(context, index),
+                      icon: Icon(
+                        Icons.edit_outlined,
+                        color: colorScheme.primary,
+                      ),
+                      tooltip: 'Edit question',
+                      style: IconButton.styleFrom(
+                        backgroundColor: colorScheme.primary.withOpacity(0.1),
+                      ),
                     ),
-                    tooltip: 'Edit question',
-                    style: IconButton.styleFrom(
-                      backgroundColor: colorScheme.primary.withOpacity(0.1),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -1493,6 +1579,7 @@ class _QuizFormState extends State<QuizForm> {
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
       final formData = QuizFormData(
+        id: widget.quiz?.id,
         title: _titleController.text,
         description: _descriptionController.text.isEmpty
             ? null
@@ -1530,6 +1617,7 @@ class QuizFormData {
   final bool showCorrectAnswers;
   final List<String>? groupIds;
   final List<QuestionCreateRequest>? questions;
+  final String? id;
 
   QuizFormData({
     required this.title,
@@ -1546,5 +1634,6 @@ class QuizFormData {
     required this.showCorrectAnswers,
     this.groupIds,
     this.questions,
+    this.id,
   });
 }

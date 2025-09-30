@@ -1,4 +1,4 @@
-import 'package:classroom_mini/app/data/models/course_model.dart';
+import 'package:classroom_mini/app/data/models/response/course_response.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 

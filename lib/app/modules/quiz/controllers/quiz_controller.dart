@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:get/get.dart';
-import '../../../data/models/quiz_model.dart';
+import 'package:classroom_mini/app/data/models/response/quiz_response.dart';
+import 'package:classroom_mini/app/data/models/request/quiz_request.dart';
 import '../../../data/services/quiz_api_service.dart';
 import '../../../data/services/gemini_service.dart'; // Import GeminiService
 
