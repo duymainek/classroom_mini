@@ -16,10 +16,8 @@ class AssignmentCreateRequest {
   final int maxAttempts;
   final List<String> fileFormats;
   final int maxFileSize;
-  @JsonKey(includeIfNull: false)
   final List<String>? groupIds;
-  @JsonKey(includeIfNull: false)
-  final List<SubmissionAttachment>? attachments;
+  final List<String>? attachmentIds;
 
   AssignmentCreateRequest({
     required this.title,
@@ -34,7 +32,7 @@ class AssignmentCreateRequest {
     required this.fileFormats,
     required this.maxFileSize,
     this.groupIds,
-    this.attachments,
+    this.attachmentIds,
   });
 
   factory AssignmentCreateRequest.fromJson(Map<String, dynamic> json) =>
@@ -56,10 +54,8 @@ class AssignmentUpdateRequest {
   final List<String>? fileFormats;
   final int? maxFileSize;
   final bool? isActive;
-  @JsonKey(includeIfNull: false)
   final List<String>? groupIds;
-  @JsonKey(includeIfNull: false)
-  final List<SubmissionAttachment>? attachments;
+  final List<String>? attachmentIds;
 
   AssignmentUpdateRequest({
     required this.id,
@@ -75,7 +71,7 @@ class AssignmentUpdateRequest {
     this.maxFileSize,
     this.isActive,
     this.groupIds,
-    this.attachments,
+    this.attachmentIds,
   });
 
   factory AssignmentUpdateRequest.fromJson(Map<String, dynamic> json) =>

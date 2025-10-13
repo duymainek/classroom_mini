@@ -19,8 +19,8 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
-  flutter: ">=3.0.0"
+  sdk: '>=3.3.0 <4.0.0'
+  flutter: ">=3.19.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -33,11 +33,12 @@ dependencies:
     sdk: flutter
   
   # State Management
-  get: ^4.6.6
+  get: ^4.6.5
   
   # HTTP Client
-  dio: ^5.3.2
-  retrofit: ^4.0.3
+  dio: ^5.4.0
+  retrofit: ^4.1.0
+  http_parser: ^4.0.2
   
   # JSON Serialization
   json_annotation: ^4.9.0
@@ -59,6 +60,9 @@ dependencies:
   file_picker: ^8.0.0
   csv: ^6.0.0
   file_saver: ^0.2.14
+  
+  # URL Launcher
+  url_launcher: ^6.2.2
 
   # Responsive Framework
   responsive_framework: ^1.5.1
@@ -71,19 +75,16 @@ dependencies:
   # Charting
   fl_chart: ^0.68.0
   intl: ^0.19.0
+  pretty_dio_logger: ^1.4.0
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  
   # Code Generation
   build_runner: ^2.4.6
-  retrofit_generator: ^8.0.4
+  retrofit_generator:
   json_serializable: ^6.7.1
-  analyzer: ^6.0.0
-  
+
   # Linting
-  flutter_lints: ^4.0.0
+  flutter_lints: ^3.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

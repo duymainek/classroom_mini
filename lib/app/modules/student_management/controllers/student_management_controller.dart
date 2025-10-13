@@ -80,6 +80,8 @@ class StudentManagementController extends GetxController {
             'isActive': u.isActive,
             'groupId': u.groupId,
             'courseId': u.courseId,
+            'group': u.group,
+            'course': u.course,
           };
           mapped.add(map);
         }
@@ -152,6 +154,8 @@ class StudentManagementController extends GetxController {
         'isActive': u.isActive,
         'groupId': u.groupId,
         'courseId': u.courseId,
+        'group': u.group,
+        'course': u.course,
       };
       students.insert(0, studentMap);
       return studentMap;

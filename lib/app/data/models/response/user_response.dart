@@ -15,6 +15,8 @@ class UserModel {
   final String? avatarUrl;
   final String? groupId;
   final String? courseId;
+  final Map<String, dynamic>? group;
+  final Map<String, dynamic>? course;
 
   UserModel({
     required this.id,
@@ -28,6 +30,8 @@ class UserModel {
     this.avatarUrl,
     this.groupId,
     this.courseId,
+    this.group,
+    this.course,
   });
 
   bool get isInstructor => role == 'instructor';
@@ -52,6 +56,8 @@ class UserModel {
     String? avatarUrl,
     String? groupId,
     String? courseId,
+    Map<String, dynamic>? group,
+    Map<String, dynamic>? course,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -65,6 +71,8 @@ class UserModel {
       avatarUrl: avatarUrl ?? this.avatarUrl,
       groupId: groupId ?? this.groupId,
       courseId: courseId ?? this.courseId,
+      group: group ?? this.group,
+      course: course ?? this.course,
     );
   }
 }

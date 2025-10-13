@@ -200,8 +200,8 @@ class StudentRepository {
 
       if (response.success) {
         return StudentsListResult.success(
-          students: response.students ?? [],
-          pagination: response.pagination,
+          students: response.data.students,
+          pagination: response.data.pagination,
           message: 'Students loaded successfully',
         );
       } else {

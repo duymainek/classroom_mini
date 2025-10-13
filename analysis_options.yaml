@@ -8,9 +8,13 @@
 # The following line activates a set of recommended lints for Flutter apps,
 # packages, and plugins designed to encourage good coding practices.
 analyzer:
+  language:
+    strict-casts: false
+    strict-inference: false
   errors:
     sort_child_properties_last: ignore
     prefer_const_constructors: ignore
+    invalid_annotation_target: ignore
 include: package:flutter_lints/flutter.yaml
 
 linter:

@@ -6,6 +6,7 @@ class AssignmentCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final VoidCallback? onTrack;
   final bool showActions;
 
   const AssignmentCard({
@@ -14,6 +15,7 @@ class AssignmentCard extends StatelessWidget {
     this.onTap,
     this.onEdit,
     this.onDelete,
+    this.onTrack,
     this.showActions = false,
   }) : super(key: key);
 
@@ -157,6 +159,7 @@ class AssignmentCard extends StatelessWidget {
               if (assignment.description != null &&
                   assignment.description!.isNotEmpty)
                 Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceVariant.withOpacity(0.3),
@@ -203,7 +206,6 @@ class AssignmentCard extends StatelessWidget {
               // Actions
               if (showActions) ...[
                 const SizedBox(height: 16),
-                _buildActions(context),
               ],
             ],
           ),
@@ -437,7 +439,20 @@ class AssignmentCard extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        if (onEdit != null)
+        if (onTrack != null)
+          OutlinedButton.icon(
+            onPressed: onTrack,
+            icon: const Icon(Icons.track_changes, size: 16),
+            label: const Text('Theo dõi'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        if (onEdit != null) ...[
+          const SizedBox(width: 8),
           OutlinedButton.icon(
             onPressed: onEdit,
             icon: const Icon(Icons.edit, size: 16),
@@ -449,6 +464,7 @@ class AssignmentCard extends StatelessWidget {
               ),
             ),
           ),
+        ],
         if (onDelete != null) ...[
           const SizedBox(width: 8),
           FilledButton.icon(

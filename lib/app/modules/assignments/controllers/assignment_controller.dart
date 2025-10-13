@@ -1,6 +1,6 @@
 import 'package:classroom_mini/app/data/models/response/course_response.dart';
 import 'package:classroom_mini/app/data/models/response/group_response.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide MultipartFile;
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/services/gemini_service.dart'; // Import GeminiService
@@ -88,6 +88,30 @@ class AssignmentController extends GetxController {
   bool get isGeneratingDescription =>
       _isGeneratingDescription.value; // Getter for new loading state
   bool get isGroupsLoading => _isGroupsLoading.value;
+
+  // Tracking statistics getters
+  int get totalStudents => _submissions.length;
+  int get submittedCount => _submissions
+      .where((s) => s.status != SubmissionStatus.notSubmitted)
+      .length;
+  int get notSubmittedCount => _submissions
+      .where((s) => s.status == SubmissionStatus.notSubmitted)
+      .length;
+  int get lateCount =>
+      _submissions.where((s) => s.status == SubmissionStatus.late).length;
+  int get gradedCount =>
+      _submissions.where((s) => s.status == SubmissionStatus.graded).length;
+  double get submissionRate =>
+      totalStudents > 0 ? (submittedCount / totalStudents) * 100 : 0.0;
+  double get averageGrade {
+    final gradedSubmissions =
+        _submissions.where((s) => s.averageGrade != null).toList();
+    if (gradedSubmissions.isEmpty) return 0.0;
+    return gradedSubmissions
+            .map((s) => s.averageGrade!)
+            .reduce((a, b) => a + b) /
+        gradedSubmissions.length;
+  }
 
   // Form setters
   void initFormState({List<Course>? courses, List<Group>? groups}) {
@@ -267,15 +291,13 @@ class AssignmentController extends GetxController {
   }
 
   /// Create new assignment
-  Future<bool> createAssignment(AssignmentCreateRequest request) async {
+  Future<String?> createAssignment(AssignmentCreateRequest request) async {
     _isLoading.value = true;
     _error.value = '';
-    bool dialogShown = false;
 
     try {
       // Freeze UI with loading dialog
       if (!(Get.isDialogOpen ?? false)) {
-        dialogShown = true;
         Get.dialog(
           const Center(child: CircularProgressIndicator()),
           barrierDismissible: false,
@@ -287,7 +309,7 @@ class AssignmentController extends GetxController {
         final ok = await SemesterHelper.autoSelectLatestSemester();
         if (!ok) {
           _error.value = 'Vui lòng chọn học kì trước khi tạo bài tập';
-          return false;
+          return null;
         }
       }
       semesterId = SemesterHelper.getCurrentSemesterId();
@@ -321,6 +343,13 @@ class AssignmentController extends GetxController {
           .toSet()
           .toList();
 
+      // Debug: Log attachment IDs before creating request
+      print('=== CONTROLLER DEBUG ===');
+      print('Original request.attachmentIds: ${request.attachmentIds}');
+      print('attachmentIds is null: ${request.attachmentIds == null}');
+      print('attachmentIds length: ${request.attachmentIds?.length ?? 0}');
+      print('=== END CONTROLLER DEBUG ===');
+
       final sanitized = AssignmentCreateRequest(
         title: request.title.trim(),
         description: request.description?.trim().isEmpty == true
@@ -338,7 +367,8 @@ class AssignmentController extends GetxController {
         groupIds: (request.groupIds == null)
             ? <String>[]
             : request.groupIds!.where((e) => e.trim().isNotEmpty).toList(),
-        attachments: request.attachments,
+        // Include attachment IDs if any are provided
+        attachmentIds: request.attachmentIds,
       );
 
       final response = await _apiService.createAssignment(sanitized);
@@ -348,11 +378,11 @@ class AssignmentController extends GetxController {
       if (Get.isDialogOpen == true) {
         Get.back();
       }
-      return true;
+      return response.data.assignment.id; // Return the created assignment ID
     } catch (e) {
       _error.value = e.toString();
       Get.snackbar('Lỗi', 'Không thể tạo bài tập: $e');
-      return false;
+      return null;
     } finally {
       _isLoading.value = false;
       // Ensure dialog closed in any case (controller only closes dialog)
@@ -459,6 +489,52 @@ class AssignmentController extends GetxController {
     } catch (e) {
       _error.value = e.toString();
       Get.snackbar('Lỗi', 'Không thể xuất dữ liệu: $e');
+      return null;
+    }
+  }
+
+  /// Export assignment tracking data to CSV (includes all students)
+  Future<List<int>?> exportAssignmentTracking(
+    String assignmentId, {
+    String search = '',
+    String status = 'all',
+    String groupId = '',
+    String sortBy = 'fullName',
+    String sortOrder = 'asc',
+  }) async {
+    try {
+      return await _apiService.exportAssignmentTracking(
+        assignmentId,
+        search: search,
+        status: status,
+        groupId: groupId,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
+      );
+    } catch (e) {
+      _error.value = e.toString();
+      Get.snackbar('Lỗi', 'Không thể xuất dữ liệu theo dõi: $e');
+      return null;
+    }
+  }
+
+  /// Export all assignments to CSV
+  Future<List<int>?> exportAllAssignments({
+    String courseId = '',
+    String semesterId = '',
+    bool includeSubmissions = true,
+    bool includeGrades = true,
+  }) async {
+    try {
+      return await _apiService.exportAllAssignments(
+        courseId: courseId,
+        semesterId: semesterId,
+        includeSubmissions: includeSubmissions,
+        includeGrades: includeGrades,
+      );
+    } catch (e) {
+      _error.value = e.toString();
+      Get.snackbar('Lỗi', 'Không thể xuất tất cả bài tập: $e');
       return null;
     }
   }
@@ -637,24 +713,10 @@ class StudentAssignmentController extends GetxController {
     }
   }
 
-  /// Upload attachment
-  Future<SubmissionAttachment?> uploadAttachment(
-      String submissionId, FileUploadRequest request) async {
-    try {
-      final response =
-          await _apiService.uploadAttachment(submissionId, request);
-      return response.data.attachment;
-    } catch (e) {
-      _error.value = e.toString();
-      Get.snackbar('Lỗi', 'Không thể tải file: $e');
-      return null;
-    }
-  }
-
   /// Delete attachment
   Future<bool> deleteAttachment(String attachmentId) async {
     try {
-      await _apiService.deleteAttachment(attachmentId);
+      await _apiService.deleteAssignmentAttachment(attachmentId);
       Get.snackbar('Thành công', 'Xóa file thành công');
       return true;
     } catch (e) {

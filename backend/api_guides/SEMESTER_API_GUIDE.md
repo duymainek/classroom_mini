@@ -25,3 +25,4 @@ Response 200: `{ success, message }`
 Response 200: `{ success, data: { totalSemesters, activeSemesters, inactiveSemesters } }`
 
 
+

@@ -8,7 +8,7 @@ import 'app_config.dart';
 class AppBinding extends Bindings {
   @override
   void dependencies() {
-    // Khởi tạo AppConfig như một singleton
+    print('Registering AppConfig...');
     Get.put<AppConfig>(AppConfig(), permanent: true);
   }
 }

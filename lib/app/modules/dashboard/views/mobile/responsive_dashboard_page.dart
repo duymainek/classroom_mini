@@ -241,11 +241,6 @@ class ResponsiveDashboardPage extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.notifications_outlined,
-                  color: Colors.white.withOpacity(0.8),
-                  size: 24,
-                ),
               ],
             ),
             const SizedBox(height: 16),

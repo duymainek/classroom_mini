@@ -16,6 +16,7 @@ const assignmentRoutes = require('./src/routes/assignments');
 const submissionRoutes = require('./src/routes/submissions');
 const profileRoutes = require('./src/routes/profile');
 const quizRoutes = require('./src/routes/quizzes');
+const fileUploadRoutes = require('./src/routes/fileUploadRoutes');
 const { errorHandler, notFoundHandler } = require('./src/middleware/errorHandler');
 const { testConnection, initializeAdminUser } = require('./src/services/supabaseClient');
 
@@ -97,6 +98,7 @@ app.use('/api/assignments', assignmentRoutes);
 app.use('/api/submissions', submissionRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/quizzes', quizRoutes);
+app.use('/api', fileUploadRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

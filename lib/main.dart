@@ -1,3 +1,4 @@
+// @dart=3.0
 import 'package:classroom_mini/app/core/services/auth_service.dart';
 import 'package:flutter_gemini/flutter_gemini.dart'; // Import flutter_gemini
 import 'dart:ui' as ui show TextDirection;

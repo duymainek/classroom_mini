@@ -17,3 +17,4 @@ Response 200: `{ success, data: { currentSemester } }`
 Response 200: `{ success, message, data: { semester } }`
 
 
+

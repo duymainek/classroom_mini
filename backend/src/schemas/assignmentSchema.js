@@ -97,6 +97,15 @@ const createAssignmentSchema = Joi.object({
     .messages({
       'array.min': 'At least one group must be selected',
       'string.uuid': 'Group ID must be a valid UUID'
+    }),
+
+  attachmentIds: Joi.array()
+    .items(Joi.string().uuid())
+    .optional()
+    .default([])
+    .messages({
+      'array.items': 'Invalid attachment ID format',
+      'string.uuid': 'Attachment ID must be a valid UUID'
     })
 });
 
@@ -171,7 +180,15 @@ const updateAssignmentSchema = Joi.object({
     }),
   
   isActive: Joi.boolean()
+    .optional(),
+    
+  attachmentIds: Joi.array()
+    .items(Joi.string().uuid())
     .optional()
+    .messages({
+      'array.items': 'Invalid attachment ID format',
+      'string.uuid': 'Attachment ID must be a valid UUID'
+    })
 }).min(1).messages({
   'object.min': 'At least one field must be provided for update'
 });

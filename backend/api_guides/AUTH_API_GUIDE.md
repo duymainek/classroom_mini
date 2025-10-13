@@ -50,3 +50,4 @@ Body: { isActive }
 Response 200: `{ success, message, data: { student: /* JSDoc: StudentSummary */ } }`
 
 
+

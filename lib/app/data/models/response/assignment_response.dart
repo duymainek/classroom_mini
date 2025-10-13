@@ -22,6 +22,7 @@ class Assignment {
   final DateTime updatedAt;
   final CourseInfo? course;
   final InstructorInfo? instructor;
+  @JsonKey(name: 'assignmentAttachments')
   final List<AssignmentAttachment> attachments;
   @JsonKey(readValue: _readGroups)
   final List<GroupInfo> groups;

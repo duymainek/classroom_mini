@@ -38,6 +38,7 @@ class Routes {
   static const String ASSIGNMENTS_CREATE = '/assignments/create';
   static const String ASSIGNMENTS_EDIT = '/assignments/edit';
   static const String ASSIGNMENTS_DETAIL = '/assignments/detail';
+  static const String ASSIGNMENTS_TRACKING = '/assignments/tracking';
   static const String ASSIGNMENTS_STUDENT_LIST = '/assignments/student';
 
   // Quiz routes

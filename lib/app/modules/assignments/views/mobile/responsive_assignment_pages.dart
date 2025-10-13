@@ -2,10 +2,11 @@ import 'package:classroom_mini/app/core/utils/semester_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:classroom_mini/app/data/models/response/assignment_response.dart';
 import 'package:classroom_mini/app/data/models/request/assignment_request.dart';
+import 'package:classroom_mini/app/routes/app_routes.dart';
 import 'assignment_list_view.dart';
 import 'assignment_detail_view.dart';
 import 'package:get/get.dart';
-import '../shared/widgets/assignment_form.dart';
+import '../../widgets/assignment_form.dart';
 import '../../controllers/assignment_controller.dart';
 
 class AssignmentListPage extends StatelessWidget {
@@ -34,7 +35,8 @@ class AssignmentCreatePage extends StatelessWidget {
               SliverAppBar(
                 expandedHeight: 120,
                 floating: false,
-                pinned: true,
+                pinned: false, // Fixed: Set to false to allow scrolling
+                snap: false,
                 backgroundColor: colorScheme.surface,
                 surfaceTintColor: colorScheme.surfaceTint,
                 elevation: 0,
@@ -64,8 +66,29 @@ class AssignmentCreatePage extends StatelessWidget {
                     courses: const [],
                     groups: const [],
                     isLoading: controller.isLoading,
-                    onCancel: () => Get.back(),
+                    onCancel: () => Navigator.pop(context),
                     onSubmit: (form) async {
+                      // Debug: Log attachment information
+                      print('=== ASSIGNMENT SUBMIT DEBUG ===');
+                      print(
+                          'Total uploadedAttachments: ${form.uploadedAttachments.length}');
+                      for (int i = 0;
+                          i < form.uploadedAttachments.length;
+                          i++) {
+                        final att = form.uploadedAttachments[i];
+                        print(
+                            'Attachment $i: ${att.fileName} - Status: ${att.status} - ID: ${att.attachmentId} - isUploaded: ${att.isUploaded}');
+                      }
+
+                      // Get attachment IDs from uploaded files
+                      final attachmentIds = form.uploadedAttachments
+                          .where((attachment) => attachment.isUploaded)
+                          .map((attachment) => attachment.attachmentId!)
+                          .toList();
+
+                      print('Filtered attachmentIds: $attachmentIds');
+                      print('=== END ASSIGNMENT SUBMIT DEBUG ===');
+
                       final req = AssignmentCreateRequest(
                         title: form.title,
                         description:
@@ -80,19 +103,51 @@ class AssignmentCreatePage extends StatelessWidget {
                         maxFileSize: form.maxFileSize,
                         groupIds: form.groupIds.isEmpty ? null : form.groupIds,
                         semesterId: SemesterHelper.getCurrentSemesterId(),
+                        attachmentIds:
+                            attachmentIds.isEmpty ? null : attachmentIds,
                       );
-                      final ok = await controller.createAssignment(req);
-                      if (ok) {
+
+                      // Create assignment with attachment IDs
+                      final assignmentId =
+                          await controller.createAssignment(req);
+                      if (assignmentId != null) {
                         Navigator.pop(context, true);
+
+                        // Show success message
+                        final attachmentCount = attachmentIds.length;
+                        final successMessage = attachmentCount > 0
+                            ? 'Đã tạo bài tập "${form.title}" với $attachmentCount tệp đính kèm'
+                            : 'Đã tạo bài tập "${form.title}" thành công';
+
+                        // Show success snackbar with option to go to tracking
                         Get.snackbar(
                           'Thành công',
-                          'Đã tạo bài tập "${form.title}" thành công',
+                          successMessage,
                           snackPosition: SnackPosition.TOP,
                           backgroundColor: colorScheme.primary,
                           colorText: colorScheme.onPrimary,
-                          duration: const Duration(seconds: 3),
+                          duration: const Duration(seconds: 5),
                           icon: Icon(Icons.check_circle,
                               color: colorScheme.onPrimary),
+                          mainButton: TextButton(
+                            onPressed: () {
+                              Get.closeCurrentSnackbar();
+                              // Find the created assignment and navigate to tracking
+                              final createdAssignment =
+                                  controller.assignments.first;
+                              Get.toNamed(
+                                Routes.ASSIGNMENTS_TRACKING,
+                                arguments: {
+                                  'assignmentId': createdAssignment.id,
+                                  'assignmentTitle': createdAssignment.title,
+                                },
+                              );
+                            },
+                            child: Text(
+                              'Theo dõi',
+                              style: TextStyle(color: colorScheme.onPrimary),
+                            ),
+                          ),
                         );
                       }
                     },
@@ -178,7 +233,7 @@ class _AssignmentEditPageState extends State<AssignmentEditPage> {
               SliverAppBar(
                 expandedHeight: 120,
                 floating: false,
-                pinned: true,
+                pinned: false,
                 backgroundColor: colorScheme.surface,
                 surfaceTintColor: colorScheme.surfaceTint,
                 elevation: 0,
@@ -237,7 +292,7 @@ class _AssignmentEditPageState extends State<AssignmentEditPage> {
                           courses: courses,
                           groups: groups,
                           isLoading: controller.isLoading,
-                          onCancel: () => Get.back(),
+                          onCancel: () => Navigator.pop(context),
                           onSubmit: (form) async {
                             final req = AssignmentUpdateRequest(
                               id: widget.assignment.id,
@@ -258,7 +313,7 @@ class _AssignmentEditPageState extends State<AssignmentEditPage> {
                             );
                             final ok = await controller.updateAssignment(req);
                             if (ok) {
-                              Get.back(result: true);
+                              Navigator.pop(context, true);
                               Get.snackbar(
                                 'Thành công',
                                 'Đã cập nhật bài tập "${form.title}" thành công',

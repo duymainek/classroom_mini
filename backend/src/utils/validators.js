@@ -362,6 +362,7 @@ function isValidVietnameseName(name) {
 }
 
 module.exports = {
+  validate,
   validateLogin,
   validateUserCreation,
   validateRefreshToken,

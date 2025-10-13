@@ -1,9 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'package:classroom_mini/app/data/models/response/user_response.dart';
 import 'package:classroom_mini/app/data/models/response/semester_response.dart';
-import 'package:classroom_mini/app/data/models/response/quiz_response.dart';
-import 'package:classroom_mini/app/data/models/response/course_response.dart';
-import 'package:classroom_mini/app/data/models/response/group_response.dart';
 
 part 'auth_response.g.dart';
 
@@ -88,17 +85,30 @@ class LogoutResponse extends BaseResponse {
 }
 
 @JsonSerializable()
+class StudentsListData {
+  final List<UserModel> students;
+  final PaginationInfo pagination;
+
+  const StudentsListData({
+    required this.students,
+    required this.pagination,
+  });
+
+  factory StudentsListData.fromJson(Map<String, dynamic> json) =>
+      _$StudentsListDataFromJson(json);
+  Map<String, dynamic> toJson() => _$StudentsListDataToJson(this);
+}
+
+@JsonSerializable()
 class StudentsListResponse extends BaseResponse {
-  final List<UserModel>? students;
-  final PaginationInfo? pagination;
+  final StudentsListData data;
 
   StudentsListResponse({
     required super.success,
     super.message,
     super.code,
     super.errors,
-    this.students,
-    this.pagination,
+    required this.data,
   });
 
   factory StudentsListResponse.fromJson(Map<String, dynamic> json) =>

@@ -21,6 +21,8 @@ import 'package:responsive_framework/responsive_framework.dart';
 import 'package:classroom_mini/app/data/models/response/assignment_response.dart';
 import '../modules/assignments/views/mobile/assignment_list_view.dart';
 import '../modules/assignments/views/responsive/assignment_pages.dart';
+import '../modules/assignments/bindings/assignment_binding.dart';
+import '../modules/assignments/views/mobile/assignment_tracking_page.dart';
 
 class AppPages {
   static const String INITIAL = Routes.HOME;
@@ -112,11 +114,13 @@ class AppPages {
     GetPage(
       name: Routes.ASSIGNMENTS_LIST,
       page: () => _getResponsiveAssignmentList(),
+      binding: AssignmentBinding(),
       transition: Transition.fadeIn,
     ),
     GetPage(
       name: Routes.ASSIGNMENTS_CREATE,
       page: () => const ResponsiveAssignmentCreatePage(),
+      binding: AssignmentBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
@@ -130,6 +134,7 @@ class AppPages {
         }
         return ResponsiveAssignmentEditPage(assignment: assignment);
       },
+      binding: AssignmentBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
@@ -143,11 +148,31 @@ class AppPages {
         }
         return ResponsiveAssignmentDetailPage(assignment: assignment);
       },
+      binding: AssignmentBinding(),
       transition: Transition.rightToLeft,
     ),
+
+    // Assignment Tracking Route
+    GetPage(
+      name: Routes.ASSIGNMENTS_TRACKING,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>? ?? {};
+        final assignmentId = args['assignmentId'] as String? ?? '';
+        final assignmentTitle =
+            args['assignmentTitle'] as String? ?? 'Theo dõi nộp bài';
+        return AssignmentTrackingPage(
+          assignmentId: assignmentId,
+          assignmentTitle: assignmentTitle,
+        );
+      },
+      binding: AssignmentBinding(),
+      transition: Transition.rightToLeft,
+    ),
+
     GetPage(
       name: Routes.ASSIGNMENTS_STUDENT_LIST,
       page: () => const MobileStudentAssignmentListView(),
+      binding: AssignmentBinding(),
       transition: Transition.fadeIn,
     ),
 

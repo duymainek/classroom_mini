@@ -1,5 +1,5 @@
+import 'package:classroom_mini/app/data/models/response/user_response.dart';
 import 'package:get/get.dart';
-import '../../data/models/user_model.dart';
 import '../../data/services/storage_service.dart';
 import '../../routes/app_routes.dart';
 
@@ -12,11 +12,14 @@ class AuthService extends GetxService {
   Future<AuthService> init() async {
     print('[AuthService] Initializing...');
     final token = await _storageService.getAccessToken();
-    print('[AuthService] Token from storage: ${token != null ? "Exists" : "Null"}');
+    print(
+        '[AuthService] Token from storage: ${token != null ? "Exists" : "Null"}');
 
     if (token != null) {
-      final userModel = await _storageService.getUserData(); // This returns UserModel?
-      print('[AuthService] User data from storage: ${userModel != null ? "Exists" : "Null"}');
+      final userModel =
+          await _storageService.getUserData(); // This returns UserModel?
+      print(
+          '[AuthService] User data from storage: ${userModel != null ? "Exists" : "Null"}');
 
       if (userModel != null) {
         user.value = userModel;
@@ -24,7 +27,8 @@ class AuthService extends GetxService {
         print('[AuthService] User authenticated: true');
       } else {
         // Has token but no valid UserModel? This is an inconsistent state.
-        print('[AuthService] Inconsistent state: Token exists but no valid UserModel. Clearing session.');
+        print(
+            '[AuthService] Inconsistent state: Token exists but no valid UserModel. Clearing session.');
         await _storageService.clearAll();
         isAuthenticated.value = false;
         user.value = null;
@@ -35,7 +39,8 @@ class AuthService extends GetxService {
       user.value = null;
       print('[AuthService] User authenticated: false (no token)');
     }
-    print('[AuthService] Initialization complete. isAuthenticated: ${isAuthenticated.value}');
+    print(
+        '[AuthService] Initialization complete. isAuthenticated: ${isAuthenticated.value}');
     return this;
   }
 

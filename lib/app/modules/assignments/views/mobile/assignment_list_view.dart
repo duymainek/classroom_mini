@@ -2,8 +2,11 @@ import 'package:classroom_mini/app/data/models/response/assignment_response.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:classroom_mini/app/routes/app_routes.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 import '../../controllers/assignment_controller.dart';
 import '../../widgets/assignment_card.dart';
+import 'package:classroom_mini/app/core/utils/semester_helper.dart';
 
 class MobileAssignmentListView extends StatelessWidget {
   const MobileAssignmentListView({Key? key}) : super(key: key);
@@ -46,6 +49,11 @@ class MobileAssignmentListView extends StatelessWidget {
                   ),
                 ),
                 actions: [
+                  IconButton(
+                    icon: Icon(Icons.download, color: colorScheme.primary),
+                    onPressed: () => _exportAllAssignments(controller),
+                    tooltip: 'Xuất tất cả bài tập',
+                  ),
                   IconButton(
                     icon: Icon(Icons.filter_list, color: colorScheme.primary),
                     onPressed: () => _showFilterDialog(controller),
@@ -100,6 +108,9 @@ class MobileAssignmentListView extends StatelessWidget {
                             assignment: assignment,
                             onTap: () =>
                                 _navigateToAssignmentDetail(assignment),
+                            showActions: true,
+                            onTrack: () =>
+                                _navigateToAssignmentTracking(assignment),
                           ),
                         );
                       },
@@ -310,6 +321,63 @@ class MobileAssignmentListView extends StatelessWidget {
 
   void _navigateToAssignmentDetail(Assignment assignment) {
     Get.toNamed(Routes.ASSIGNMENTS_DETAIL, arguments: assignment);
+  }
+
+  void _navigateToAssignmentTracking(Assignment assignment) {
+    Get.toNamed(
+      Routes.ASSIGNMENTS_TRACKING,
+      arguments: {
+        'assignmentId': assignment.id,
+        'assignmentTitle': assignment.title,
+      },
+    );
+  }
+
+  Future<void> _exportAllAssignments(AssignmentController controller) async {
+    try {
+      Get.dialog(
+        const Center(child: CircularProgressIndicator()),
+        barrierDismissible: false,
+      );
+
+      final semesterId = SemesterHelper.getCurrentSemesterId();
+      final csvBytes = await controller.exportAllAssignments(
+        semesterId: semesterId,
+        includeSubmissions: true,
+        includeGrades: true,
+      );
+
+      // Đóng dialog trước khi xử lý kết quả
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
+
+      if (csvBytes == null || csvBytes.isEmpty) {
+        Get.snackbar('Lỗi', 'Không thể xuất dữ liệu');
+        return;
+      }
+
+      final directory = await getApplicationDocumentsDirectory();
+      final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
+      final filePath = '${directory.path}/all_assignments_$timestamp.csv';
+      final file = File(filePath);
+      await file.writeAsBytes(csvBytes);
+
+      Get.snackbar(
+        'Thành công',
+        'Đã xuất file CSV: $filePath',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 5),
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      // Đóng dialog nếu có lỗi
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
+      Get.snackbar('Lỗi', 'Không thể xuất file: $e');
+    }
   }
 }
 

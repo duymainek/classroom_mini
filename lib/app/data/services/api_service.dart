@@ -1,9 +1,17 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:classroom_mini/app/data/models/request/profile_request.dart';
 import 'package:classroom_mini/app/data/models/response/assignment_response.dart';
+import 'package:classroom_mini/app/data/models/response/attachment_response.dart'
+    as attachment_resp;
 import 'package:classroom_mini/app/data/models/request/assignment_request.dart';
+import 'package:classroom_mini/app/data/models/response/attachment_response.dart';
+import 'package:classroom_mini/app/data/models/response/auth_response.dart';
 import 'package:classroom_mini/app/data/models/response/dashboard_response.dart';
 import 'package:classroom_mini/app/data/models/response/submission_response.dart';
+import 'package:dio/dio.dart' as dio_pkg;
 import 'package:dio/dio.dart';
+import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:retrofit/retrofit.dart';
 import '../../core/constants/api_endpoints.dart';
 import '../../core/utils/logger.dart';
@@ -14,7 +22,8 @@ import 'package:classroom_mini/app/data/models/request/semester_request.dart';
 import 'package:classroom_mini/app/data/models/request/profile_request.dart'
     as profile_req;
 
-import 'package:classroom_mini/app/data/models/response/auth_response.dart';
+import 'package:classroom_mini/app/data/models/response/auth_response.dart'
+    as auth_response;
 import 'package:classroom_mini/app/data/models/response/course_response.dart';
 import 'package:classroom_mini/app/data/models/response/group_response.dart';
 import 'package:classroom_mini/app/data/models/response/semester_response.dart';
@@ -23,27 +32,32 @@ import 'package:classroom_mini/app/data/models/response/profile_response.dart';
 import 'storage_service.dart';
 
 import 'package:awesome_dio_interceptor/awesome_dio_interceptor.dart';
+
+import 'package:awesome_dio_interceptor/awesome_dio_interceptor.dart';
 part 'api_service.g.dart';
 
 @RestApi(baseUrl: ApiEndpoints.baseUrl)
 abstract class ApiService {
-  factory ApiService(Dio dio, {String baseUrl}) = _ApiService;
+  factory ApiService(dio_pkg.Dio dio, {String baseUrl}) = _ApiService;
 
   // Authentication endpoints
   @POST(ApiEndpoints.instructorLogin)
-  Future<AuthResponse> instructorLogin(@Body() LoginRequest request);
+  Future<auth_response.AuthResponse> instructorLogin(
+      @Body() LoginRequest request);
 
   @POST(ApiEndpoints.studentLogin)
-  Future<AuthResponse> studentLogin(@Body() LoginRequest request);
+  Future<auth_response.AuthResponse> studentLogin(@Body() LoginRequest request);
 
   @POST(ApiEndpoints.createStudent)
-  Future<AuthResponse> createStudent(@Body() CreateStudentRequest request);
+  Future<auth_response.AuthResponse> createStudent(
+      @Body() CreateStudentRequest request);
 
   @POST(ApiEndpoints.logout)
-  Future<LogoutResponse> logout();
+  Future<auth_response.LogoutResponse> logout();
 
   @POST(ApiEndpoints.refreshToken)
-  Future<AuthResponse> refreshToken(@Body() RefreshTokenRequest request);
+  Future<auth_response.AuthResponse> refreshToken(
+      @Body() RefreshTokenRequest request);
 
   @GET(ApiEndpoints.currentUser)
   Future<UserSingleResponse> getCurrentUser();
@@ -71,37 +85,39 @@ abstract class ApiService {
   );
 
   @DELETE('/students/{studentId}')
-  Future<SimpleResponse> deleteStudent(@Path('studentId') String studentId);
+  Future<auth_response.SimpleResponse> deleteStudent(
+      @Path('studentId') String studentId);
 
   @POST(ApiEndpoints.studentsBulk)
-  Future<BulkOperationResponse> bulkUpdateStudentsRequest(
+  Future<auth_response.BulkOperationResponse> bulkUpdateStudentsRequest(
     @Body() BulkOperationRequest bulkData,
   );
 
   @GET(ApiEndpoints.studentsStatistics)
-  Future<StatisticsResponse> getStudentStatistics();
+  Future<auth_response.StatisticsResponse> getStudentStatistics();
 
   @POST('/students/{studentId}/reset-password')
-  Future<SimpleResponse> resetStudentPasswordRequest(
+  Future<auth_response.SimpleResponse> resetStudentPasswordRequest(
     @Path('studentId') String studentId,
     @Body() ResetPasswordRequest passwordData,
   );
 
   @GET(ApiEndpoints.studentsExport)
-  Future<SimpleResponse> exportStudents({
+  Future<auth_response.SimpleResponse> exportStudents({
     @Query('format') String format = 'csv',
   });
 
   // Student import endpoints
   @POST(ApiEndpoints.studentsImportPreview)
-  Future<ImportPreviewResponse> importStudentsPreview(
+  Future<auth_response.ImportPreviewResponse> importStudentsPreview(
       @Body() Map<String, dynamic> body);
 
   @POST(ApiEndpoints.studentsImport)
-  Future<ImportResponse> importStudents(@Body() ImportStudentsRequest body);
+  Future<auth_response.ImportResponse> importStudents(
+      @Body() ImportStudentsRequest body);
 
   @POST(ApiEndpoints.studentsImport)
-  Future<ImportResponse> importStudentsWithAssignments(
+  Future<auth_response.ImportResponse> importStudentsWithAssignments(
       @Body() Map<String, dynamic> body);
 
   @GET(ApiEndpoints.studentsImportTemplate)
@@ -144,10 +160,11 @@ abstract class ApiService {
   );
 
   @DELETE('/semesters/{semesterId}')
-  Future<SimpleResponse> deleteSemester(@Path('semesterId') String semesterId);
+  Future<auth_response.SimpleResponse> deleteSemester(
+      @Path('semesterId') String semesterId);
 
   @GET('/semesters/statistics')
-  Future<StatisticsResponse> getSemesterStatistics();
+  Future<auth_response.StatisticsResponse> getSemesterStatistics();
 
   // Course Management endpoints
   @GET('/courses')
@@ -183,10 +200,11 @@ abstract class ApiService {
   );
 
   @DELETE('/courses/{courseId}')
-  Future<SimpleResponse> deleteCourse(@Path('courseId') String courseId);
+  Future<auth_response.SimpleResponse> deleteCourse(
+      @Path('courseId') String courseId);
 
   @GET('/courses/statistics')
-  Future<StatisticsResponse> getCourseStatistics();
+  Future<auth_response.StatisticsResponse> getCourseStatistics();
 
   // Group Management endpoints
   @GET('/groups')
@@ -222,10 +240,11 @@ abstract class ApiService {
   );
 
   @DELETE('/groups/{groupId}')
-  Future<SimpleResponse> deleteGroup(@Path('groupId') String groupId);
+  Future<auth_response.SimpleResponse> deleteGroup(
+      @Path('groupId') String groupId);
 
   @GET('/groups/statistics')
-  Future<StatisticsResponse> getGroupStatistics();
+  Future<auth_response.StatisticsResponse> getGroupStatistics();
 
   // Dashboard endpoints
   @GET('/dashboard/instructor')
@@ -269,7 +288,7 @@ abstract class ApiService {
   );
 
   @DELETE('/assignments/{assignmentId}')
-  Future<SimpleResponse> deleteAssignment(
+  Future<auth_response.SimpleResponse> deleteAssignment(
       @Path('assignmentId') String assignmentId);
 
   @GET('/assignments/{assignmentId}/submissions')
@@ -281,6 +300,8 @@ abstract class ApiService {
     @Query('status') String status = 'all',
     @Query('sortBy') String sortBy = 'submitted_at',
     @Query('sortOrder') String sortOrder = 'desc',
+    @Query('groupId') String groupId = '',
+    @Query('attemptFilter') String attemptFilter = 'all',
   });
 
   @PUT('/assignments/submissions/{submissionId}/grade')
@@ -290,8 +311,45 @@ abstract class ApiService {
   );
 
   @GET('/assignments/{assignmentId}/export')
+  @DioResponseType(ResponseType.bytes)
   Future<List<int>> exportSubmissions(
-      @Path('assignmentId') String assignmentId);
+    @Path('assignmentId') String assignmentId, {
+    @Query('includeGrades') bool includeGrades = true,
+    @Query('includeFeedback') bool includeFeedback = true,
+    @Query('includeAttempts') bool includeAttempts = true,
+    @Query('groupFilter') String groupFilter = '',
+    @Query('statusFilter') String statusFilter = 'all',
+  });
+
+  @GET('/assignments/{assignmentId}/export/tracking')
+  @DioResponseType(ResponseType.bytes)
+  Future<List<int>> exportAssignmentTracking(
+    @Path('assignmentId') String assignmentId, {
+    @Query('search') String search = '',
+    @Query('status') String status = 'all',
+    @Query('groupId') String groupId = '',
+    @Query('sortBy') String sortBy = 'fullName',
+    @Query('sortOrder') String sortOrder = 'asc',
+  });
+
+  @GET('/assignments/export/all')
+  @DioResponseType(ResponseType.bytes)
+  Future<List<int>> exportAllAssignments({
+    @Query('courseId') String courseId = '',
+    @Query('semesterId') String semesterId = '',
+    @Query('includeSubmissions') bool includeSubmissions = true,
+    @Query('includeGrades') bool includeGrades = true,
+  });
+
+  @GET('/assignments/{assignmentId}/attachments')
+  Future<attachment_resp.AttachmentListResponse> getAssignmentAttachments(
+    @Path('assignmentId') String assignmentId,
+  );
+
+  @DELETE('/assignments/attachments/{attachmentId}')
+  Future<SimpleResponse> deleteAssignmentAttachment(
+    @Path('attachmentId') String attachmentId,
+  );
 
   // Assignment Submission endpoints
   @POST('/submissions/assignments/{assignmentId}')
@@ -321,25 +379,25 @@ abstract class ApiService {
   );
 
   @DELETE('/submissions/{submissionId}')
-  Future<SimpleResponse> deleteSubmission(
+  Future<auth_response.SimpleResponse> deleteSubmission(
       @Path('submissionId') String submissionId);
 
-  @POST('/submissions/{submissionId}/attachments')
-  Future<AttachmentResponse> uploadAttachment(
-    @Path('submissionId') String submissionId,
-    @Body() FileUploadRequest request,
-  );
-
   @DELETE('/submissions/attachments/{attachmentId}')
-  Future<SimpleResponse> deleteAttachment(
+  Future<auth_response.SimpleResponse> deleteAttachment(
       @Path('attachmentId') String attachmentId);
+
+  @POST('/attachments/temp')
+  @MultiPart()
+  Future<attachment_resp.TempAttachmentResponse> uploadTempAttachment(
+    @Part(name: "file") File file,
+  );
 }
 
 class DioClient {
-  static Dio? _dio;
+  static dio_pkg.Dio? _dio;
   static ApiService? _apiService;
 
-  static Dio get dio {
+  static dio_pkg.Dio get dio {
     _dio ??= _createDio();
     return _dio!;
   }
@@ -349,8 +407,8 @@ class DioClient {
     return _apiService!;
   }
 
-  static Dio _createDio() {
-    final dio = Dio();
+  static dio_pkg.Dio _createDio() {
+    final dio = dio_pkg.Dio();
 
     // Configure base options
     dio.options.baseUrl = ApiEndpoints.baseUrl;
@@ -361,13 +419,13 @@ class DioClient {
     // Add interceptors
     dio.interceptors.addAll([
       _AuthInterceptor(),
-      _LoggingInterceptor(),
+      PrettyDioLogger(
+          requestHeader: true,
+          requestBody: true,
+          responseBody: true,
+          responseHeader: false,
+          error: true),
       _ErrorInterceptor(),
-      AwesomeDioInterceptor(
-        logRequestHeaders: false,
-        logRequestTimeout: false,
-        logResponseHeaders: false,
-      ),
     ]);
 
     return dio;
@@ -379,7 +437,7 @@ class DioClient {
 }
 
 // Auth interceptor to add JWT token to requests
-class _AuthInterceptor extends Interceptor {
+class _AuthInterceptor extends dio_pkg.Interceptor {
   static bool _isRefreshing = false;
   static final List<Function> _requestsQueue = [];
 
@@ -410,8 +468,8 @@ class _AuthInterceptor extends Interceptor {
   }
 
   @override
-  void onRequest(
-      RequestOptions options, RequestInterceptorHandler handler) async {
+  void onRequest(dio_pkg.RequestOptions options,
+      dio_pkg.RequestInterceptorHandler handler) async {
     // Skip auth for login endpoints
     if (options.path.contains('/login') || options.path.contains('/refresh')) {
       handler.next(options);
@@ -458,7 +516,8 @@ class _AuthInterceptor extends Interceptor {
   }
 
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) async {
+  void onError(
+      dio_pkg.DioException err, dio_pkg.ErrorInterceptorHandler handler) async {
     final requestOptions = err.requestOptions;
 
     // Handle token refresh on 401 (excluding refresh endpoint itself)
@@ -476,7 +535,7 @@ class _AuthInterceptor extends Interceptor {
 
               final response = await DioClient.dio.request(
                 requestOptions.path,
-                options: Options(
+                options: dio_pkg.Options(
                   method: requestOptions.method,
                   headers: requestOptions.headers,
                 ),
@@ -509,7 +568,7 @@ class _AuthInterceptor extends Interceptor {
             // Retry the original request
             final response = await DioClient.dio.request(
               requestOptions.path,
-              options: Options(
+              options: dio_pkg.Options(
                 method: requestOptions.method,
                 headers: requestOptions.headers,
               ),
@@ -552,13 +611,13 @@ class _AuthInterceptor extends Interceptor {
       AppLogger.info('Attempting to refresh token...');
 
       // Create a new Dio instance to avoid interceptor loops
-      final refreshDio = Dio();
+      final refreshDio = dio_pkg.Dio();
       refreshDio.options.baseUrl = ApiEndpoints.baseUrl;
       refreshDio.options.connectTimeout = const Duration(seconds: 30);
       refreshDio.options.receiveTimeout = const Duration(seconds: 30);
 
       // Add logging for refresh request
-      refreshDio.interceptors.add(LogInterceptor(
+      refreshDio.interceptors.add(dio_pkg.LogInterceptor(
         requestBody: false,
         responseBody: true,
         logPrint: (obj) => AppLogger.debug('Refresh: $obj'),
@@ -601,7 +660,7 @@ class _AuthInterceptor extends Interceptor {
       return false;
     } catch (e) {
       AppLogger.error('Token refresh error', error: e);
-      if (e is DioException) {
+      if (e is dio_pkg.DioException) {
         AppLogger.error('Dio error details: ${e.response?.data}');
         AppLogger.error('Dio error status: ${e.response?.statusCode}');
       }
@@ -632,53 +691,30 @@ class _AuthInterceptor extends Interceptor {
   }
 }
 
-// Logging interceptor for debugging
-class _LoggingInterceptor extends Interceptor {
-  @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    AppLogger.debug('REQUEST[${options.method}] => PATH: ${options.path}');
-    handler.next(options);
-  }
-
-  @override
-  void onResponse(Response response, ResponseInterceptorHandler handler) {
-    AppLogger.debug(
-        'RESPONSE[${response.statusCode}] => PATH: ${response.requestOptions.path}');
-    handler.next(response);
-  }
-
-  @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
-    AppLogger.error(
-        'ERROR[${err.response?.statusCode}] => PATH: ${err.requestOptions.path}');
-    AppLogger.error('ERROR MESSAGE: ${err.message}');
-    handler.next(err);
-  }
-}
-
 // Error handling interceptor
-class _ErrorInterceptor extends Interceptor {
+class _ErrorInterceptor extends dio_pkg.Interceptor {
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
+  void onError(
+      dio_pkg.DioException err, dio_pkg.ErrorInterceptorHandler handler) {
     String message;
 
     switch (err.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
+      case dio_pkg.DioExceptionType.connectionTimeout:
+      case dio_pkg.DioExceptionType.sendTimeout:
+      case dio_pkg.DioExceptionType.receiveTimeout:
         message = 'Connection timeout. Please check your internet connection.';
         break;
-      case DioExceptionType.badResponse:
+      case dio_pkg.DioExceptionType.badResponse:
         message = _handleHttpError(err.response?.statusCode);
         break;
-      case DioExceptionType.cancel:
+      case dio_pkg.DioExceptionType.cancel:
         message = 'Request was cancelled';
         break;
       default:
         message = 'Network error occurred. Please try again.';
     }
 
-    handler.next(DioException(
+    handler.next(dio_pkg.DioException(
       requestOptions: err.requestOptions,
       message: message,
       type: err.type,

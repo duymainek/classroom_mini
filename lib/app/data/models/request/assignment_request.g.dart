@@ -27,37 +27,28 @@ AssignmentCreateRequest _$AssignmentCreateRequestFromJson(
       groupIds: (json['groupIds'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
-      attachments: (json['attachments'] as List<dynamic>?)
-          ?.map((e) => SubmissionAttachment.fromJson(e as Map<String, dynamic>))
+      attachmentIds: (json['attachmentIds'] as List<dynamic>?)
+          ?.map((e) => e as String)
           .toList(),
     );
 
 Map<String, dynamic> _$AssignmentCreateRequestToJson(
-    AssignmentCreateRequest instance) {
-  final val = <String, dynamic>{
-    'title': instance.title,
-    'description': instance.description,
-    'courseId': instance.courseId,
-    'semesterId': instance.semesterId,
-    'startDate': instance.startDate.toIso8601String(),
-    'dueDate': instance.dueDate.toIso8601String(),
-    'lateDueDate': instance.lateDueDate?.toIso8601String(),
-    'allowLateSubmission': instance.allowLateSubmission,
-    'maxAttempts': instance.maxAttempts,
-    'fileFormats': instance.fileFormats,
-    'maxFileSize': instance.maxFileSize,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('groupIds', instance.groupIds);
-  writeNotNull('attachments', instance.attachments);
-  return val;
-}
+        AssignmentCreateRequest instance) =>
+    <String, dynamic>{
+      'title': instance.title,
+      'description': instance.description,
+      'courseId': instance.courseId,
+      'semesterId': instance.semesterId,
+      'startDate': instance.startDate.toIso8601String(),
+      'dueDate': instance.dueDate.toIso8601String(),
+      'lateDueDate': instance.lateDueDate?.toIso8601String(),
+      'allowLateSubmission': instance.allowLateSubmission,
+      'maxAttempts': instance.maxAttempts,
+      'fileFormats': instance.fileFormats,
+      'maxFileSize': instance.maxFileSize,
+      'groupIds': instance.groupIds,
+      'attachmentIds': instance.attachmentIds,
+    };
 
 AssignmentUpdateRequest _$AssignmentUpdateRequestFromJson(
         Map<String, dynamic> json) =>
@@ -85,38 +76,29 @@ AssignmentUpdateRequest _$AssignmentUpdateRequestFromJson(
       groupIds: (json['groupIds'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
-      attachments: (json['attachments'] as List<dynamic>?)
-          ?.map((e) => SubmissionAttachment.fromJson(e as Map<String, dynamic>))
+      attachmentIds: (json['attachmentIds'] as List<dynamic>?)
+          ?.map((e) => e as String)
           .toList(),
     );
 
 Map<String, dynamic> _$AssignmentUpdateRequestToJson(
-    AssignmentUpdateRequest instance) {
-  final val = <String, dynamic>{
-    'id': instance.id,
-    'title': instance.title,
-    'description': instance.description,
-    'courseId': instance.courseId,
-    'startDate': instance.startDate?.toIso8601String(),
-    'dueDate': instance.dueDate?.toIso8601String(),
-    'lateDueDate': instance.lateDueDate?.toIso8601String(),
-    'allowLateSubmission': instance.allowLateSubmission,
-    'maxAttempts': instance.maxAttempts,
-    'fileFormats': instance.fileFormats,
-    'maxFileSize': instance.maxFileSize,
-    'isActive': instance.isActive,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('groupIds', instance.groupIds);
-  writeNotNull('attachments', instance.attachments);
-  return val;
-}
+        AssignmentUpdateRequest instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'title': instance.title,
+      'description': instance.description,
+      'courseId': instance.courseId,
+      'startDate': instance.startDate?.toIso8601String(),
+      'dueDate': instance.dueDate?.toIso8601String(),
+      'lateDueDate': instance.lateDueDate?.toIso8601String(),
+      'allowLateSubmission': instance.allowLateSubmission,
+      'maxAttempts': instance.maxAttempts,
+      'fileFormats': instance.fileFormats,
+      'maxFileSize': instance.maxFileSize,
+      'isActive': instance.isActive,
+      'groupIds': instance.groupIds,
+      'attachmentIds': instance.attachmentIds,
+    };
 
 SubmitAssignmentRequest _$SubmitAssignmentRequestFromJson(
         Map<String, dynamic> json) =>

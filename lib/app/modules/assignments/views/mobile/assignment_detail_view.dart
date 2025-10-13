@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:classroom_mini/app/data/models/response/assignment_response.dart';
 import 'package:classroom_mini/app/data/models/response/submission_response.dart';
 import 'package:classroom_mini/app/routes/app_routes.dart';
@@ -17,7 +18,13 @@ class MobileAssignmentDetailView extends StatelessWidget {
 
     return GetBuilder<AssignmentController>(
       init: AssignmentController(),
-      initState: (_) => Get.find<AssignmentController>().loadAssignmentSubmissions(assignment.id),
+      initState: (_) {
+        // Sử dụng WidgetsBinding để đảm bảo gọi sau khi build hoàn tất
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Get.find<AssignmentController>()
+              .loadAssignmentSubmissions(assignment.id);
+        });
+      },
       builder: (controller) {
         return Scaffold(
           body: CustomScrollView(
@@ -52,6 +59,19 @@ class MobileAssignmentDetailView extends StatelessWidget {
                 ),
                 actions: [
                   IconButton(
+                    icon: Icon(Icons.track_changes, color: colorScheme.primary),
+                    onPressed: () {
+                      Get.toNamed(
+                        Routes.ASSIGNMENTS_TRACKING,
+                        arguments: {
+                          'assignmentId': assignment.id,
+                          'assignmentTitle': assignment.title,
+                        },
+                      );
+                    },
+                    tooltip: 'Theo dõi nộp bài',
+                  ),
+                  IconButton(
                     icon: Icon(Icons.edit, color: colorScheme.primary),
                     onPressed: () async {
                       final result = await Get.toNamed(Routes.ASSIGNMENTS_EDIT,
@@ -74,6 +94,8 @@ class MobileAssignmentDetailView extends StatelessWidget {
                     _buildTimeInfo(context),
                     const SizedBox(height: 16),
                     _buildSubmissionSettings(context),
+                    const SizedBox(height: 16),
+                    _buildTrackingOverview(context, controller),
                     const SizedBox(height: 16),
                     _buildSubmissions(context, controller),
                   ]),
@@ -114,6 +136,7 @@ class MobileAssignmentDetailView extends StatelessWidget {
             assignment.description!.isNotEmpty) ...[
           const SizedBox(height: 12),
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: colorScheme.surfaceVariant.withOpacity(0.3),
@@ -264,6 +287,121 @@ class MobileAssignmentDetailView extends StatelessWidget {
     );
   }
 
+  Widget _buildTrackingOverview(
+      BuildContext context, AssignmentController controller) {
+    return _buildModernSection(
+      context,
+      title: 'Tổng quan theo dõi',
+      icon: Icons.analytics,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                context,
+                title: 'Tổng số SV',
+                value: controller.submissions.length.toString(),
+                icon: Icons.people,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                context,
+                title: 'Đã nộp',
+                value: controller.submissions
+                    .where((s) => s.status != SubmissionStatus.notSubmitted)
+                    .length
+                    .toString(),
+                icon: Icons.check_circle,
+                color: Theme.of(context).colorScheme.tertiary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                context,
+                title: 'Chưa nộp',
+                value: controller.submissions
+                    .where((s) => s.status == SubmissionStatus.notSubmitted)
+                    .length
+                    .toString(),
+                icon: Icons.pending,
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                context,
+                title: 'Đã chấm',
+                value: controller.submissions
+                    .where((s) => s.status == SubmissionStatus.graded)
+                    .length
+                    .toString(),
+                icon: Icons.grade,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(
+    BuildContext context, {
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: color,
+            size: 24,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSubmissions(
       BuildContext context, AssignmentController controller) {
     return Obx(() {
@@ -326,43 +464,6 @@ class MobileAssignmentDetailView extends StatelessWidget {
         title: 'Danh sách nộp bài',
         icon: Icons.assignment_turned_in,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Search submissions...',
-                    prefixIcon: Icon(Icons.search),
-                  ),
-                  onChanged: (value) {
-                    controller.loadAssignmentSubmissions(
-                      assignment.id,
-                      search: value,
-                    );
-                  },
-                ),
-              ),
-              IconButton(
-                icon: Icon(Icons.filter_list),
-                onPressed: () {
-                  _showFilterDialog(context, controller);
-                },
-              ),
-              IconButton(
-                icon: Icon(Icons.sort),
-                onPressed: () {
-                  _showSortDialog(context, controller);
-                },
-              ),
-              IconButton(
-                icon: Icon(Icons.download),
-                onPressed: () {
-                  controller.exportSubmissions(assignment.id);
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
           ...controller.submissions.map((s) => Container(
                 margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
@@ -433,19 +534,132 @@ class MobileAssignmentDetailView extends StatelessWidget {
 
     return _buildModernSection(
       context,
-      title: 'Attachments',
+      title: 'Tài liệu đính kèm',
       icon: Icons.attachment,
       children: assignment.attachments
-          .map((att) => ListTile(
-                leading: Icon(Icons.insert_drive_file),
-                title: Text(att.fileName),
-                subtitle: Text('${(att.fileSize ?? 0) / 1024} KB'),
-                onTap: () {
-                  // TODO: Implement file download/opening
-                },
-              ))
+          .map((att) => _buildAttachmentTile(context, att))
           .toList(),
     );
+  }
+
+  Widget _buildAttachmentTile(
+      BuildContext context, AssignmentAttachment attachment) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.2),
+        ),
+      ),
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: _getFileTypeColor(attachment.fileType).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            _getFileTypeIcon(attachment.fileType),
+            color: _getFileTypeColor(attachment.fileType),
+            size: 20,
+          ),
+        ),
+        title: Text(
+          attachment.fileName,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _formatFileSize(attachment.fileSize),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            if (attachment.fileType != null)
+              Text(
+                attachment.fileType!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+                ),
+              ),
+          ],
+        ),
+        trailing: Icon(
+          Icons.open_in_new,
+          color: colorScheme.primary,
+          size: 20,
+        ),
+        onTap: () => _openAttachmentInBrowser(attachment.fileUrl),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      ),
+    );
+  }
+
+  Color _getFileTypeColor(String? fileType) {
+    if (fileType == null) return Colors.grey;
+
+    if (fileType.contains('pdf')) return Colors.red;
+    if (fileType.contains('doc') || fileType.contains('word'))
+      return Colors.blue;
+    if (fileType.contains('image') ||
+        fileType.contains('jpg') ||
+        fileType.contains('png')) return Colors.green;
+    if (fileType.contains('zip') || fileType.contains('rar'))
+      return Colors.orange;
+    if (fileType.contains('text') || fileType.contains('txt'))
+      return Colors.purple;
+
+    return Colors.grey;
+  }
+
+  IconData _getFileTypeIcon(String? fileType) {
+    if (fileType == null) return Icons.insert_drive_file;
+
+    if (fileType.contains('pdf')) return Icons.picture_as_pdf;
+    if (fileType.contains('doc') || fileType.contains('word'))
+      return Icons.description;
+    if (fileType.contains('image') ||
+        fileType.contains('jpg') ||
+        fileType.contains('png')) return Icons.image;
+    if (fileType.contains('zip') || fileType.contains('rar'))
+      return Icons.archive;
+    if (fileType.contains('text') || fileType.contains('txt'))
+      return Icons.text_snippet;
+
+    return Icons.insert_drive_file;
+  }
+
+  String _formatFileSize(int? fileSize) {
+    if (fileSize == null) return 'Unknown size';
+
+    if (fileSize < 1024) return '${fileSize} B';
+    if (fileSize < 1024 * 1024)
+      return '${(fileSize / 1024).toStringAsFixed(1)} KB';
+    return '${(fileSize / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  Future<void> _openAttachmentInBrowser(String fileUrl) async {
+    try {
+      final Uri url = Uri.parse(fileUrl);
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        Get.snackbar('Lỗi', 'Không thể mở file. Vui lòng thử lại.');
+      }
+    } catch (e) {
+      Get.snackbar('Lỗi', 'Không thể mở file: $e');
+    }
   }
 
   Color _submissionColor(BuildContext context, SubmissionStatus status) {
@@ -652,7 +866,8 @@ class MobileAssignmentDetailView extends StatelessWidget {
     );
   }
 
-  void _showFilterDialog(BuildContext context, AssignmentController controller) {
+  void _showFilterDialog(
+      BuildContext context, AssignmentController controller) {
     Get.dialog(
       AlertDialog(
         title: const Text('Filter Submissions'),

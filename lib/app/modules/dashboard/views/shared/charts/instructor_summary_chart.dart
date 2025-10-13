@@ -154,8 +154,8 @@ class InstructorSummaryChart extends StatelessWidget {
         break;
     }
     return SideTitleWidget(
-      axisSide: meta.axisSide,
       space: 16,
+      axisSide: AxisSide.left,
       child: text,
     );
   }

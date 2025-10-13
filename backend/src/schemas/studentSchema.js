@@ -56,3 +56,4 @@ const bulkOperationSchema = Joi.object({
 
 module.exports = { createStudentSchema, updateStudentSchema, bulkOperationSchema };
 
+

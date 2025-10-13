@@ -20,6 +20,8 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
       avatarUrl: json['avatarUrl'] as String?,
       groupId: json['groupId'] as String?,
       courseId: json['courseId'] as String?,
+      group: json['group'] as Map<String, dynamic>?,
+      course: json['course'] as Map<String, dynamic>?,
     );
 
 Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
@@ -34,6 +36,8 @@ Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
       'avatarUrl': instance.avatarUrl,
       'groupId': instance.groupId,
       'courseId': instance.courseId,
+      'group': instance.group,
+      'course': instance.course,
     };
 
 UserData _$UserDataFromJson(Map<String, dynamic> json) => UserData(

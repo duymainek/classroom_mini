@@ -32,7 +32,7 @@ Assignment _$AssignmentFromJson(Map<String, dynamic> json) => Assignment(
       instructor: json['instructor'] == null
           ? null
           : InstructorInfo.fromJson(json['instructor'] as Map<String, dynamic>),
-      attachments: (json['attachments'] as List<dynamic>?)
+      attachments: (json['assignmentAttachments'] as List<dynamic>?)
               ?.map((e) =>
                   AssignmentAttachment.fromJson(e as Map<String, dynamic>))
               .toList() ??
@@ -62,7 +62,7 @@ Map<String, dynamic> _$AssignmentToJson(Assignment instance) =>
       'updatedAt': instance.updatedAt.toIso8601String(),
       'course': instance.course,
       'instructor': instance.instructor,
-      'attachments': instance.attachments,
+      'assignmentAttachments': instance.attachments,
       'groups': instance.groups,
     };
 

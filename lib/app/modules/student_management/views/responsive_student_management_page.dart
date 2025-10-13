@@ -285,18 +285,6 @@ class _MobileView extends StatelessWidget {
                                   ),
                         ),
                         const SizedBox(height: 32),
-                        FilledButton.icon(
-                          onPressed: () =>
-                              _showAddStudentSheet(context, controller),
-                          icon: const Icon(Icons.person_add_rounded),
-                          label: const Text('Thêm sinh viên đầu tiên'),
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 12,
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -617,11 +605,9 @@ class _FabActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FloatingActionButton.extended(
+    return FloatingActionButton(
       onPressed: () => _openActions(context),
-      icon: const Icon(Icons.add_rounded, size: 20),
-      label: const Text('Thêm sinh viên',
-          style: TextStyle(fontWeight: FontWeight.w600)),
+      child: const Icon(Icons.add_rounded, size: 20),
       backgroundColor: Theme.of(context).colorScheme.primary,
       foregroundColor: Theme.of(context).colorScheme.onPrimary,
       elevation: 4,
@@ -634,7 +620,6 @@ class _FabActions extends StatelessWidget {
   void _openActions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      showDragHandle: true,
       isScrollControlled: true,
       builder: (_) {
         return SafeArea(

@@ -21,3 +21,4 @@ const updateProfileSchema = Joi.object({
 
 module.exports = { updateProfileSchema };
 
+

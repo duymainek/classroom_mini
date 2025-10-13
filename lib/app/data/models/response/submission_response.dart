@@ -143,30 +143,119 @@ class SubmissionTrackingData {
   final String username;
   final String fullName;
   final String email;
+  final String? groupId;
+  final String? groupName;
   final int totalSubmissions;
+  final int gradedSubmissions;
+  final int lateSubmissions;
+  final double? averageGrade;
   final AssignmentSubmission? latestSubmission;
+  @JsonKey(unknownEnumValue: SubmissionStatus.notSubmitted)
   final SubmissionStatus status;
+  final bool hasMultipleAttempts;
 
   SubmissionTrackingData({
     required this.studentId,
     required this.username,
     required this.fullName,
     required this.email,
+    this.groupId,
+    this.groupName,
     required this.totalSubmissions,
+    required this.gradedSubmissions,
+    required this.lateSubmissions,
+    this.averageGrade,
     this.latestSubmission,
     required this.status,
+    required this.hasMultipleAttempts,
   });
 
-  factory SubmissionTrackingData.fromJson(Map<String, dynamic> json) =>
-      _$SubmissionTrackingDataFromJson(json);
-  Map<String, dynamic> toJson() => _$SubmissionTrackingDataToJson(this);
+  // Custom JSON mapping to accept snake_case status from API without codegen
+  factory SubmissionTrackingData.fromJson(Map<String, dynamic> json) {
+    return SubmissionTrackingData(
+      studentId: json['studentId'] as String,
+      username: json['username'] as String,
+      fullName: json['fullName'] as String,
+      email: json['email'] as String,
+      groupId: json['groupId'] as String?,
+      groupName: json['groupName'] as String?,
+      totalSubmissions: (json['totalSubmissions'] as num? ?? 0).toInt(),
+      gradedSubmissions: (json['gradedSubmissions'] as num? ?? 0).toInt(),
+      lateSubmissions: (json['lateSubmissions'] as num? ?? 0).toInt(),
+      averageGrade: (json['averageGrade'] as num?)?.toDouble(),
+      latestSubmission: json['latestSubmission'] == null
+          ? null
+          : AssignmentSubmission.fromJson(
+              json['latestSubmission'] as Map<String, dynamic>,
+            ),
+      status: _parseSubmissionStatus(json['status']),
+      hasMultipleAttempts: json['hasMultipleAttempts'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'studentId': studentId,
+        'username': username,
+        'fullName': fullName,
+        'email': email,
+        'groupId': groupId,
+        'groupName': groupName,
+        'totalSubmissions': totalSubmissions,
+        'gradedSubmissions': gradedSubmissions,
+        'lateSubmissions': lateSubmissions,
+        'averageGrade': averageGrade,
+        'latestSubmission': latestSubmission?.toJson(),
+        'status': _submissionStatusToString(status),
+        'hasMultipleAttempts': hasMultipleAttempts,
+      };
 }
 
 enum SubmissionStatus {
+  @JsonValue('not_submitted')
   notSubmitted,
+  @JsonValue('submitted')
   submitted,
+  @JsonValue('late')
   late,
+  @JsonValue('graded')
   graded,
+}
+
+// Helpers for mapping status values
+SubmissionStatus _parseSubmissionStatus(dynamic raw) {
+  if (raw is String) {
+    switch (raw) {
+      case 'not_submitted':
+        return SubmissionStatus.notSubmitted;
+      case 'submitted':
+        return SubmissionStatus.submitted;
+      case 'late':
+        return SubmissionStatus.late;
+      case 'graded':
+        return SubmissionStatus.graded;
+      default:
+        // Fallback for typos like "not_submited"
+        final normalized = raw.replaceAll('-', '_');
+        if (normalized.contains('not') && normalized.contains('submit')) {
+          return SubmissionStatus.notSubmitted;
+        }
+        return SubmissionStatus.notSubmitted;
+    }
+  }
+  return SubmissionStatus.notSubmitted;
+}
+
+String _submissionStatusToString(SubmissionStatus status) {
+  switch (status) {
+    case SubmissionStatus.notSubmitted:
+      return 'not_submitted';
+    case SubmissionStatus.submitted:
+      return 'submitted';
+    case SubmissionStatus.late:
+      return 'late';
+    case SubmissionStatus.graded:
+      return 'graded';
+  }
 }
 
 extension SubmissionStatusExtension on SubmissionStatus {

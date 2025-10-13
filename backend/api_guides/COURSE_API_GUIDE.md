@@ -28,3 +28,4 @@ Response 200: `{ success, data: { courses: /* JSDoc: CourseSummary[] */, paginat
 Response 200: `{ success, data: { totalCourses, activeCourses, inactiveCourses } }`
 
 
+

@@ -83,6 +83,21 @@ Map<String, dynamic> _$LogoutResponseToJson(LogoutResponse instance) =>
       'errors': instance.errors,
     };
 
+StudentsListData _$StudentsListDataFromJson(Map<String, dynamic> json) =>
+    StudentsListData(
+      students: (json['students'] as List<dynamic>)
+          .map((e) => UserModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      pagination:
+          PaginationInfo.fromJson(json['pagination'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$StudentsListDataToJson(StudentsListData instance) =>
+    <String, dynamic>{
+      'students': instance.students,
+      'pagination': instance.pagination,
+    };
+
 StudentsListResponse _$StudentsListResponseFromJson(
         Map<String, dynamic> json) =>
     StudentsListResponse(
@@ -91,12 +106,7 @@ StudentsListResponse _$StudentsListResponseFromJson(
       code: json['code'] as String?,
       errors:
           (json['errors'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      students: (json['students'] as List<dynamic>?)
-          ?.map((e) => UserModel.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      pagination: json['pagination'] == null
-          ? null
-          : PaginationInfo.fromJson(json['pagination'] as Map<String, dynamic>),
+      data: StudentsListData.fromJson(json['data'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$StudentsListResponseToJson(
@@ -106,8 +116,7 @@ Map<String, dynamic> _$StudentsListResponseToJson(
       'message': instance.message,
       'code': instance.code,
       'errors': instance.errors,
-      'students': instance.students,
-      'pagination': instance.pagination,
+      'data': instance.data,
     };
 
 StudentUpdateResponse _$StudentUpdateResponseFromJson(

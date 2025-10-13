@@ -98,12 +98,19 @@ SubmissionTrackingData _$SubmissionTrackingDataFromJson(
       username: json['username'] as String,
       fullName: json['fullName'] as String,
       email: json['email'] as String,
+      groupId: json['groupId'] as String?,
+      groupName: json['groupName'] as String?,
       totalSubmissions: (json['totalSubmissions'] as num).toInt(),
+      gradedSubmissions: (json['gradedSubmissions'] as num).toInt(),
+      lateSubmissions: (json['lateSubmissions'] as num).toInt(),
+      averageGrade: (json['averageGrade'] as num?)?.toDouble(),
       latestSubmission: json['latestSubmission'] == null
           ? null
           : AssignmentSubmission.fromJson(
               json['latestSubmission'] as Map<String, dynamic>),
-      status: $enumDecode(_$SubmissionStatusEnumMap, json['status']),
+      status: $enumDecode(_$SubmissionStatusEnumMap, json['status'],
+          unknownValue: SubmissionStatus.notSubmitted),
+      hasMultipleAttempts: json['hasMultipleAttempts'] as bool,
     );
 
 Map<String, dynamic> _$SubmissionTrackingDataToJson(
@@ -113,13 +120,19 @@ Map<String, dynamic> _$SubmissionTrackingDataToJson(
       'username': instance.username,
       'fullName': instance.fullName,
       'email': instance.email,
+      'groupId': instance.groupId,
+      'groupName': instance.groupName,
       'totalSubmissions': instance.totalSubmissions,
+      'gradedSubmissions': instance.gradedSubmissions,
+      'lateSubmissions': instance.lateSubmissions,
+      'averageGrade': instance.averageGrade,
       'latestSubmission': instance.latestSubmission,
       'status': _$SubmissionStatusEnumMap[instance.status]!,
+      'hasMultipleAttempts': instance.hasMultipleAttempts,
     };
 
 const _$SubmissionStatusEnumMap = {
-  SubmissionStatus.notSubmitted: 'notSubmitted',
+  SubmissionStatus.notSubmitted: 'not_submitted',
   SubmissionStatus.submitted: 'submitted',
   SubmissionStatus.late: 'late',
   SubmissionStatus.graded: 'graded',

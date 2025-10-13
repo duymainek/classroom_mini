@@ -27,3 +27,4 @@ const updateSemesterSchema = Joi.object({
 
 module.exports = { createSemesterSchema, updateSemesterSchema };
 
+
