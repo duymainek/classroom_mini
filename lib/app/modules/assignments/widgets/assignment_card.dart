@@ -439,18 +439,6 @@ class AssignmentCard extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        if (onTrack != null)
-          OutlinedButton.icon(
-            onPressed: onTrack,
-            icon: const Icon(Icons.track_changes, size: 16),
-            label: const Text('Theo dõi'),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
         if (onEdit != null) ...[
           const SizedBox(width: 8),
           OutlinedButton.icon(

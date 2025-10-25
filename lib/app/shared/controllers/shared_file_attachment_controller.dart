@@ -1,14 +1,24 @@
 import 'package:get/get.dart';
-import 'package:classroom_mini/app/modules/assignments/models/uploaded_attachment.dart';
+import 'package:classroom_mini/app/shared/models/uploaded_attachment.dart';
 import 'package:classroom_mini/app/data/models/response/submission_response.dart';
 import 'package:classroom_mini/app/data/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 
-class FileAttachmentController extends GetxController {
+/**
+ * Shared File Attachment Controller
+ * Configurable controller for handling file uploads across different modules
+ */
+class SharedFileAttachmentController extends GetxController {
   final RxList<UploadedAttachment> attachments = <UploadedAttachment>[].obs;
   final ApiService _apiService = ApiService(DioClient.dio);
+
+  // Configuration for different modules
+  late String _uploadEndpoint;
+  late String _finalizeEndpoint;
+  late String _deleteEndpoint;
+  late String _getEndpoint;
 
   // Callback để trả attachment info về view cha
   Function(SubmissionAttachment)? onAttachmentUploaded;
@@ -21,6 +31,19 @@ class FileAttachmentController extends GetxController {
     'videos': ['mp4', 'mov', 'avi'],
     'code': ['py', 'c', 'cpp', 'java', 'js', 'ts', 'html', 'css'],
   };
+
+  /// Configure API endpoints for different modules
+  void configureEndpoints({
+    required String uploadEndpoint,
+    required String finalizeEndpoint,
+    required String deleteEndpoint,
+    required String getEndpoint,
+  }) {
+    _uploadEndpoint = uploadEndpoint;
+    _finalizeEndpoint = finalizeEndpoint;
+    _deleteEndpoint = deleteEndpoint;
+    _getEndpoint = getEndpoint;
+  }
 
   bool canAddMoreFiles(int maxFiles) => attachments.length < maxFiles;
 
@@ -81,17 +104,18 @@ class FileAttachmentController extends GetxController {
       // Tạo File từ filePath
       final file = File(attachment.filePath);
 
-      // Gọi API upload trực tiếp qua ApiService
-      final response = await _apiService.uploadTempAttachment(file);
+      // Gọi API upload dựa trên configured endpoint
+      final response = await _uploadFile(file);
 
-      if (response.success) {
+      if (response['success'] == true) {
+        final data = response['data'];
         // Upload thành công - tạo SubmissionAttachment
         final submissionAttachment = SubmissionAttachment(
-          id: response.data.attachmentId,
-          fileName: response.data.fileName,
-          fileUrl: response.data.fileUrl,
-          fileSize: response.data.fileSize,
-          fileType: response.data.fileType,
+          id: data['attachmentId'],
+          fileName: data['fileName'],
+          fileUrl: data['fileUrl'],
+          fileSize: data['fileSize'],
+          fileType: data['fileType'],
           createdAt: DateTime.now(),
         );
 
@@ -121,6 +145,166 @@ class FileAttachmentController extends GetxController {
         errorMessage: errorMsg,
       ));
       onAttachmentFailed?.call(errorMsg);
+    }
+  }
+
+  /// Upload file using configured endpoint
+  Future<Map<String, dynamic>> _uploadFile(File file) async {
+    try {
+      // Sử dụng ApiService methods dựa trên endpoint
+      if (_uploadEndpoint.contains('assignments')) {
+        final response = await _apiService.uploadTempAttachment(file);
+        return {
+          'success': true,
+          'data': {
+            'attachmentId': response.data.attachmentId,
+            'fileName': response.data.fileName,
+            'fileUrl': response.data.fileUrl,
+            'fileSize': response.data.fileSize,
+            'fileType': response.data.fileType,
+          }
+        };
+      } else if (_uploadEndpoint.contains('announcements')) {
+        final response =
+            await _apiService.uploadTempAnnouncementAttachment(file);
+        return {
+          'success': true,
+          'data': {
+            'attachmentId': response.data.attachmentId,
+            'fileName': response.data.fileName,
+            'fileUrl': response.data.fileUrl,
+            'fileSize': response.data.fileSize,
+            'fileType': response.data.fileType,
+          }
+        };
+      } else if (_uploadEndpoint.contains('materials')) {
+        final response = await _apiService.uploadTempMaterialAttachment(file);
+        return {
+          'success': true,
+          'data': {
+            'attachmentId': response.data.attachmentId,
+            'fileName': response.data.fileName,
+            'fileUrl': response.data.fileUrl,
+            'fileSize': response.data.fileSize,
+            'fileType': response.data.fileType,
+          }
+        };
+      } else {
+        throw Exception('Unsupported upload endpoint: $_uploadEndpoint');
+      }
+    } catch (e) {
+      throw Exception('Upload failed: $e');
+    }
+  }
+
+  /// Configure for assignment attachments
+  void configureForAssignment() {
+    configureEndpoints(
+      uploadEndpoint: '/assignments/temp-attachments',
+      finalizeEndpoint: '/assignments/:id/attachments/finalize',
+      deleteEndpoint: '/assignments/attachments/:attachmentId',
+      getEndpoint: '/assignments/:id/attachments',
+    );
+  }
+
+  /// Configure for announcement attachments
+  void configureForAnnouncement() {
+    configureEndpoints(
+      uploadEndpoint: '/announcements/temp-attachments',
+      finalizeEndpoint: '/announcements/:id/attachments/finalize',
+      deleteEndpoint: '/announcements/attachments/:attachmentId',
+      getEndpoint: '/announcements/:id/attachments',
+    );
+  }
+
+  /// Configure for material attachments
+  void configureForMaterial() {
+    configureEndpoints(
+      uploadEndpoint: '/materials/temp-attachments',
+      finalizeEndpoint: '/materials/:id/attachments/finalize',
+      deleteEndpoint: '/materials/attachments/:attachmentId',
+      getEndpoint: '/materials/:id/attachments',
+    );
+  }
+
+  /// Finalize attachments using ApiService
+  Future<void> finalizeAttachments(
+      String entityId, List<String> attachmentIds) async {
+    try {
+      if (_finalizeEndpoint.contains('assignments')) {
+        await _apiService.finalizeAssignmentAttachments(entityId, {
+          'attachmentIds': attachmentIds,
+        });
+      } else if (_finalizeEndpoint.contains('announcements')) {
+        await _apiService.finalizeAnnouncementAttachments(entityId, {
+          'attachmentIds': attachmentIds,
+        });
+      } else if (_finalizeEndpoint.contains('materials')) {
+        await _apiService.finalizeMaterialAttachments(entityId, {
+          'tempAttachmentIds': attachmentIds,
+        });
+      }
+    } catch (e) {
+      throw Exception('Failed to finalize attachments: $e');
+    }
+  }
+
+  /// Get attachments using ApiService
+  Future<List<Map<String, dynamic>>> getAttachments(String entityId) async {
+    try {
+      if (_getEndpoint.contains('assignments')) {
+        final response =
+            await _apiService.getAssignmentAttachmentsById(entityId);
+        return response.data.attachments
+            .map((att) => {
+                  'id': att.id,
+                  'fileName': att.fileName,
+                  'fileUrl': att.fileUrl,
+                  'fileSize': att.fileSize,
+                  'fileType': att.fileType,
+                })
+            .toList();
+      } else if (_getEndpoint.contains('announcements')) {
+        final response = await _apiService.getAnnouncementAttachments(entityId);
+        return response.data.attachments
+            .map((att) => {
+                  'id': att.id,
+                  'fileName': att.fileName,
+                  'fileUrl': att.fileUrl,
+                  'fileSize': att.fileSize,
+                  'fileType': att.fileType,
+                })
+            .toList();
+      } else if (_getEndpoint.contains('materials')) {
+        final response = await _apiService.getMaterialAttachments(entityId);
+        return response.data.attachments
+            .map((att) => {
+                  'id': att.id,
+                  'fileName': att.fileName,
+                  'fileUrl': att.fileUrl,
+                  'fileSize': att.fileSize,
+                  'fileType': att.fileType,
+                })
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      throw Exception('Failed to get attachments: $e');
+    }
+  }
+
+  /// Delete attachment using ApiService
+  Future<void> deleteAttachment(String attachmentId) async {
+    try {
+      if (_deleteEndpoint.contains('assignments')) {
+        await _apiService.deleteAssignmentAttachmentById(attachmentId);
+      } else if (_deleteEndpoint.contains('announcements')) {
+        await _apiService.deleteAnnouncementAttachment(attachmentId);
+      } else if (_deleteEndpoint.contains('materials')) {
+        await _apiService.deleteMaterialAttachment(attachmentId);
+      }
+    } catch (e) {
+      throw Exception('Failed to delete attachment: $e');
     }
   }
 

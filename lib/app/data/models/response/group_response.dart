@@ -8,7 +8,7 @@ part 'group_response.g.dart';
 class Group {
   final String id;
   final String name;
-  final String courseId;
+  final String? courseId;
   final bool isActive;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -17,7 +17,7 @@ class Group {
   const Group({
     required this.id,
     required this.name,
-    required this.courseId,
+    this.courseId,
     required this.isActive,
     required this.createdAt,
     required this.updatedAt,

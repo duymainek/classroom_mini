@@ -48,25 +48,27 @@ class ResponsiveDashboardPage extends StatelessWidget {
               _buildWelcomeHeader(context, controller),
 
               // Quick actions for instructors
-              if (controller.isInstructor.value)
+              if (controller.isInstructor.value) ...[
                 _buildQuickActions(context, controller),
-
-              // Main content
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Dashboard content based on role
-                      if (controller.isInstructor.value)
-                        _buildInstructorDashboard(context, controller)
-                      else
-                        _buildStudentDashboard(context, controller),
-                    ],
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 24),
+                        _buildInstructorDashboard(context, controller),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+              ] else
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildStudentDashboard(context, controller),
+                  ),
+                ),
             ],
           ),
         );
@@ -297,7 +299,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
                 Expanded(
                   child: _buildQuickActionCard(
                     context,
-                    'Tạo bài tập\n ',
+                    'Tạo bài tập',
                     Icons.assignment_outlined,
                     Colors.orange,
                     () {
@@ -309,17 +311,170 @@ class ResponsiveDashboardPage extends StatelessWidget {
                 Expanded(
                   child: _buildQuickActionCard(
                     context,
-                    'Quản lý Quiz',
-                    Icons.quiz_outlined,
-                    Colors.red,
+                    'Tất cả\n ',
+                    Icons.apps_outlined,
+                    Colors.purple,
                     () {
-                      Get.toNamed(Routes.QUIZZES_LIST);
+                      _showAllFeaturesBottomSheet(context);
                     },
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAllFeaturesBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurfaceVariant
+                    .withOpacity(0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.apps_outlined,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Tất cả tính năng',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+            // Features grid
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 1.2,
+                  children: [
+                    _buildFeatureCard(
+                      context,
+                      'Quản lý Quiz',
+                      Icons.quiz_outlined,
+                      Colors.red,
+                      () {
+                        Navigator.of(context).pop();
+                        Get.toNamed(Routes.QUIZZES_LIST);
+                      },
+                    ),
+                    _buildFeatureCard(
+                      context,
+                      'Thông báo',
+                      Icons.announcement_outlined,
+                      Colors.purple,
+                      () {
+                        Navigator.of(context).pop();
+                        Get.toNamed(Routes.ANNOUNCEMENTS_LIST);
+                      },
+                    ),
+                    _buildFeatureCard(
+                      context,
+                      'Tài liệu',
+                      Icons.folder_outlined,
+                      Colors.teal,
+                      () {
+                        Navigator.of(context).pop();
+                        Get.toNamed(Routes.MATERIALS_LIST);
+                      },
+                    ),
+                    _buildFeatureCard(
+                      context,
+                      'Danh sách bài tập',
+                      Icons.assignment_outlined,
+                      Colors.orange,
+                      () {
+                        Navigator.of(context).pop();
+                        Get.toNamed(Routes.ASSIGNMENTS_LIST);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeatureCard(
+    BuildContext context,
+    String title,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: color.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 32,
+              color: color,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
@@ -455,9 +610,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
                   stats.totalCourses.toString(),
                   Icons.book_outlined,
                   Colors.blue,
-                  () {
-                    Get.toNamed(Routes.CORE_MANAGEMENT);
-                  },
+                  null,
                 ),
               ),
               const SizedBox(width: 12),
@@ -468,9 +621,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
                   stats.totalGroups.toString(),
                   Icons.group_outlined,
                   Colors.green,
-                  () {
-                    Get.toNamed(Routes.CORE_MANAGEMENT);
-                  },
+                  null,
                 ),
               ),
             ],
@@ -486,9 +637,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
                   stats.totalStudents.toString(),
                   Icons.people_outlined,
                   Colors.orange,
-                  () {
-                    Get.toNamed(Routes.STUDENTS_LIST);
-                  },
+                  null,
                 ),
               ),
               const SizedBox(width: 8),
@@ -499,9 +648,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
                   stats.totalAssignments.toString(),
                   Icons.assignment_outlined,
                   Colors.purple,
-                  () {
-                    Get.toNamed(Routes.ASSIGNMENTS_LIST);
-                  },
+                  null,
                 ),
               ),
               const SizedBox(width: 8),
@@ -512,9 +659,23 @@ class ResponsiveDashboardPage extends StatelessWidget {
                   stats.totalQuizzes.toString(),
                   Icons.quiz_outlined,
                   Colors.red,
-                  () {
-                    Get.toNamed(Routes.QUIZZES_LIST);
-                  },
+                  null,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Third row - 1 card for announcements
+          Row(
+            children: [
+              Expanded(
+                child: _buildMobileStatCard(
+                  context,
+                  'Thông báo',
+                  stats.totalAnnouncements.toString(),
+                  Icons.announcement_outlined,
+                  Colors.teal,
+                  null,
                 ),
               ),
             ],
@@ -532,63 +693,69 @@ class ResponsiveDashboardPage extends StatelessWidget {
     Color color,
     VoidCallback? onTap,
   ) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: color.withOpacity(0.2),
-            width: 1,
+    Widget cardContent = Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
             ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 20,
-              ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 20,
             ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w500,
-                  ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: cardContent,
+      );
+    } else {
+      return cardContent;
+    }
   }
 
   Widget _buildStudentDashboard(

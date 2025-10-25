@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'package:classroom_mini/app/modules/assignments/widgets/file_attachment_picker.dart';
-import 'package:classroom_mini/app/modules/assignments/models/uploaded_attachment.dart';
+import 'package:classroom_mini/app/shared/widgets/shared_file_attachment_picker.dart';
+import 'package:classroom_mini/app/shared/models/uploaded_attachment.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -1243,7 +1243,8 @@ class _AssignmentFormState extends State<AssignmentForm> {
       title: 'Tệp đính kèm',
       icon: Icons.attach_file,
       children: [
-        FileAttachmentPicker(
+        SharedFileAttachmentPicker(
+          tag: 'assignment_attachments',
           onAttachmentsChanged: (attachments) {
             print('=== ASSIGNMENT FORM CALLBACK ===');
             print('Received attachments changed callback');

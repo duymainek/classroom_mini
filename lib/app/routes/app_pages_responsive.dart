@@ -24,6 +24,23 @@ import '../modules/assignments/views/responsive/assignment_pages.dart';
 import '../modules/assignments/bindings/assignment_binding.dart';
 import '../modules/assignments/views/mobile/assignment_tracking_page.dart';
 
+// Announcement imports
+import '../modules/announcements/bindings/announcement_binding.dart';
+import '../modules/announcements/views/mobile/announcement_list_view.dart';
+import '../modules/announcements/views/mobile/announcement_create_view.dart';
+import '../modules/announcements/views/mobile/announcement_detail_view.dart';
+import '../modules/announcements/views/mobile/announcement_tracking_view.dart';
+import '../modules/announcements/views/mobile/announcement_file_tracking_view.dart';
+import 'package:classroom_mini/app/data/models/response/announcement_response.dart';
+
+// Material imports
+import '../modules/materials/bindings/material_binding.dart';
+import '../modules/materials/views/mobile/material_list_view.dart';
+import '../modules/materials/views/mobile/material_detail_view.dart';
+import '../modules/materials/widgets/material_form.dart';
+import 'package:classroom_mini/app/data/models/response/material_response.dart'
+    as material_resp;
+
 class AppPages {
   static const String INITIAL = Routes.HOME;
 
@@ -205,6 +222,136 @@ class AppPages {
         return QuizDetailView(quizId: quizId);
       },
       binding: QuizBinding(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // Announcement Routes
+    GetPage(
+      name: Routes.ANNOUNCEMENTS_LIST,
+      page: () => const MobileAnnouncementListView(),
+      binding: AnnouncementBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: Routes.ANNOUNCEMENTS_CREATE,
+      page: () => const MobileAnnouncementCreateView(),
+      binding: AnnouncementBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.ANNOUNCEMENTS_EDIT,
+      page: () {
+        final announcement = Get.arguments as Announcement?;
+        if (announcement == null) {
+          return const Scaffold(
+            body: Center(child: Text('Thông báo không tìm thấy')),
+          );
+        }
+        return const PlaceholderPage(title: 'Chỉnh sửa thông báo');
+      },
+      binding: AnnouncementBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.ANNOUNCEMENTS_DETAIL,
+      page: () {
+        final announcement = Get.arguments as Announcement?;
+        if (announcement == null) {
+          return const Scaffold(
+            body: Center(child: Text('Thông báo không tìm thấy')),
+          );
+        }
+        return MobileAnnouncementDetailView(announcement: announcement);
+      },
+      binding: AnnouncementBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.ANNOUNCEMENTS_TRACKING,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>? ?? {};
+        final announcementId = args['announcementId'] as String? ?? '';
+        final announcementTitle =
+            args['announcementTitle'] as String? ?? 'Theo dõi thông báo';
+        return MobileAnnouncementTrackingView(
+          announcementId: announcementId,
+          announcementTitle: announcementTitle,
+        );
+      },
+      binding: AnnouncementBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.ANNOUNCEMENTS_FILE_TRACKING,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>? ?? {};
+        final announcementId = args['announcementId'] as String? ?? '';
+        final announcementTitle =
+            args['announcementTitle'] as String? ?? 'Theo dõi file';
+        return MobileAnnouncementFileTrackingView(
+          announcementId: announcementId,
+          announcementTitle: announcementTitle,
+        );
+      },
+      binding: AnnouncementBinding(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // Material Routes
+    GetPage(
+      name: Routes.MATERIALS_LIST,
+      page: () => const MaterialListView(),
+      binding: MaterialBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: Routes.MATERIALS_CREATE,
+      page: () => const MaterialForm(),
+      binding: MaterialBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.MATERIALS_EDIT,
+      page: () {
+        final material = Get.arguments as material_resp.Material?;
+        if (material == null) {
+          return const Scaffold(
+            body: Center(child: Text('Tài liệu không tìm thấy')),
+          );
+        }
+        return MaterialForm(material: material, isEditing: true);
+      },
+      binding: MaterialBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.MATERIALS_DETAIL,
+      page: () {
+        final materialId = Get.parameters['id'] ?? '';
+        if (materialId.isEmpty) {
+          return const Scaffold(
+            body: Center(child: Text('ID tài liệu không hợp lệ')),
+          );
+        }
+        return MaterialDetailView(materialId: materialId);
+      },
+      binding: MaterialBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.MATERIALS_TRACKING,
+      page: () {
+        return const PlaceholderPage(title: 'Theo dõi tài liệu');
+      },
+      binding: MaterialBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.MATERIALS_FILE_TRACKING,
+      page: () {
+        return const PlaceholderPage(title: 'Theo dõi file tài liệu');
+      },
+      binding: MaterialBinding(),
       transition: Transition.rightToLeft,
     ),
   ];

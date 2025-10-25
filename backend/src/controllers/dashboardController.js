@@ -51,7 +51,8 @@ class DashboardController {
               totalGroups: 0,
               totalStudents: 0,
               totalAssignments: 0,
-              totalQuizzes: 0
+              totalQuizzes: 0,
+              totalAnnouncements: 0
             },
             recentActivity: []
           })
@@ -64,7 +65,8 @@ class DashboardController {
         groupsResult,
         studentsResult,
         assignmentsResult,
-        quizzesResult
+        quizzesResult,
+        announcementsResult
       ] = await Promise.all([
         // Total courses in current semester
         supabase
@@ -94,7 +96,14 @@ class DashboardController {
         supabase
           .from('quizzes')
           .select('*, courses!inner(*)', { count: 'exact', head: true })
+          .eq('courses.semester_id', currentSemester.id),
+
+        // Total announcements in current semester
+        supabase
+          .from('announcements')
+          .select('*, courses!inner(*)', { count: 'exact', head: true })
           .eq('courses.semester_id', currentSemester.id)
+          .eq('is_deleted', false)
       ]);
 
       const statistics = {
@@ -102,7 +111,8 @@ class DashboardController {
         totalGroups: groupsResult.count || 0,
         totalStudents: studentsResult.count || 0,
         totalAssignments: assignmentsResult.count || 0,
-        totalQuizzes: quizzesResult.count || 0
+        totalQuizzes: quizzesResult.count || 0,
+        totalAnnouncements: announcementsResult.count || 0
       };
 
       // Get recent activity (last 10 activities)

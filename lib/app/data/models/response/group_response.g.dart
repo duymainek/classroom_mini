@@ -9,7 +9,7 @@ part of 'group_response.dart';
 Group _$GroupFromJson(Map<String, dynamic> json) => Group(
       id: json['id'] as String,
       name: json['name'] as String,
-      courseId: json['courseId'] as String,
+      courseId: json['courseId'] as String?,
       isActive: json['isActive'] as bool,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),

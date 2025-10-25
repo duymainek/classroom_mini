@@ -1,22 +1,22 @@
 import 'dart:typed_data';
 
 enum AttachmentUploadStatus {
-  pending,    // File selected but not uploaded yet
-  uploading,  // Currently uploading to storage  
-  uploaded,   // Successfully uploaded to storage
-  failed      // Upload failed
+  pending, // File selected but not uploaded yet
+  uploading, // Currently uploading to storage
+  uploaded, // Successfully uploaded to storage
+  failed // Upload failed
 }
 
 class UploadedAttachment {
-  final String id;           // Unique ID for this attachment
-  final String fileName;     // Original file name
-  final String filePath;     // Local file path (may be empty on web)
-  final Uint8List? fileBytes;  // File bytes (for web platform)
-  final int fileSize;        // File size in bytes
-  final String fileType;     // MIME type
+  final String id; // Unique ID for this attachment
+  final String fileName; // Original file name
+  final String filePath; // Local file path (may be empty on web)
+  final Uint8List? fileBytes; // File bytes (for web platform)
+  final int fileSize; // File size in bytes
+  final String fileType; // MIME type
   final AttachmentUploadStatus status;
   final String? attachmentId; // Backend attachment ID (after upload)
-  final String? fileUrl;     // Public URL (after upload) 
+  final String? fileUrl; // Public URL (after upload)
   final String? errorMessage; // Error message if failed
   final double? uploadProgress; // Upload progress 0.0 - 1.0
 
@@ -62,7 +62,8 @@ class UploadedAttachment {
     );
   }
 
-  bool get isUploaded => status == AttachmentUploadStatus.uploaded && attachmentId != null;
+  bool get isUploaded =>
+      status == AttachmentUploadStatus.uploaded && attachmentId != null;
   bool get isUploading => status == AttachmentUploadStatus.uploading;
   bool get hasFailed => status == AttachmentUploadStatus.failed;
   bool get isPending => status == AttachmentUploadStatus.pending;
@@ -72,3 +73,4 @@ class UploadedAttachment {
     return 'UploadedAttachment(id: $id, fileName: $fileName, status: $status, attachmentId: $attachmentId, fileUrl: $fileUrl)';
   }
 }
+

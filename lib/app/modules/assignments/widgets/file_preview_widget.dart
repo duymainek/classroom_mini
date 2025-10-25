@@ -1,4 +1,4 @@
-import 'package:classroom_mini/app/modules/assignments/models/uploaded_attachment.dart';
+import 'package:classroom_mini/app/shared/models/uploaded_attachment.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
@@ -157,7 +157,8 @@ class _FilePreviewWidgetState extends State<FilePreviewWidget> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
-              _getFileTypeIcon(_getCategoryFromMimeType(widget.attachment.fileType)),
+              _getFileTypeIcon(
+                  _getCategoryFromMimeType(widget.attachment.fileType)),
               color: colorScheme.primary,
               size: 20,
             ),
@@ -347,7 +348,8 @@ class _FilePreviewWidgetState extends State<FilePreviewWidget> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            _getFileTypeIcon(_getCategoryFromMimeType(widget.attachment.fileType)),
+            _getFileTypeIcon(
+                _getCategoryFromMimeType(widget.attachment.fileType)),
             size: 64,
             color: colorScheme.onSurfaceVariant.withOpacity(0.6),
           ),
@@ -410,12 +412,12 @@ class _FilePreviewWidgetState extends State<FilePreviewWidget> {
     } else if (mimeType.startsWith('video/')) {
       return 'videos';
     } else if (mimeType.contains('zip') ||
-               mimeType.contains('rar') ||
-               mimeType.contains('compressed')) {
+        mimeType.contains('rar') ||
+        mimeType.contains('compressed')) {
       return 'archives';
     } else if (mimeType.startsWith('text/') ||
-               mimeType.contains('javascript') ||
-               mimeType.contains('typescript')) {
+        mimeType.contains('javascript') ||
+        mimeType.contains('typescript')) {
       return 'code';
     }
     return 'other';

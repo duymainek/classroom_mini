@@ -6,7 +6,6 @@ class Routes {
   static const String LOGIN = '/login';
   static const String REGISTER = '/register';
 
-
   // Student management routes
   static const String STUDENTS_LIST = '/students-list';
   static const String STUDENT_DETAILS = '/student-details';
@@ -46,4 +45,21 @@ class Routes {
   static const String QUIZZES_CREATE = '/quizzes/create';
   static const String QUIZZES_EDIT = '/quizzes/edit';
   static const String QUIZZES_DETAIL = '/quizzes/detail';
+
+  // Announcement routes
+  static const String ANNOUNCEMENTS_LIST = '/announcements';
+  static const String ANNOUNCEMENTS_CREATE = '/announcements/create';
+  static const String ANNOUNCEMENTS_EDIT = '/announcements/edit';
+  static const String ANNOUNCEMENTS_DETAIL = '/announcements/detail';
+  static const String ANNOUNCEMENTS_TRACKING = '/announcements/tracking';
+  static const String ANNOUNCEMENTS_FILE_TRACKING =
+      '/announcements/file-tracking';
+
+  // Material routes
+  static const String MATERIALS_LIST = '/materials';
+  static const String MATERIALS_CREATE = '/materials/create';
+  static const String MATERIALS_EDIT = '/materials/edit';
+  static const String MATERIALS_DETAIL = '/materials/detail/:id';
+  static const String MATERIALS_TRACKING = '/materials/tracking';
+  static const String MATERIALS_FILE_TRACKING = '/materials/file-tracking';
 }

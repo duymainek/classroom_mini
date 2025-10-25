@@ -9,6 +9,8 @@ import 'package:classroom_mini/app/data/models/response/attachment_response.dart
 import 'package:classroom_mini/app/data/models/response/auth_response.dart';
 import 'package:classroom_mini/app/data/models/response/dashboard_response.dart';
 import 'package:classroom_mini/app/data/models/response/submission_response.dart';
+import 'package:classroom_mini/app/data/models/request/material_request.dart';
+import 'package:classroom_mini/app/data/models/response/material_response.dart';
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:dio/dio.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
@@ -31,9 +33,6 @@ import 'package:classroom_mini/app/data/models/response/user_response.dart';
 import 'package:classroom_mini/app/data/models/response/profile_response.dart';
 import 'storage_service.dart';
 
-import 'package:awesome_dio_interceptor/awesome_dio_interceptor.dart';
-
-import 'package:awesome_dio_interceptor/awesome_dio_interceptor.dart';
 part 'api_service.g.dart';
 
 @RestApi(baseUrl: ApiEndpoints.baseUrl)
@@ -390,6 +389,123 @@ abstract class ApiService {
   @MultiPart()
   Future<attachment_resp.TempAttachmentResponse> uploadTempAttachment(
     @Part(name: "file") File file,
+  );
+
+  @POST('/announcements/temp-attachments')
+  @MultiPart()
+  Future<attachment_resp.TempAttachmentResponse>
+      uploadTempAnnouncementAttachment(
+    @Part(name: "file") File file,
+  );
+
+  // Assignment attachment management
+  @POST('/assignments/{assignmentId}/attachments/finalize')
+  Future<auth_response.SimpleResponse> finalizeAssignmentAttachments(
+    @Path('assignmentId') String assignmentId,
+    @Body() Map<String, dynamic> attachmentIds,
+  );
+
+  @GET('/assignments/{assignmentId}/attachments')
+  Future<attachment_resp.AttachmentListResponse> getAssignmentAttachmentsById(
+    @Path('assignmentId') String assignmentId,
+  );
+
+  @DELETE('/assignments/attachments/{attachmentId}')
+  Future<auth_response.SimpleResponse> deleteAssignmentAttachmentById(
+    @Path('attachmentId') String attachmentId,
+  );
+
+  // Announcement attachment management
+  @POST('/announcements/{announcementId}/attachments/finalize')
+  Future<auth_response.SimpleResponse> finalizeAnnouncementAttachments(
+    @Path('announcementId') String announcementId,
+    @Body() Map<String, dynamic> attachmentIds,
+  );
+
+  @GET('/announcements/{announcementId}/attachments')
+  Future<attachment_resp.AttachmentListResponse> getAnnouncementAttachments(
+    @Path('announcementId') String announcementId,
+  );
+
+  @DELETE('/announcements/attachments/{attachmentId}')
+  Future<auth_response.SimpleResponse> deleteAnnouncementAttachment(
+    @Path('attachmentId') String attachmentId,
+  );
+
+  // Material Management endpoints
+  @POST('/materials')
+  Future<MaterialResponse> createMaterial(
+      @Body() CreateMaterialRequest request);
+
+  @GET('/materials')
+  Future<MaterialResponse> getMaterials({
+    @Query('page') int page = 1,
+    @Query('limit') int limit = 20,
+    @Query('search') String search = '',
+    @Query('courseId') String? courseId,
+    @Query('sortBy') String sortBy = 'created_at',
+    @Query('sortOrder') String sortOrder = 'desc',
+  });
+
+  @GET('/materials/{materialId}')
+  Future<MaterialResponse> getMaterialById(
+      @Path('materialId') String materialId);
+
+  @PUT('/materials/{materialId}')
+  Future<MaterialResponse> updateMaterial(
+    @Path('materialId') String materialId,
+    @Body() UpdateMaterialRequest request,
+  );
+
+  @DELETE('/materials/{materialId}')
+  Future<auth_response.SimpleResponse> deleteMaterial(
+    @Path('materialId') String materialId,
+  );
+
+  @POST('/materials/{materialId}/track-view')
+  Future<auth_response.SimpleResponse> trackMaterialView(
+    @Path('materialId') String materialId,
+  );
+
+  @POST('/materials/attachments/{fileId}/track-download')
+  Future<auth_response.SimpleResponse> trackMaterialDownload(
+    @Path('fileId') String fileId,
+  );
+
+  @GET('/materials/{materialId}/tracking')
+  Future<MaterialResponse> getMaterialTracking(
+    @Path('materialId') String materialId,
+    @Query('groupId') String? groupId,
+    @Query('status') String? status,
+  );
+
+  @GET('/materials/{materialId}/file-tracking')
+  Future<MaterialResponse> getMaterialFileTracking(
+    @Path('materialId') String materialId,
+    @Query('fileId') String? fileId,
+  );
+
+  // Material attachment management
+  @POST('/materials/temp-attachments')
+  @MultiPart()
+  Future<attachment_resp.TempAttachmentResponse> uploadTempMaterialAttachment(
+    @Part() File file,
+  );
+
+  @POST('/materials/{materialId}/attachments/finalize')
+  Future<auth_response.SimpleResponse> finalizeMaterialAttachments(
+    @Path('materialId') String materialId,
+    @Body() Map<String, dynamic> attachmentIds,
+  );
+
+  @GET('/materials/{materialId}/attachments')
+  Future<attachment_resp.AttachmentListResponse> getMaterialAttachments(
+    @Path('materialId') String materialId,
+  );
+
+  @DELETE('/materials/attachments/{attachmentId}')
+  Future<auth_response.SimpleResponse> deleteMaterialAttachment(
+    @Path('attachmentId') String attachmentId,
   );
 }
 

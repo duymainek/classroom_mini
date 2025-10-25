@@ -70,13 +70,6 @@ class _EnhancedCoreManagementPageState extends State<EnhancedCoreManagementPage>
             ),
           ],
         ),
-        floatingActionButton: EnhancedFAB(
-          currentTab: controller.currentTab,
-          onSemesterCreate: () =>
-              _showCreateSemesterDialog(context, controller),
-          onCourseCreate: () => _showCreateCourseDialog(context, controller),
-          onGroupCreate: () => _showCreateGroupDialog(context, controller),
-        ),
       ),
     );
   }

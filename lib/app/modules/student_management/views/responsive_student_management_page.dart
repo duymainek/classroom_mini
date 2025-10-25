@@ -12,7 +12,6 @@ class ResponsiveStudentManagementPage
   Widget build(BuildContext context) {
     return Scaffold(
       body: _MobileView(controller: controller),
-      floatingActionButton: _FabActions(controller: controller),
     );
   }
 }

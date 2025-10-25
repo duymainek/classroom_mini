@@ -14,6 +14,7 @@ class DashboardStats {
   final int totalStudents;
   final int totalAssignments;
   final int totalQuizzes;
+  final int totalAnnouncements;
 
   const DashboardStats({
     required this.totalCourses,
@@ -21,6 +22,7 @@ class DashboardStats {
     required this.totalStudents,
     required this.totalAssignments,
     required this.totalQuizzes,
+    required this.totalAnnouncements,
   });
 
   factory DashboardStats.fromJson(Map<String, dynamic> json) =>

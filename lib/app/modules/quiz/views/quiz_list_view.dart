@@ -87,13 +87,6 @@ class QuizListView extends GetView<QuizController> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Get.toNamed(Routes.QUIZZES_CREATE),
-        icon: const Icon(Icons.add),
-        label: const Text('Create Quiz'),
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
-      ),
     );
   }
 

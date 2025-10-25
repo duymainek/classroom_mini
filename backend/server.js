@@ -16,6 +16,8 @@ const assignmentRoutes = require('./src/routes/assignments');
 const submissionRoutes = require('./src/routes/submissions');
 const profileRoutes = require('./src/routes/profile');
 const quizRoutes = require('./src/routes/quizzes');
+const announcementRoutes = require('./src/routes/announcements');
+const materialRoutes = require('./src/routes/materials');
 const fileUploadRoutes = require('./src/routes/fileUploadRoutes');
 const { errorHandler, notFoundHandler } = require('./src/middleware/errorHandler');
 const { testConnection, initializeAdminUser } = require('./src/services/supabaseClient');
@@ -98,6 +100,8 @@ app.use('/api/assignments', assignmentRoutes);
 app.use('/api/submissions', submissionRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/quizzes', quizRoutes);
+app.use('/api/announcements', announcementRoutes);
+app.use('/api/materials', materialRoutes);
 app.use('/api', fileUploadRoutes);
 
 // Root endpoint
@@ -117,7 +121,9 @@ app.get('/', (req, res) => {
       dashboard: '/api/dashboard',
       assignments: '/api/assignments',
       submissions: '/api/submissions',
-      quizzes: '/api/quizzes'
+      quizzes: '/api/quizzes',
+      announcements: '/api/announcements',
+      materials: '/api/materials'
     }
   });
 });

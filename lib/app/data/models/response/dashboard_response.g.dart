@@ -13,6 +13,7 @@ DashboardStats _$DashboardStatsFromJson(Map<String, dynamic> json) =>
       totalStudents: (json['totalStudents'] as num).toInt(),
       totalAssignments: (json['totalAssignments'] as num).toInt(),
       totalQuizzes: (json['totalQuizzes'] as num).toInt(),
+      totalAnnouncements: (json['totalAnnouncements'] as num).toInt(),
     );
 
 Map<String, dynamic> _$DashboardStatsToJson(DashboardStats instance) =>
@@ -22,6 +23,7 @@ Map<String, dynamic> _$DashboardStatsToJson(DashboardStats instance) =>
       'totalStudents': instance.totalStudents,
       'totalAssignments': instance.totalAssignments,
       'totalQuizzes': instance.totalQuizzes,
+      'totalAnnouncements': instance.totalAnnouncements,
     };
 
 ActivityLog _$ActivityLogFromJson(Map<String, dynamic> json) => ActivityLog(
