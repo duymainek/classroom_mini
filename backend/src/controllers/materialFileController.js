@@ -153,13 +153,12 @@ class MaterialFileController {
 
     try {
       console.log('Fetching temp attachments from database...');
-      // Get temp attachments for this user
+      // Get temp attachments for this user (including already finalized ones)
       const { data: tempAttachments, error: fetchError } = await supabase
         .from('temp_attachments')
         .select('*')
         .in('temp_id', tempIds)
-        .eq('user_id', userId)
-        .eq('is_finalized', false);
+        .eq('user_id', userId);
 
       console.log('Database query result:', { tempAttachments, fetchError });
 
@@ -174,6 +173,26 @@ class MaterialFileController {
           success: false,
           message: 'No valid temporary attachments found',
           code: 'TEMP_ATTACHMENTS_NOT_FOUND'
+        });
+      }
+
+      // Check if attachments are already finalized
+      const alreadyFinalized = tempAttachments.filter(ta => ta.is_finalized);
+      if (alreadyFinalized.length > 0) {
+        console.log('Some attachments already finalized:', alreadyFinalized.map(ta => ta.temp_id));
+        // Return success if already finalized
+        return res.json({
+          success: true,
+          message: 'Attachments already finalized',
+          data: {
+            attachments: alreadyFinalized.map(ta => ({
+              id: ta.id,
+              fileName: ta.file_name,
+              fileUrl: ta.file_url,
+              fileSize: ta.file_size,
+              fileType: ta.file_type
+            }))
+          }
         });
       }
 

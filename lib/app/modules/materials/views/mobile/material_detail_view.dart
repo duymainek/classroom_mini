@@ -513,7 +513,7 @@ class _MaterialDetailViewState extends State<MaterialDetailView> {
                   color: colorScheme.primary, size: 24),
               const SizedBox(width: 12),
               Text(
-                'Thống kê',
+                'Thống kê cơ bản',
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onSurface,
@@ -818,15 +818,14 @@ class _MaterialDetailViewState extends State<MaterialDetailView> {
     try {
       final Uri url = Uri.parse(file.fileUrl);
 
+      // File view tracking removed - no longer needed
+
       // Check if URL can be launched
       if (await canLaunchUrl(url)) {
         await launchUrl(
           url,
           mode: LaunchMode.externalApplication, // Mở trong browser
         );
-
-        // Track file view
-        controller.trackFileDownload(file.id);
 
         Get.snackbar(
           'Thành công',
@@ -859,15 +858,14 @@ class _MaterialDetailViewState extends State<MaterialDetailView> {
     try {
       final Uri url = Uri.parse(file.fileUrl);
 
+      // File download tracking removed - no longer needed
+
       // Check if URL can be launched
       if (await canLaunchUrl(url)) {
         await launchUrl(
           url,
           mode: LaunchMode.externalApplication, // Mở trong browser để download
         );
-
-        // Track file download
-        controller.trackFileDownload(file.id);
 
         Get.snackbar(
           'Thành công',

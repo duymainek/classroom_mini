@@ -122,7 +122,7 @@ class MaterialController {
         courses!inner(id, code, name),
         users!materials_instructor_id_fkey(id, full_name, email),
         material_attachments(id, file_name, file_url, file_size, file_type),
-        material_views(id)
+        material_views(id, view_count)
       `)
       .eq('instructor_id', instructorId)
       .eq('is_active', true);
@@ -142,7 +142,7 @@ class MaterialController {
     // Apply pagination
     query = query.range(offset, offset + limit - 1);
 
-    const { data: materials, error, count } = await query;
+    const { data: materials, error } = await query;
 
     if (error) {
       return res.status(400).json(
@@ -169,25 +169,34 @@ class MaterialController {
     const { count: totalCount } = await countQuery;
 
     // Format response
-    const formattedMaterials = materials.map(mat => ({
-      id: mat.id,
-      title: mat.title,
-      description: mat.description,
-      createdAt: mat.created_at,
-      updatedAt: mat.updated_at,
-      course: {
-        id: mat.courses.id,
-        code: mat.courses.code,
-        name: mat.courses.name
-      },
-      instructor: {
-        id: mat.users.id,
-        fullName: mat.users.full_name,
-        email: mat.users.email
-      },
-      files: mat.material_attachments || [],
-      viewCount: mat.material_views?.length || 0
-    }));
+    const formattedMaterials = materials.map(mat => {
+      // Calculate total view count by summing all view_count values
+      const totalViewCount = mat.material_views?.reduce((sum, view) => sum + (view.view_count || 0), 0) || 0;
+      console.log(`📊 Material ${mat.id} viewCount calculation:`, {
+        material_views: mat.material_views,
+        totalViewCount: totalViewCount
+      });
+      
+      return {
+        id: mat.id,
+        title: mat.title,
+        description: mat.description,
+        createdAt: mat.created_at,
+        updatedAt: mat.updated_at,
+        course: {
+          id: mat.courses.id,
+          code: mat.courses.code,
+          name: mat.courses.name
+        },
+        instructor: {
+          id: mat.users.id,
+          fullName: mat.users.full_name,
+          email: mat.users.email
+        },
+        files: mat.material_attachments || [],
+        viewCount: totalViewCount
+      };
+    });
 
     const totalPages = Math.ceil((totalCount || 0) / limit);
 
@@ -210,6 +219,63 @@ class MaterialController {
   getMaterialById = catchAsync(async (req, res) => {
     const { id } = req.params;
     const instructorId = req.user.id;
+    const userRole = req.user.role;
+
+    // Auto track view when material is accessed (for all users) - BEFORE permission check
+    try {
+      console.log(`🔍 Tracking view for material: ${id}, user: ${req.user.id}`);
+      
+      // Check if view already exists
+      const { data: existingView, error: selectError } = await supabase
+        .from('material_views')
+        .select('id, view_count')
+        .eq('material_id', id)
+        .eq('student_id', req.user.id)
+        .single();
+
+      if (selectError && selectError.code !== 'PGRST116') {
+        console.error('❌ Error checking existing view:', selectError);
+        throw selectError;
+      }
+
+      if (existingView) {
+        console.log(`📊 Updating existing view: ${existingView.view_count} -> ${existingView.view_count + 1}`);
+        // Update existing view count
+        const { error: updateError } = await supabase
+          .from('material_views')
+          .update({
+            view_count: existingView.view_count + 1,
+            viewed_at: new Date().toISOString()
+          })
+          .eq('id', existingView.id);
+
+        if (updateError) {
+          console.error('❌ Error updating view count:', updateError);
+          throw updateError;
+        }
+        console.log('✅ View count updated successfully');
+      } else {
+        console.log('🆕 Creating new view record');
+        // Create new view record
+        const { error: insertError } = await supabase
+          .from('material_views')
+          .insert({
+            material_id: id,
+            student_id: req.user.id,
+            viewed_at: new Date().toISOString(),
+            view_count: 1
+          });
+
+        if (insertError) {
+          console.error('❌ Error creating view record:', insertError);
+          throw insertError;
+        }
+        console.log('✅ New view record created successfully');
+      }
+    } catch (error) {
+      console.error('❌ Failed to track material view:', error.message);
+      // Don't fail the request if tracking fails
+    }
 
     const material = await this.getMaterialWithRelations(id);
 
@@ -257,7 +323,7 @@ class MaterialController {
     }
 
     // Update material
-    const { data: updatedMaterial, error: updateError } = await supabase
+    const { error: updateError } = await supabase
       .from('materials')
       .update({
         title,
@@ -380,304 +446,10 @@ class MaterialController {
     );
   });
 
-  /**
-   * Track material view
-   */
-  trackView = catchAsync(async (req, res) => {
-    const { id } = req.params;
-    const userId = req.user.id;
-    const userRole = req.user.role;
 
-    // Only students can track views
-    if (userRole !== 'student') {
-      return res.status(403).json(
-        buildResponse(false, 'Only students can track material views')
-      );
-    }
 
-    // Check if view already exists
-    const { data: existingView, error: fetchError } = await supabase
-      .from('material_views')
-      .select('*')
-      .eq('material_id', id)
-      .eq('student_id', userId)
-      .single();
 
-    if (existingView) {
-      // Update view count
-      const { error: updateError } = await supabase
-        .from('material_views')
-        .update({
-          view_count: existingView.view_count + 1,
-          viewed_at: new Date().toISOString()
-        })
-        .eq('id', existingView.id);
 
-      if (updateError) {
-        return res.status(400).json(
-          buildResponse(false, 'Failed to update view', null, updateError.message)
-        );
-      }
-    } else {
-      // Create new view
-      const { error: createError } = await supabase
-        .from('material_views')
-        .insert({
-          material_id: id,
-          student_id: userId,
-          viewed_at: new Date().toISOString(),
-          view_count: 1
-        });
-
-      if (createError) {
-        return res.status(400).json(
-          buildResponse(false, 'Failed to track view', null, createError.message)
-        );
-      }
-    }
-
-    res.json(
-      buildResponse(true, 'View tracked successfully')
-    );
-  });
-
-  /**
-   * Track file download
-   */
-  trackDownload = catchAsync(async (req, res) => {
-    const { fileId } = req.params;
-    const studentId = req.user.id;
-
-    // Check if download already exists
-    const { data: existingDownload, error: fetchError } = await supabase
-      .from('material_downloads')
-      .select('*')
-      .eq('file_id', fileId)
-      .eq('student_id', studentId)
-      .single();
-
-    if (existingDownload) {
-      // Update download count
-      const { error: updateError } = await supabase
-        .from('material_downloads')
-        .update({
-          download_count: existingDownload.download_count + 1,
-          downloaded_at: new Date().toISOString()
-        })
-        .eq('id', existingDownload.id);
-
-      if (updateError) {
-        return res.status(400).json(
-          buildResponse(false, 'Failed to update download', null, updateError.message)
-        );
-      }
-    } else {
-      // Create new download
-      const { error: createError } = await supabase
-        .from('material_downloads')
-        .insert({
-          file_id: fileId,
-          student_id: studentId,
-          downloaded_at: new Date().toISOString(),
-          download_count: 1
-        });
-
-      if (createError) {
-        return res.status(400).json(
-          buildResponse(false, 'Failed to track download', null, createError.message)
-        );
-      }
-    }
-
-    res.json(
-      buildResponse(true, 'Download tracked successfully')
-    );
-  });
-
-  /**
-   * Get material tracking data
-   */
-  getMaterialTracking = catchAsync(async (req, res) => {
-    const { id } = req.params;
-    const { groupId, status } = req.query;
-    const instructorId = req.user.id;
-
-    // Check if material belongs to instructor
-    const { data: material, error: materialError } = await supabase
-      .from('materials')
-      .select('id')
-      .eq('id', id)
-      .eq('instructor_id', instructorId)
-      .eq('is_active', true)
-      .single();
-
-    if (materialError || !material) {
-      return res.status(404).json(
-        buildResponse(false, 'Material not found or access denied')
-      );
-    }
-
-    // Get all students in the course
-    const { data: students, error: studentsError } = await supabase
-      .from('student_enrollments')
-      .select(`
-        users!student_enrollments_student_id_fkey(id, full_name, email),
-        groups!student_enrollments_group_id_fkey(id, name)
-      `)
-      .eq('semester_id', req.user.current_semester_id);
-
-    if (studentsError) {
-      return res.status(400).json(
-        buildResponse(false, 'Failed to fetch students', null, studentsError.message)
-      );
-    }
-
-    // Get view tracking data
-    const { data: views, error: viewsError } = await supabase
-      .from('material_views')
-      .select('student_id, viewed_at, view_count')
-      .eq('material_id', id);
-
-    if (viewsError) {
-      return res.status(400).json(
-        buildResponse(false, 'Failed to fetch view data', null, viewsError.message)
-      );
-    }
-
-    // Combine data
-    const trackingData = students.map(student => {
-      const viewData = views.find(v => v.student_id === student.users.id);
-      return {
-        student: {
-          id: student.users.id,
-          fullName: student.users.full_name,
-          email: student.users.email
-        },
-        group: {
-          id: student.groups.id,
-          name: student.groups.name
-        },
-        viewed: !!viewData,
-        viewedAt: viewData?.viewed_at,
-        viewCount: viewData?.view_count || 0
-      };
-    });
-
-    // Apply status filter
-    let filteredData = trackingData;
-    if (status === 'viewed') {
-      filteredData = trackingData.filter(item => item.viewed);
-    } else if (status === 'not_viewed') {
-      filteredData = trackingData.filter(item => !item.viewed);
-    }
-
-    res.json(
-      buildResponse(true, 'Tracking data fetched successfully', {
-        tracking: filteredData,
-        summary: {
-          total: trackingData.length,
-          viewed: trackingData.filter(item => item.viewed).length,
-          notViewed: trackingData.filter(item => !item.viewed).length
-        }
-      })
-    );
-  });
-
-  /**
-   * Get file download tracking data
-   */
-  getFileDownloadTracking = catchAsync(async (req, res) => {
-    const { id } = req.params;
-    const { fileId } = req.query;
-    const instructorId = req.user.id;
-
-    // Check if material belongs to instructor
-    const { data: material, error: materialError } = await supabase
-      .from('materials')
-      .select('id')
-      .eq('id', id)
-      .eq('instructor_id', instructorId)
-      .eq('is_active', true)
-      .single();
-
-    if (materialError || !material) {
-      return res.status(404).json(
-        buildResponse(false, 'Material not found or access denied')
-      );
-    }
-
-    // Get files for this material
-    let filesQuery = supabase
-      .from('material_attachments')
-      .select('*')
-      .eq('material_id', id);
-
-    if (fileId) {
-      filesQuery = filesQuery.eq('id', fileId);
-    }
-
-    const { data: files, error: filesError } = await filesQuery;
-
-    if (filesError) {
-      return res.status(400).json(
-        buildResponse(false, 'Failed to fetch files', null, filesError.message)
-      );
-    }
-
-    // Get download tracking for each file
-    const fileTrackingData = await Promise.all(
-      files.map(async (file) => {
-        const { data: downloads, error: downloadsError } = await supabase
-          .from('material_downloads')
-          .select(`
-            student_id,
-            downloaded_at,
-            download_count,
-            users!material_downloads_student_id_fkey(id, full_name, email)
-          `)
-          .eq('file_id', file.id);
-
-        if (downloadsError) {
-          console.error('Failed to fetch downloads for file:', file.id, downloadsError);
-          return {
-            file: {
-              id: file.id,
-              fileName: file.file_name,
-              fileSize: file.file_size,
-              fileType: file.file_type
-            },
-            downloads: [],
-            totalDownloads: 0
-          };
-        }
-
-        return {
-          file: {
-            id: file.id,
-            fileName: file.file_name,
-            fileSize: file.file_size,
-            fileType: file.file_type
-          },
-          downloads: downloads.map(download => ({
-            student: {
-              id: download.users.id,
-              fullName: download.users.full_name,
-              email: download.users.email
-            },
-            downloadedAt: download.downloaded_at,
-            downloadCount: download.download_count
-          })),
-          totalDownloads: downloads.reduce((sum, d) => sum + d.download_count, 0)
-        };
-      })
-    );
-
-    res.json(
-      buildResponse(true, 'File download tracking fetched successfully', {
-        files: fileTrackingData
-      })
-    );
-  });
 
   /**
    * Helper method to get material with all relations
@@ -690,7 +462,7 @@ class MaterialController {
         courses!inner(id, code, name),
         users!materials_instructor_id_fkey(id, full_name, email),
         material_attachments(id, file_name, file_url, file_size, file_type),
-        material_views(id)
+        material_views(id, view_count)
       `)
       .eq('id', materialId)
       .eq('is_active', true)
@@ -699,6 +471,13 @@ class MaterialController {
     if (error || !material) {
       return null;
     }
+
+    // Calculate total view count by summing all view_count values
+    const totalViewCount = material.material_views?.reduce((sum, view) => sum + (view.view_count || 0), 0) || 0;
+    console.log(`📊 Material ${materialId} viewCount calculation:`, {
+      material_views: material.material_views,
+      totalViewCount: totalViewCount
+    });
 
     return {
       id: material.id,
@@ -717,7 +496,7 @@ class MaterialController {
         email: material.users.email
       },
       files: material.material_attachments || [],
-      viewCount: material.material_views?.length || 0
+      viewCount: totalViewCount
     };
   }
 }

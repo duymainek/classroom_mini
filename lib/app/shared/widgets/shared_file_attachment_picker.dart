@@ -45,6 +45,8 @@ class _SharedFileAttachmentPickerState
       _controller.configureForAnnouncement();
     } else if (widget.tag.contains('material')) {
       _controller.configureForMaterial();
+    } else if (widget.tag.contains('forum')) {
+      _controller.configureForForum();
     }
 
     // Set up callbacks

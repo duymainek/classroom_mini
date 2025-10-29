@@ -309,38 +309,6 @@ class MaterialController extends GetxController {
   }
 
   /**
-   * Track material view
-   */
-  Future<void> trackMaterialView(String materialId) async {
-    try {
-      await _apiService.trackMaterialView(materialId);
-    } catch (e) {
-      print('Error tracking material view: $e');
-    }
-  }
-
-  /**
-   * Track material download
-   */
-  Future<void> trackMaterialDownload(String fileId) async {
-    try {
-      await _apiService.trackMaterialDownload(fileId);
-    } catch (e) {
-      print('Error tracking material download: $e');
-    }
-  }
-
-  /**
-   * Get material tracking data
-   */
-  Future<material_resp.MaterialData?> getMaterialTracking(String materialId,
-      {String? groupId, String? status}) async {
-    return (await _apiService.getMaterialTracking(
-            materialId, groupId ?? '', status ?? ''))
-        .data;
-  }
-
-  /**
    * Finalize attachments for material
    */
   Future<void> finalizeAttachments(

@@ -5,6 +5,7 @@ import 'package:classroom_mini/app/data/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
+import 'package:dio/dio.dart' as dio;
 
 /**
  * Shared File Attachment Controller
@@ -26,10 +27,11 @@ class SharedFileAttachmentController extends GetxController {
 
   static const Map<String, List<String>> supportedExtensions = {
     'documents': ['pdf', 'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'txt'],
-    'images': ['jpg', 'jpeg', 'png', 'gif'],
+    'images': ['jpg', 'jpeg', 'png', 'gif', 'webp'],
     'archives': ['zip', 'rar'],
     'videos': ['mp4', 'mov', 'avi'],
-    'code': ['py', 'c', 'cpp', 'java', 'js', 'ts', 'html', 'css'],
+    'code': ['py', 'c', 'cpp', 'java', 'js', 'ts', 'html', 'css', 'json'],
+    'spreadsheets': ['csv', 'xls', 'xlsx'],
   };
 
   /// Configure API endpoints for different modules
@@ -189,6 +191,38 @@ class SharedFileAttachmentController extends GetxController {
             'fileType': response.data.fileType,
           }
         };
+      } else if (_uploadEndpoint.contains('forum')) {
+        // Forum upload uses direct multipart upload
+        final formData = dio.FormData.fromMap({
+          'file': await dio.MultipartFile.fromFile(file.path,
+              filename: file.path.split('/').last),
+        });
+
+        final response = await DioClient.dio.post(
+          _uploadEndpoint,
+          data: formData,
+          options: dio.Options(
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          ),
+        );
+
+        if (response.statusCode == 201 && response.data['success'] == true) {
+          final data = response.data['data'];
+          return {
+            'success': true,
+            'data': {
+              'attachmentId': data['id']?.toString() ?? '',
+              'fileName': data['file_name']?.toString() ?? '',
+              'fileUrl': data['file_url']?.toString() ?? '',
+              'fileSize': data['file_size']?.toInt() ?? 0,
+              'fileType': data['file_type']?.toString() ?? '',
+            }
+          };
+        } else {
+          throw Exception('Upload failed: ${response.data['message']}');
+        }
       } else {
         throw Exception('Unsupported upload endpoint: $_uploadEndpoint');
       }
@@ -224,6 +258,16 @@ class SharedFileAttachmentController extends GetxController {
       finalizeEndpoint: '/materials/:id/attachments/finalize',
       deleteEndpoint: '/materials/attachments/:attachmentId',
       getEndpoint: '/materials/:id/attachments',
+    );
+  }
+
+  /// Configure for forum attachments
+  void configureForForum() {
+    configureEndpoints(
+      uploadEndpoint: '/forum/attachments/upload',
+      finalizeEndpoint: '/api/forum/topics/:id/attachments/finalize',
+      deleteEndpoint: '/api/forum/attachments/:attachmentId',
+      getEndpoint: '/api/forum/topics/:id/attachments',
     );
   }
 
@@ -381,6 +425,8 @@ class SharedFileAttachmentController extends GetxController {
         return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
       case 'xls':
         return 'application/vnd.ms-excel';
+      case 'csv':
+        return 'text/csv';
       case 'txt':
         return 'text/plain';
       case 'jpg':
@@ -390,6 +436,8 @@ class SharedFileAttachmentController extends GetxController {
         return 'image/png';
       case 'gif':
         return 'image/gif';
+      case 'webp':
+        return 'image/webp';
       case 'zip':
         return 'application/zip';
       case 'rar':
@@ -416,6 +464,8 @@ class SharedFileAttachmentController extends GetxController {
         return 'text/html';
       case 'css':
         return 'text/css';
+      case 'json':
+        return 'application/json';
       default:
         return 'application/octet-stream';
     }
@@ -441,8 +491,13 @@ class SharedFileAttachmentController extends GetxController {
       return 'archives';
     } else if (mimeType.startsWith('text/') ||
         mimeType.contains('javascript') ||
-        mimeType.contains('typescript')) {
+        mimeType.contains('typescript') ||
+        mimeType == 'application/json') {
       return 'code';
+    } else if (mimeType == 'text/csv' ||
+        mimeType.contains('spreadsheet') ||
+        mimeType.contains('excel')) {
+      return 'spreadsheets';
     }
     return 'other';
   }
@@ -459,6 +514,8 @@ class SharedFileAttachmentController extends GetxController {
         return Icons.video_file;
       case 'code':
         return Icons.code;
+      case 'spreadsheets':
+        return Icons.table_chart;
       default:
         return Icons.insert_drive_file;
     }
@@ -476,6 +533,8 @@ class SharedFileAttachmentController extends GetxController {
         return Colors.purple;
       case 'code':
         return Colors.teal;
+      case 'spreadsheets':
+        return Colors.indigo;
       default:
         return Colors.grey;
     }

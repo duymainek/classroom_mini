@@ -48,6 +48,12 @@ dependencies:
   
   # Icons
   cupertino_icons: ^1.0.8
+  
+  # Time formatting
+  timeago: ^3.6.1
+  
+  # File picker
+  file_picker: ^8.0.0+1
 
   # Networking/Debug
   awesome_dio_interceptor: ^1.1.0
@@ -57,7 +63,6 @@ dependencies:
   cached_network_image: ^3.3.1
 
   # Import/Export utilities
-  file_picker: ^8.0.0
   csv: ^6.0.0
   file_saver: ^0.2.14
   

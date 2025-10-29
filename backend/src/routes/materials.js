@@ -11,11 +11,6 @@ router.get('/:id', authenticateToken, materialController.getMaterialById);
 router.put('/:id', authenticateToken, materialController.updateMaterial);
 router.delete('/:id', authenticateToken, materialController.deleteMaterial);
 
-// Material tracking routes
-router.post('/:id/track-view', authenticateToken, materialController.trackView);
-router.post('/attachments/:fileId/track-download', authenticateToken, materialController.trackDownload);
-router.get('/:id/tracking', authenticateToken, materialController.getMaterialTracking);
-router.get('/:id/file-tracking', authenticateToken, materialController.getFileDownloadTracking);
 
 // Material file attachment routes
 router.post('/temp-attachments', authenticateToken, materialFileController.uploadTempAttachment);

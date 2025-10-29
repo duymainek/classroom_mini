@@ -41,6 +41,11 @@ import '../modules/materials/widgets/material_form.dart';
 import 'package:classroom_mini/app/data/models/response/material_response.dart'
     as material_resp;
 
+// Forum imports
+import '../modules/forum/bindings/forum_binding.dart';
+import '../modules/forum/views/forum_list_view.dart';
+import '../modules/forum/views/forum_detail_view.dart';
+
 class AppPages {
   static const String INITIAL = Routes.HOME;
 
@@ -352,6 +357,20 @@ class AppPages {
         return const PlaceholderPage(title: 'Theo dõi file tài liệu');
       },
       binding: MaterialBinding(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // Forum Routes
+    GetPage(
+      name: Routes.FORUM_LIST,
+      page: () => const ForumListView(),
+      binding: ForumBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: Routes.FORUM_DETAIL,
+      page: () => const ForumDetailView(),
+      binding: ForumBinding(),
       transition: Transition.rightToLeft,
     ),
   ];

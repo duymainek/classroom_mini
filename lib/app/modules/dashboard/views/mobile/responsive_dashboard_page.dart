@@ -299,18 +299,6 @@ class ResponsiveDashboardPage extends StatelessWidget {
                 Expanded(
                   child: _buildQuickActionCard(
                     context,
-                    'Tạo bài tập',
-                    Icons.assignment_outlined,
-                    Colors.orange,
-                    () {
-                      Get.toNamed(Routes.ASSIGNMENTS_CREATE);
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildQuickActionCard(
-                    context,
                     'Tất cả\n ',
                     Icons.apps_outlined,
                     Colors.purple,
@@ -427,6 +415,16 @@ class ResponsiveDashboardPage extends StatelessWidget {
                       () {
                         Navigator.of(context).pop();
                         Get.toNamed(Routes.ASSIGNMENTS_LIST);
+                      },
+                    ),
+                    _buildFeatureCard(
+                      context,
+                      'Forum',
+                      Icons.forum_outlined,
+                      Colors.indigo,
+                      () {
+                        Navigator.of(context).pop();
+                        Get.toNamed(Routes.FORUM_LIST);
                       },
                     ),
                   ],
@@ -665,7 +663,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          // Third row - 1 card for announcements
+          // Third row - 2 cards for announcements and forum
           Row(
             children: [
               Expanded(
@@ -676,6 +674,19 @@ class ResponsiveDashboardPage extends StatelessWidget {
                   Icons.announcement_outlined,
                   Colors.teal,
                   null,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildMobileStatCard(
+                  context,
+                  'Forum',
+                  '0', // TODO: Add forum stats to dashboard data
+                  Icons.forum_outlined,
+                  Colors.indigo,
+                  () {
+                    Get.toNamed(Routes.FORUM_LIST);
+                  },
                 ),
               ),
             ],
@@ -803,6 +814,12 @@ class ResponsiveDashboardPage extends StatelessWidget {
 
         // Study progress
         _buildStudyProgress(context, data),
+
+        // Quick access for students
+        const SizedBox(height: 24),
+        _buildSectionHeader(context, 'Truy cập nhanh', Icons.apps_outlined),
+        const SizedBox(height: 16),
+        _buildStudentQuickAccess(context),
       ],
     );
   }
@@ -1006,6 +1023,48 @@ class ResponsiveDashboardPage extends StatelessWidget {
                 )
               ],
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStudentQuickAccess(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildQuickActionCard(
+            context,
+            'Forum',
+            Icons.forum_outlined,
+            Colors.indigo,
+            () {
+              Get.toNamed(Routes.FORUM_LIST);
+            },
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildQuickActionCard(
+            context,
+            'Bài tập',
+            Icons.assignment_outlined,
+            Colors.orange,
+            () {
+              Get.toNamed(Routes.ASSIGNMENTS_LIST);
+            },
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildQuickActionCard(
+            context,
+            'Tài liệu',
+            Icons.folder_outlined,
+            Colors.teal,
+            () {
+              Get.toNamed(Routes.MATERIALS_LIST);
+            },
           ),
         ),
       ],

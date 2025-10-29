@@ -31,6 +31,7 @@ import 'package:classroom_mini/app/data/models/response/group_response.dart';
 import 'package:classroom_mini/app/data/models/response/semester_response.dart';
 import 'package:classroom_mini/app/data/models/response/user_response.dart';
 import 'package:classroom_mini/app/data/models/response/profile_response.dart';
+import 'package:classroom_mini/app/data/services/forum_api_service.dart';
 import 'storage_service.dart';
 
 part 'api_service.g.dart';
@@ -462,34 +463,11 @@ abstract class ApiService {
     @Path('materialId') String materialId,
   );
 
-  @POST('/materials/{materialId}/track-view')
-  Future<auth_response.SimpleResponse> trackMaterialView(
-    @Path('materialId') String materialId,
-  );
-
-  @POST('/materials/attachments/{fileId}/track-download')
-  Future<auth_response.SimpleResponse> trackMaterialDownload(
-    @Path('fileId') String fileId,
-  );
-
-  @GET('/materials/{materialId}/tracking')
-  Future<MaterialResponse> getMaterialTracking(
-    @Path('materialId') String materialId,
-    @Query('groupId') String? groupId,
-    @Query('status') String? status,
-  );
-
-  @GET('/materials/{materialId}/file-tracking')
-  Future<MaterialResponse> getMaterialFileTracking(
-    @Path('materialId') String materialId,
-    @Query('fileId') String? fileId,
-  );
-
   // Material attachment management
   @POST('/materials/temp-attachments')
   @MultiPart()
   Future<attachment_resp.TempAttachmentResponse> uploadTempMaterialAttachment(
-    @Part() File file,
+    @Part(name: "file") File file,
   );
 
   @POST('/materials/{materialId}/attachments/finalize')
@@ -856,4 +834,17 @@ class _ErrorInterceptor extends dio_pkg.Interceptor {
         return 'An error occurred. Please try again.';
     }
   }
+}
+
+/// Service wrapper that contains all API services
+class ApiServiceWrapper {
+  late final ApiService _apiService;
+  late final ForumApiService forumApiService;
+
+  ApiServiceWrapper(Dio dio) {
+    _apiService = ApiService(dio);
+    forumApiService = ForumApiService(dio);
+  }
+
+  ApiService get apiService => _apiService;
 }

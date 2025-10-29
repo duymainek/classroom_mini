@@ -322,7 +322,8 @@ class _MaterialListViewState extends State<MaterialListView> {
     }
   }
 
-  void _navigateToMaterialDetail(material_resp.Material material) {
+  void _navigateToMaterialDetail(material_resp.Material material) async {
+    // Navigate to material detail (view tracking is now handled automatically in backend)
     Get.toNamed(Routes.MATERIALS_DETAIL.replaceAll(':id', material.id));
   }
 

@@ -62,4 +62,8 @@ class Routes {
   static const String MATERIALS_DETAIL = '/materials/detail/:id';
   static const String MATERIALS_TRACKING = '/materials/tracking';
   static const String MATERIALS_FILE_TRACKING = '/materials/file-tracking';
+
+  // Forum routes
+  static const String FORUM_LIST = '/forum';
+  static const String FORUM_DETAIL = '/forum/detail/:id';
 }
