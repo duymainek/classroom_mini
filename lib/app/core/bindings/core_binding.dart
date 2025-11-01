@@ -3,6 +3,7 @@ import 'package:classroom_mini/app/core/services/auth_service.dart';
 import 'package:get/get.dart';
 import '../../data/services/api_service.dart';
 import '../../data/services/storage_service.dart';
+import '../../data/services/chat_socket_service.dart';
 
 /// Core binding for essential services that need to be available throughout the app
 class CoreBinding {
@@ -35,6 +36,9 @@ class CoreBinding {
   }
 
   Future<void> _initializeAuthService() async {
+    // Initialize ChatSocketService first (permanent singleton)
+    Get.put<ChatSocketService>(ChatSocketService(), permanent: true);
+    
     // Initialize AuthService asynchronously
     final authService = await AuthService().init();
     Get.put<AuthService>(authService, permanent: true);

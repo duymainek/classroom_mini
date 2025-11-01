@@ -4,6 +4,7 @@ import '../../dashboard/bindings/dashboard_binding.dart';
 import '../../notification/bindings/notification_binding.dart';
 import '../../profile/bindings/profile_binding.dart';
 import '../../forum/bindings/forum_binding.dart';
+import '../../chat/bindings/chat_binding.dart';
 
 class HomeBinding extends Bindings {
   @override
@@ -11,6 +12,7 @@ class HomeBinding extends Bindings {
     Get.lazyPut<HomeController>(() => HomeController());
     DashboardBinding().dependencies();
     ForumBinding().dependencies();
+    ChatBinding().dependencies();
     NotificationBinding().dependencies();
     ProfileBinding().dependencies();
   }

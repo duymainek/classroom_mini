@@ -15,17 +15,17 @@
   - Quiz Management: 100% ✅
   - **Announcement Management**: 100% ✅
   - **Material Management**: 100% ✅
+- **Forum Management**: 95% ✅ (thiếu file attachments trong replies UI)
 - **UI/UX Best Practices**: 100% ✅
 - **Technical Requirements**: 80% ✅ (thiếu deployment)
 - **Responsive Design**: 100% ✅
 
 ### ❌ CHƯA HOÀN THÀNH
-- **Forum Management**: 0% ❌
 - **Private Messaging**: 0% ❌
 - **Offline Capability**: 0% ❌
 - **Deployment**: 0% ❌
 
-### 📈 TỶ LỆ HOÀN THÀNH TỔNG THỂ: ~95%
+### 📈 TỶ LỆ HOÀN THÀNH TỔNG THỂרבע ~97%
 
 ## A. AUTHENTICATION & PROFILE
 
@@ -466,28 +466,34 @@
 
 ## E. INTERACTION & COMMUNICATION
 
-### Forum Management
+### Forum Management ✅
 
-- [ ] **Create Forum Topic**
-  - [ ] Per course
-  - [ ] Form input: topic title
-  - [ ] Form input: initial post content
-  - [ ] File attachment(s) optional
-  - [ ] Create button
-  - [ ] Success feedback
+- [x] **Create Forum Topic**
+  - [x] Per course
+  - [x] Form input: topic title
+  - [x] Form input: initial post content
+  - [x] File attachment(s) optional (shared widget ForumAttachmentChips)
+  - [x] Create button (FAB + AppBar button)
+  - [x] Success feedback
 
-- [ ] **View Forum**
-  - [ ] List all topics in course
-  - [ ] Display: title, author, date, replies count
-  - [ ] Search topics by keyword
-  - [ ] Sort by date, replies
+- [x] **View Forum**
+  - [x] List all topics in course (ForumListView with ForumTopicCard)
+  - [x] Display: title, author, date, replies count, view count
+  - [x] Search topics by keyword
+  - [x] Sort by date, replies (latest, popular, most_replied)
+  - [x] Progressive disclosure UI/UX
+  - [x] Pull-to-refresh functionality
 
-- [ ] **Participate in Discussions**
-  - [ ] View topic with all replies (threaded)
-  - [ ] Reply to posts
-  - [ ] File attachments in replies
-  - [ ] Edit own posts
-  - [ ] Delete own posts
+- [x] **Participate in Discussions**
+  - [x] View topic with all replies (threaded/nested replies support)
+  - [x] Reply to posts (ForumReplyForm)
+  - [x] Reply to replies (nested/threaded)
+  - [x] Like/unlike replies
+  - [x] Edit own posts (topic edit dialog)
+  - [x] Delete own posts (topic delete dialog)
+  - [x] Delete replies
+  - [x] View attachments in topic (ForumTopicHeader displays attachments)
+  - [ ] File attachments in replies (backend supports, UI pending)
 
 ---
 

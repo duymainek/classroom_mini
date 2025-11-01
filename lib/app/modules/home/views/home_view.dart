@@ -5,6 +5,7 @@ import '../../dashboard/views/responsive_dashboard_page.dart';
 import '../../notification/views/notification_view.dart';
 import '../../profile/views/profile_view.dart';
 import '../../forum/views/forum_list_view.dart';
+import '../../chat/views/chat_list_view.dart';
 
 class HomeView extends GetView<HomeController> {
   const HomeView({Key? key}) : super(key: key);
@@ -17,11 +18,13 @@ class HomeView extends GetView<HomeController> {
             children: const [
               ResponsiveDashboardPage(),
               ForumListView(),
+              ChatListView(),
               NotificationView(),
               ProfileView(),
             ],
           )),
       bottomNavigationBar: Obx(() => BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
             currentIndex: controller.selectedIndex.value,
             onTap: controller.changeTabIndex,
             items: const [
@@ -34,6 +37,11 @@ class HomeView extends GetView<HomeController> {
                 icon: Icon(Icons.forum_outlined),
                 activeIcon: Icon(Icons.forum),
                 label: 'Forum',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.chat_bubble_outline),
+                activeIcon: Icon(Icons.chat_bubble),
+                label: 'Chat',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.notifications_outlined),

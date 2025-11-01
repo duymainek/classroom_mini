@@ -365,6 +365,7 @@ class _ForumListViewState extends State<ForumListView>
     return ScaleTransition(
       scale: _fabScaleAnimation,
       child: FloatingActionButton.extended(
+        heroTag: 'forum_fab',
         onPressed: () => _showCreateTopicDialog(context),
         backgroundColor: ForumDesignSystem.primary,
         foregroundColor: Colors.white,

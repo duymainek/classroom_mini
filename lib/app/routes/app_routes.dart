@@ -66,4 +66,9 @@ class Routes {
   // Forum routes
   static const String FORUM_LIST = '/forum';
   static const String FORUM_DETAIL = '/forum/detail/:id';
+
+  // Chat routes
+  static const String CHAT_LIST = '/chat';
+  static const String CHAT_ROOM = '/chat/room';
+  static const String CHAT_NEW = '/chat/new';
 }

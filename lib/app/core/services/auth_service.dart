@@ -1,6 +1,7 @@
 import 'package:classroom_mini/app/data/models/response/user_response.dart';
 import 'package:get/get.dart';
 import '../../data/services/storage_service.dart';
+import '../../data/services/chat_socket_service.dart';
 import '../../routes/app_routes.dart';
 
 class AuthService extends GetxService {
@@ -25,6 +26,16 @@ class AuthService extends GetxService {
         user.value = userModel;
         isAuthenticated.value = true;
         print('[AuthService] User authenticated: true');
+        
+        // Connect to chat socket if user is authenticated
+        try {
+          if (Get.isRegistered<ChatSocketService>()) {
+            final chatSocketService = Get.find<ChatSocketService>();
+            await chatSocketService.connect(token);
+          }
+        } catch (e) {
+          print('[AuthService] Failed to connect chat socket: $e');
+        }
       } else {
         // Has token but no valid UserModel? This is an inconsistent state.
         print(
@@ -61,6 +72,17 @@ class AuthService extends GetxService {
   Future<void> logout() async {
     isAuthenticated.value = false;
     user.value = null;
+    
+    // Disconnect chat socket
+    try {
+      if (Get.isRegistered<ChatSocketService>()) {
+        final chatSocketService = Get.find<ChatSocketService>();
+        chatSocketService.disconnect();
+      }
+    } catch (e) {
+      print('Error disconnecting socket: $e');
+    }
+    
     // Also clear tokens from storage
     await _storageService.clearAll();
     // Navigate to login after logout

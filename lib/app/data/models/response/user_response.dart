@@ -7,11 +7,18 @@ class UserModel {
   final String id;
   final String username;
   final String email;
+  @JsonKey(name: 'fullName')
   final String fullName;
+  @JsonKey(name: 'isActive')
   final bool isActive;
+  @JsonKey(name: 'lastLoginAt')
   final DateTime? lastLoginAt;
+  @JsonKey(name: 'createdAt')
   final DateTime createdAt;
+  @JsonKey(name: 'updatedAt')
+  final DateTime? updatedAt;
   final String? role;
+  @JsonKey(name: 'avatarUrl')
   final String? avatarUrl;
   final String? groupId;
   final String? courseId;
@@ -26,6 +33,7 @@ class UserModel {
     this.isActive = true,
     this.lastLoginAt,
     required this.createdAt,
+    this.updatedAt,
     this.role,
     this.avatarUrl,
     this.groupId,

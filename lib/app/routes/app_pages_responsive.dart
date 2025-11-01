@@ -45,6 +45,10 @@ import 'package:classroom_mini/app/data/models/response/material_response.dart'
 import '../modules/forum/bindings/forum_binding.dart';
 import '../modules/forum/views/forum_list_view.dart';
 import '../modules/forum/views/forum_detail_view.dart';
+import '../modules/chat/views/chat_list_view.dart';
+import '../modules/chat/views/chat_room_view.dart';
+import '../modules/chat/views/new_chat_view.dart';
+import '../modules/chat/bindings/chat_binding.dart';
 
 class AppPages {
   static const String INITIAL = Routes.HOME;
@@ -371,6 +375,26 @@ class AppPages {
       name: Routes.FORUM_DETAIL,
       page: () => const ForumDetailView(),
       binding: ForumBinding(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // Chat Routes
+    GetPage(
+      name: Routes.CHAT_LIST,
+      page: () => const ChatListView(),
+      binding: ChatBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: Routes.CHAT_ROOM,
+      page: () => const ChatRoomView(),
+      binding: ChatBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.CHAT_NEW,
+      page: () => const NewChatView(),
+      binding: ChatBinding(),
       transition: Transition.rightToLeft,
     ),
   ];
