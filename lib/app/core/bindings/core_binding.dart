@@ -1,9 +1,11 @@
 import 'package:classroom_mini/app/core/app_config.dart';
-import 'package:classroom_mini/app/core/services/auth_service.dart';
 import 'package:get/get.dart';
 import '../../data/services/api_service.dart';
 import '../../data/services/storage_service.dart';
 import '../../data/services/chat_socket_service.dart';
+import '../../data/services/connectivity_service.dart';
+import '../../data/services/sync_service.dart';
+import '../../core/services/auth_service.dart';
 
 /// Core binding for essential services that need to be available throughout the app
 class CoreBinding {
@@ -13,7 +15,10 @@ class CoreBinding {
     await Future.wait([
       _initializeApiService(),
       _initializeAppConfig(),
+      _initializeConnectivityService(),
     ]);
+    // Must be after connectivity service
+    await _initializeSyncService();
     // Must be after storage service
     await _initializeAuthService();
   }
@@ -33,6 +38,14 @@ class CoreBinding {
     // Initialize StorageService asynchronously since it needs SharedPreferences
     final storageService = await StorageService.getInstance();
     Get.put<StorageService>(storageService, permanent: true);
+  }
+
+  Future<void> _initializeConnectivityService() async {
+    Get.put<ConnectivityService>(ConnectivityService(), permanent: true);
+  }
+
+  Future<void> _initializeSyncService() async {
+    Get.put<SyncService>(SyncService(), permanent: true);
   }
 
   Future<void> _initializeAuthService() async {

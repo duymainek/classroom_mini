@@ -56,7 +56,15 @@ class Quiz {
     this.questionCount,
   });
 
-  factory Quiz.fromJson(Map<String, dynamic> json) => _$QuizFromJson(json);
+  factory Quiz.fromJson(Map<String, dynamic> json) {
+    // Handle both 'questions' and 'quiz_questions' fields from backend
+    final questionsData = json['questions'] ?? json['quiz_questions'];
+    if (questionsData != null) {
+      json = Map<String, dynamic>.from(json);
+      json['questions'] = questionsData;
+    }
+    return _$QuizFromJson(json);
+  }
   Map<String, dynamic> toJson() => _$QuizToJson(this);
 }
 
@@ -114,18 +122,54 @@ class QuizQuestion {
   });
 
   factory QuizQuestion.fromJson(Map<String, dynamic> json) {
-    return QuizQuestion(
-      id: json['id'] as String,
-      quizId: (json['quiz_id'] ?? '') as String,
-      questionText: json['question_text'] as String,
-      questionType: json['question_type'] as String,
-      points: (json['points'] ?? 1) as int,
-      orderIndex: (json['order_index'] ?? 0) as int,
-      isRequired: (json['is_required'] ?? true) as bool,
-      options: (json['quiz_question_options'] as List?)
-          ?.map((e) => QuizQuestionOption.fromJson(e as Map<String, dynamic>))
-          .toList(),
-    );
+    try {
+      final quizIdValue = json['quizId'] ?? json['quiz_id'] ?? '';
+      final questionTextValue =
+          json['questionText'] ?? json['question_text'] ?? '';
+      final questionTypeValue =
+          json['questionType'] ?? json['question_type'] ?? '';
+      final pointsValue = json['points'] ?? 1;
+      final orderIndexValue = json['orderIndex'] ?? json['order_index'] ?? 0;
+      final isRequiredValue = json['isRequired'] ?? json['is_required'] ?? true;
+
+      final optionsData = json['quizQuestionOptions'] ??
+          json['quiz_question_options'] ??
+          json['options'];
+
+      List<QuizQuestionOption>? parsedOptions;
+      if (optionsData != null && optionsData is List) {
+        try {
+          parsedOptions = (optionsData as List)
+              .where((e) => e != null)
+              .map(
+                  (e) => QuizQuestionOption.fromJson(e as Map<String, dynamic>))
+              .toList();
+        } catch (e) {
+          print('⚠️ Error parsing quiz question options: $e');
+          parsedOptions = null;
+        }
+      }
+
+      return QuizQuestion(
+        id: json['id'] as String? ?? '',
+        quizId: quizIdValue.toString(),
+        questionText: questionTextValue.toString(),
+        questionType: questionTypeValue.toString(),
+        points: (pointsValue is int)
+            ? pointsValue
+            : ((pointsValue is num) ? pointsValue.toInt() : 1),
+        orderIndex: (orderIndexValue is int)
+            ? orderIndexValue
+            : ((orderIndexValue is num) ? orderIndexValue.toInt() : 0),
+        isRequired: (isRequiredValue is bool) ? isRequiredValue : true,
+        options: parsedOptions,
+      );
+    } catch (e, stackTrace) {
+      print('❌ Error parsing QuizQuestion: $e');
+      print('   JSON: $json');
+      print('   Stack: $stackTrace');
+      rethrow;
+    }
   }
   Map<String, dynamic> toJson() => _$QuizQuestionToJson(this);
 }
@@ -148,13 +192,27 @@ class QuizQuestionOption {
   });
 
   factory QuizQuestionOption.fromJson(Map<String, dynamic> json) {
-    return QuizQuestionOption(
-      id: json['id'] as String,
-      questionId: (json['question_id'] ?? '') as String,
-      optionText: json['option_text'] as String,
-      isCorrect: json['is_correct'] as bool,
-      orderIndex: json['order_index'] as int,
-    );
+    try {
+      final questionIdValue = json['questionId'] ?? json['question_id'] ?? '';
+      final optionTextValue = json['optionText'] ?? json['option_text'] ?? '';
+      final isCorrectValue = json['isCorrect'] ?? json['is_correct'] ?? false;
+      final orderIndexValue = json['orderIndex'] ?? json['order_index'] ?? 0;
+
+      return QuizQuestionOption(
+        id: json['id']?.toString() ?? '',
+        questionId: questionIdValue.toString(),
+        optionText: optionTextValue.toString(),
+        isCorrect: (isCorrectValue is bool) ? isCorrectValue : false,
+        orderIndex: (orderIndexValue is int)
+            ? orderIndexValue
+            : ((orderIndexValue is num) ? orderIndexValue.toInt() : 0),
+      );
+    } catch (e, stackTrace) {
+      print('❌ Error parsing QuizQuestionOption: $e');
+      print('   JSON: $json');
+      print('   Stack: $stackTrace');
+      rethrow;
+    }
   }
   Map<String, dynamic> toJson() => _$QuizQuestionOptionToJson(this);
 }
@@ -253,7 +311,7 @@ class UserInfo {
   UserInfo({required this.fullName});
 
   factory UserInfo.fromJson(Map<String, dynamic> json) => UserInfo(
-        fullName: json['full_name'] as String,
+        fullName: json['fullName'] ?? json['full_name'] ?? '',
       );
   Map<String, dynamic> toJson() => {
         'full_name': fullName,

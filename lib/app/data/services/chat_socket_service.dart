@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:classroom_mini/app/data/models/request/chat_request.dart';
 import 'package:classroom_mini/app/data/models/response/chat_response.dart';
 import 'package:classroom_mini/app/core/constants/api_endpoints.dart';
+import 'package:classroom_mini/app/data/services/storage_service.dart';
+import 'package:classroom_mini/app/data/services/api_service.dart';
 
 class ChatSocketService extends GetxService {
   IO.Socket? _socket;
@@ -17,9 +19,20 @@ class ChatSocketService extends GetxService {
   Function(String messageId)? onMessagesRead;
   Function(String tempId, ChatMessageResponse)? onMessageSent;
 
-  Future<void> connect(String token) async {
+  Future<void> connect(String? token) async {
     if (_socket != null && _socket!.connected) {
       print('Socket already connected');
+      return;
+    }
+
+    String? accessToken = token;
+    if (accessToken == null) {
+      final storageService = await StorageService.getInstance();
+      accessToken = await storageService.getAccessToken();
+    }
+
+    if (accessToken == null) {
+      print('No access token available for socket connection');
       return;
     }
 
@@ -29,7 +42,7 @@ class ChatSocketService extends GetxService {
       '$socketUrl/chat',
       IO.OptionBuilder()
         .setTransports(['websocket', 'polling'])
-        .setAuth({'token': token})
+        .setAuth({'token': accessToken})
         .enableAutoConnect()
         .build(),
     );
@@ -47,9 +60,62 @@ class ChatSocketService extends GetxService {
 
     _socket!.onConnectError((error) {
       print('Socket connection error: $error');
+      final errorString = error.toString().toLowerCase();
+      if (errorString.contains('token') || errorString.contains('auth') || errorString.contains('expired')) {
+        print('Socket auth error detected, attempting to refresh token and reconnect...');
+        _handleAuthError();
+      }
     });
 
     _setupGlobalListeners();
+  }
+
+  Future<void> _handleAuthError() async {
+    try {
+      print('Attempting to refresh token for socket...');
+      final storageService = await StorageService.getInstance();
+      final refreshToken = await storageService.getRefreshToken();
+
+      if (refreshToken == null) {
+        print('No refresh token available for socket');
+        return;
+      }
+
+      final refreshDio = DioClient.createCleanInstance();
+      final response = await refreshDio.post(
+        ApiEndpoints.refreshToken,
+        data: {'refreshToken': refreshToken},
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final tokens = response.data['data']['tokens'];
+        if (tokens['accessToken'] != null && tokens['refreshToken'] != null) {
+          await storageService.saveTokens(
+            tokens['accessToken'],
+            tokens['refreshToken'],
+          );
+
+          print('Token refreshed for socket, reconnecting...');
+          await reconnect();
+        }
+      }
+    } catch (e) {
+      print('Failed to refresh token for socket: $e');
+    }
+  }
+
+  Future<void> reconnect() async {
+    if (_socket != null) {
+      final currentRoom = currentRoomId.value;
+      disconnect();
+      await connect(null);
+      
+      if (currentRoom.isNotEmpty) {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          joinRoom(currentRoom);
+        });
+      }
+    }
   }
 
   void _setupGlobalListeners() {

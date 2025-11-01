@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:dio/dio.dart';
 import 'package:classroom_mini/app/data/services/api_service.dart';
 import 'package:classroom_mini/app/data/services/forum_api_service.dart';
 import 'package:classroom_mini/app/data/models/request/forum_request.dart';
@@ -43,6 +44,13 @@ class ForumService extends GetxService {
       print('  - success: ${response.success}');
       print('  - data: ${response.data}');
       print('  - message: ${response.message}');
+
+      final dynamic responseWithExtra = response;
+      try {
+        final dio = Get.find<ApiServiceWrapper>().apiService;
+        final dioClient = DioClient.dio;
+        responseWithExtra.rawResponse = null;
+      } catch (_) {}
 
       return response;
     } catch (e, stackTrace) {

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:classroom_mini/app/data/models/response/forum_response.dart';
 import 'package:classroom_mini/app/core/utils/timeago.dart';
 import 'package:classroom_mini/app/modules/forum/design/forum_design_system.dart';
 import 'package:classroom_mini/app/modules/forum/widgets/forum_attachment_chips.dart';
+import 'package:classroom_mini/app/modules/forum/controllers/forum_controller.dart';
 
 /**
  * Enhanced Forum Topic Card Widget
@@ -123,42 +125,60 @@ class _ForumTopicCardState extends State<ForumTopicCard>
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Topic status indicators
-        if (widget.topic.isPinned) ...[
-          _buildStatusChip(
-            context,
-            icon: Icons.push_pin,
-            label: 'Pinned',
-            color: ForumDesignSystem.warning,
-          ),
-          SizedBox(width: ForumDesignSystem.spacingSM),
-        ],
-        if (widget.topic.isLocked) ...[
-          _buildStatusChip(
-            context,
-            icon: Icons.lock,
-            label: 'Locked',
-            color: ForumDesignSystem.error,
-          ),
-          SizedBox(width: ForumDesignSystem.spacingSM),
-        ],
-
-        // Title with proper hierarchy
-        Expanded(
-          child: Text(
-            widget.topic.title,
-            style: ForumDesignSystem.subheadingStyle.copyWith(
-              color: ForumDesignSystem.getTextColor(context),
+    final controller = Get.find<ForumController>();
+    final isPending = controller.isTopicPending(widget.topic.id);
+    
+    return Obx(() {
+      final stillPending = controller.isTopicPending(widget.topic.id);
+      
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Pending sync indicator
+          if (stillPending) ...[
+            _buildStatusChip(
+              context,
+              icon: Icons.cloud_upload_outlined,
+              label: 'Đang chờ đồng bộ',
+              color: Colors.orange,
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+            SizedBox(width: ForumDesignSystem.spacingSM),
+          ],
+          
+          // Topic status indicators
+          if (widget.topic.isPinned) ...[
+            _buildStatusChip(
+              context,
+              icon: Icons.push_pin,
+              label: 'Pinned',
+              color: ForumDesignSystem.warning,
+            ),
+            SizedBox(width: ForumDesignSystem.spacingSM),
+          ],
+          if (widget.topic.isLocked) ...[
+            _buildStatusChip(
+              context,
+              icon: Icons.lock,
+              label: 'Locked',
+              color: ForumDesignSystem.error,
+            ),
+            SizedBox(width: ForumDesignSystem.spacingSM),
+          ],
+
+          // Title with proper hierarchy
+          Expanded(
+            child: Text(
+              widget.topic.title,
+              style: ForumDesignSystem.subheadingStyle.copyWith(
+                color: ForumDesignSystem.getTextColor(context),
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
 
   Widget _buildContentPreview(BuildContext context) {

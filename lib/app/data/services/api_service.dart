@@ -32,6 +32,10 @@ import 'package:classroom_mini/app/data/models/response/semester_response.dart';
 import 'package:classroom_mini/app/data/models/response/user_response.dart';
 import 'package:classroom_mini/app/data/models/response/profile_response.dart';
 import 'package:classroom_mini/app/data/services/forum_api_service.dart';
+import 'package:classroom_mini/app/data/network/interceptors/offline_interceptor.dart';
+import 'package:classroom_mini/app/data/network/interceptors/cache_interceptor.dart';
+import 'package:classroom_mini/app/data/local/cache_manager.dart';
+import 'package:classroom_mini/app/data/local/sync_queue_manager.dart';
 import 'storage_service.dart';
 
 part 'api_service.g.dart';
@@ -490,6 +494,16 @@ abstract class ApiService {
 class DioClient {
   static dio_pkg.Dio? _dio;
   static ApiService? _apiService;
+  static bool _cacheInitialized = false;
+
+  static Future<void> initCache() async {
+    if (!_cacheInitialized) {
+      await CacheManager.init();
+      await SyncQueueManager.init();
+      _cacheInitialized = true;
+      print('✅ Cache and sync queue initialized');
+    }
+  }
 
   static dio_pkg.Dio get dio {
     _dio ??= _createDio();
@@ -510,9 +524,11 @@ class DioClient {
     dio.options.receiveTimeout = const Duration(seconds: 30);
     dio.options.sendTimeout = const Duration(seconds: 30);
 
-    // Add interceptors
+    // Add interceptors (ORDER MATTERS!)
     dio.interceptors.addAll([
       _AuthInterceptor(),
+      OfflineInterceptor(),
+      CacheInterceptor(),
       PrettyDioLogger(
           requestHeader: true,
           requestBody: true,
@@ -527,6 +543,32 @@ class DioClient {
 
   static void updateBaseUrl(String newBaseUrl) {
     dio.options.baseUrl = newBaseUrl;
+  }
+
+  static dio_pkg.Dio createCleanInstance() {
+    final cleanDio = dio_pkg.Dio();
+    cleanDio.options.baseUrl = dio.options.baseUrl;
+    cleanDio.options.connectTimeout = dio.options.connectTimeout;
+    cleanDio.options.receiveTimeout = dio.options.receiveTimeout;
+    cleanDio.options.sendTimeout = dio.options.sendTimeout;
+    return cleanDio;
+  }
+
+  static Future<void> clearCache(String path,
+      [Map<String, dynamic>? queryParams]) async {
+    await CacheManager.clear(path, queryParams);
+  }
+
+  static Future<void> clearAllCache() async {
+    await CacheManager.clearAll();
+  }
+
+  static Future<void> clearCacheByPattern(String pattern) async {
+    await CacheManager.clearByPathPattern(pattern);
+  }
+
+  static Map<String, dynamic> getCacheStats() {
+    return CacheManager.getStats();
   }
 }
 
@@ -621,6 +663,13 @@ class _AuthInterceptor extends dio_pkg.Interceptor {
       if (_isRefreshing) {
         _requestsQueue.add(() async {
           try {
+            // Wait a bit for refresh to complete
+            int attempts = 0;
+            while (_isRefreshing && attempts < 10) {
+              await Future.delayed(const Duration(milliseconds: 100));
+              attempts++;
+            }
+
             final storageService = await StorageService.getInstance();
             final newToken = await storageService.getAccessToken();
 
@@ -636,12 +685,13 @@ class _AuthInterceptor extends dio_pkg.Interceptor {
                 data: requestOptions.data,
                 queryParameters: requestOptions.queryParameters,
               );
-              handler.resolve(response);
+              return handler.resolve(response);
             } else {
-              handler.next(err);
+              return handler.next(err);
             }
           } catch (e) {
-            handler.next(err);
+            AppLogger.error('Error retrying queued request', error: e);
+            return handler.next(err);
           }
         });
         return;
@@ -671,7 +721,9 @@ class _AuthInterceptor extends dio_pkg.Interceptor {
             );
 
             // Process queued requests
-            _processQueue();
+            _processQueue().catchError((e) {
+              AppLogger.error('Error processing request queue', error: e);
+            });
 
             handler.resolve(response);
             return;
@@ -705,10 +757,8 @@ class _AuthInterceptor extends dio_pkg.Interceptor {
       AppLogger.info('Attempting to refresh token...');
 
       // Create a new Dio instance to avoid interceptor loops
-      final refreshDio = dio_pkg.Dio();
-      refreshDio.options.baseUrl = ApiEndpoints.baseUrl;
-      refreshDio.options.connectTimeout = const Duration(seconds: 30);
-      refreshDio.options.receiveTimeout = const Duration(seconds: 30);
+      // Sử dụng DioClient để tạo instance sạch (không có interceptors)
+      final refreshDio = DioClient.createCleanInstance();
 
       // Add logging for refresh request
       refreshDio.interceptors.add(dio_pkg.LogInterceptor(
@@ -762,12 +812,18 @@ class _AuthInterceptor extends dio_pkg.Interceptor {
     }
   }
 
-  void _processQueue() {
-    final queue = List<Function>.from(_requestsQueue);
-    _requestsQueue.clear();
+  Future<void> _processQueue() async {
+    while (_requestsQueue.isNotEmpty) {
+      final queue = List<Function>.from(_requestsQueue);
+      _requestsQueue.clear();
 
-    for (final request in queue) {
-      request();
+      for (final request in queue) {
+        try {
+          await request();
+        } catch (e) {
+          AppLogger.error('Error processing queued request', error: e);
+        }
+      }
     }
   }
 

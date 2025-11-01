@@ -6,6 +6,7 @@ import '../../notification/views/notification_view.dart';
 import '../../profile/views/profile_view.dart';
 import '../../forum/views/forum_list_view.dart';
 import '../../chat/views/chat_list_view.dart';
+import '../../../../app/shared/widgets/sync_status_bar.dart';
 
 class HomeView extends GetView<HomeController> {
   const HomeView({Key? key}) : super(key: key);
@@ -13,16 +14,23 @@ class HomeView extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Obx(() => IndexedStack(
-            index: controller.selectedIndex.value,
-            children: const [
-              ResponsiveDashboardPage(),
-              ForumListView(),
-              ChatListView(),
-              NotificationView(),
-              ProfileView(),
-            ],
-          )),
+      body: Column(
+        children: [
+          const SyncStatusBar(),
+          Expanded(
+            child: Obx(() => IndexedStack(
+                  index: controller.selectedIndex.value,
+                  children: const [
+                    ResponsiveDashboardPage(),
+                    ForumListView(),
+                    ChatListView(),
+                    NotificationView(),
+                    ProfileView(),
+                  ],
+                )),
+          ),
+        ],
+      ),
       bottomNavigationBar: Obx(() => BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
             currentIndex: controller.selectedIndex.value,

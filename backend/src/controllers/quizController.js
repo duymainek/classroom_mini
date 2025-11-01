@@ -223,8 +223,33 @@ class QuizController {
       .eq('id', newQuiz.id)
       .single();
 
+    // Format quiz response with proper field names
+    const formattedQuiz = {
+      ...formatQuizResponse(quizWithGroups),
+      quizGroups: (quizWithGroups.quiz_groups || []).map(qg => ({
+        id: qg.id,
+        quizId: qg.quiz_id,
+        groupId: qg.group_id,
+        groups: qg.groups
+      })),
+      questions: (quizWithGroups.quiz_questions || []).map(q => ({
+        id: q.id,
+        quizId: q.quiz_id,
+        questionText: q.question_text,
+        questionType: q.question_type,
+        points: q.points,
+        orderIndex: q.order_index,
+        isRequired: q.is_required,
+        createdAt: q.created_at,
+        updatedAt: q.updated_at,
+        quiz_question_options: q.quiz_question_options || []
+      })),
+      course: quizWithGroups.courses,
+      instructor: quizWithGroups.users || null
+    };
+
     res.status(201).json(
-      buildResponse(true, 'Quiz created successfully', { quiz: quizWithGroups })
+      buildResponse(true, 'Quiz created successfully', { quiz: formattedQuiz })
     );
   });
 
@@ -415,7 +440,27 @@ class QuizController {
       throw new AppError('Quiz not found', 404, 'QUIZ_NOT_FOUND');
     }
 
-    res.json(buildResponse(true, undefined, { quiz }));
+    // Format quiz response with proper field names
+    const formattedQuiz = {
+      ...formatQuizResponse(quiz),
+      quizGroups: quiz.quiz_groups || [],
+      questions: (quiz.quiz_questions || []).map(q => ({
+        id: q.id,
+        quizId: q.quiz_id,
+        questionText: q.question_text,
+        questionType: q.question_type,
+        points: q.points,
+        orderIndex: q.order_index,
+        isRequired: q.is_required,
+        createdAt: q.created_at,
+        updatedAt: q.updated_at,
+        quiz_question_options: q.quiz_question_options || []
+      })),
+      course: quiz.courses,
+      instructor: quiz.users
+    };
+
+    res.json(buildResponse(true, undefined, { quiz: formattedQuiz }));
   });
 
   /**

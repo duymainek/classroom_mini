@@ -2,7 +2,6 @@ import 'package:classroom_mini/app/data/models/response/assignment_response.dart
 import 'package:get/get.dart';
 import 'package:dio/dio.dart';
 import 'api_service.dart';
-import 'storage_service.dart';
 
 /**
  * Model đơn giản cho group response từ API
@@ -41,28 +40,7 @@ class MetadataService extends GetxService {
   final ApiService _apiService;
   final Dio _dio;
 
-  MetadataService(this._apiService) : _dio = Dio() {
-    _dio.options.baseUrl = 'http://localhost:3131';
-    _dio.options.connectTimeout = const Duration(seconds: 30);
-    _dio.options.receiveTimeout = const Duration(seconds: 30);
-
-    // Thêm auth interceptor
-    _dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) async {
-        // Lấy token từ storage
-        try {
-          final storageService = Get.find<StorageService>();
-          final token = await storageService.getAccessToken();
-          if (token != null) {
-            options.headers['Authorization'] = 'Bearer $token';
-          }
-        } catch (e) {
-          // Ignore nếu không có token
-        }
-        handler.next(options);
-      },
-    ));
-  }
+  MetadataService(this._apiService) : _dio = DioClient.dio;
 
   /**
    * Load danh sách courses cho form
@@ -107,7 +85,7 @@ class MetadataService extends GetxService {
     try {
       // Gọi API trực tiếp để tránh lỗi cast model
       final response = await _dio.get(
-        '/api/groups/course/$courseId',
+        '/groups/course/$courseId',
         queryParameters: {
           'page': 1,
           'limit': 200,

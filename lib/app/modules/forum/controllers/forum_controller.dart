@@ -1,6 +1,9 @@
 import 'package:get/get.dart';
 import 'package:classroom_mini/app/data/services/forum_service.dart';
 import 'package:classroom_mini/app/data/models/response/forum_response.dart';
+import 'package:classroom_mini/app/data/services/sync_service.dart';
+import 'package:classroom_mini/app/data/local/sync_queue_manager.dart';
+import 'package:classroom_mini/app/data/network/interceptors/offline_interceptor.dart';
 
 /**
  * Forum Controller
@@ -8,12 +11,16 @@ import 'package:classroom_mini/app/data/models/response/forum_response.dart';
  */
 class ForumController extends GetxController {
   final ForumService _forumService = Get.find<ForumService>();
+  final SyncService _syncService = Get.find<SyncService>();
 
   // State
   final topics = <ForumTopic>[].obs;
   final isLoading = false.obs;
   final isLoadingMore = false.obs;
   final hasMore = true.obs;
+  
+  // Track pending operations: queueId -> topicId mapping
+  final pendingTopicQueueIds = <String, String>{}.obs;
 
   // Filters
   final selectedSort = 'latest'.obs; // latest, popular, most_replied
@@ -27,6 +34,25 @@ class ForumController extends GetxController {
   void onInit() {
     super.onInit();
     loadTopics();
+    _setupSyncListener();
+  }
+  
+  void _setupSyncListener() {
+    ever(_syncService.completedQueueIds, (Set<String> completed) {
+      pendingTopicQueueIds.removeWhere((queueId, topicId) {
+        if (completed.contains(queueId)) {
+          return true;
+        }
+        if (!_syncService.isQueueIdPending(queueId)) {
+          return true;
+        }
+        return false;
+      });
+    });
+  }
+  
+  bool isTopicPending(String topicId) {
+    return pendingTopicQueueIds.values.contains(topicId);
   }
 
   /// Load initial topics
@@ -163,13 +189,46 @@ class ForumController extends GetxController {
       print('🔍 [ForumController] Create topic response:');
       print('  - success: ${response.success}');
       print('  - data: ${response.data}');
+      
+      String? queueId;
+      try {
+        queueId = PendingOperationTracker.getLatestQueueIdForPath('/forum/topics');
+        if (queueId == null) {
+          final pending = SyncQueueManager.getPending();
+          final latestPending = pending.where((op) => 
+            op.method == 'POST' && 
+            op.path.contains('/forum/topics') &&
+            op.data?['title'] == title
+          ).toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          
+          if (latestPending.isNotEmpty) {
+            queueId = latestPending.first.id;
+            PendingOperationTracker.setQueueIdForPath('/forum/topics', queueId);
+          }
+        }
+        print('📴 Found pending topic queueId: $queueId');
+      } catch (e) {
+        print('⚠️ Error checking pending operations: $e');
+      }
 
       if (response.success && response.data != null) {
         print('🔍 [ForumController] Inserting new topic at index 0...');
         topics.insert(0, response.data!);
+        
+        if (queueId != null) {
+          pendingTopicQueueIds[queueId] = response.data!.id;
+          print('📴 Tracking pending topic: ${response.data!.id} -> $queueId');
+        }
+        
         print(
             '🔍 [ForumController] Topic inserted. Total topics: ${topics.length}');
-        Get.snackbar('Success', 'Topic created successfully');
+        
+        if (queueId != null) {
+          Get.snackbar('Đã lưu', 'Chủ đề đã được lưu và sẽ được đồng bộ khi có mạng');
+        } else {
+          Get.snackbar('Success', 'Topic created successfully');
+        }
       } else {
         print('❌ [ForumController] Create topic failed or data is null');
       }

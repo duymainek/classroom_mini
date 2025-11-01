@@ -109,5 +109,8 @@ function formatQuizSubmissionResponse(submission) {
 }
 
 module.exports = {
-  calculateQuizSubmissionStatus
+  calculateQuizSubmissionStatus,
+  formatQuizResponse,
+  formatQuestionResponse,
+  formatQuizSubmissionResponse
 };

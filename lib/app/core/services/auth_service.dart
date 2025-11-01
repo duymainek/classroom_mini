@@ -35,6 +35,15 @@ class AuthService extends GetxService {
           }
         } catch (e) {
           print('[AuthService] Failed to connect chat socket: $e');
+          // Try to reconnect with fresh token if connect fails
+          try {
+            if (Get.isRegistered<ChatSocketService>()) {
+              final chatSocketService = Get.find<ChatSocketService>();
+              await chatSocketService.connect(null); // Will fetch token from storage
+            }
+          } catch (e2) {
+            print('[AuthService] Failed to reconnect chat socket: $e2');
+          }
         }
       } else {
         // Has token but no valid UserModel? This is an inconsistent state.

@@ -1,6 +1,11 @@
+import 'dart:async';
 import 'package:get/get.dart';
 import 'package:classroom_mini/app/data/services/forum_service.dart';
 import 'package:classroom_mini/app/data/models/response/forum_response.dart';
+import 'package:classroom_mini/app/data/services/sync_service.dart';
+import 'package:classroom_mini/app/data/local/sync_queue_manager.dart';
+import 'package:classroom_mini/app/data/network/interceptors/offline_interceptor.dart';
+import 'package:classroom_mini/app/core/services/auth_service.dart';
 
 /**
  * Forum Detail Controller
@@ -8,12 +13,17 @@ import 'package:classroom_mini/app/data/models/response/forum_response.dart';
  */
 class ForumDetailController extends GetxController {
   final ForumService _forumService = Get.find<ForumService>();
+  final SyncService _syncService = Get.find<SyncService>();
+  final AuthService _authService = Get.find<AuthService>();
 
   // State
   final Rxn<ForumTopic> topic = Rxn<ForumTopic>();
   final replies = <ForumReply>[].obs;
   final isLoading = false.obs;
   final isPostingReply = false.obs;
+  
+  // Track pending operations: queueId -> replyId mapping
+  final pendingReplyQueueIds = <String, String>{}.obs;
 
   // Reply input
   final replyContent = ''.obs;
@@ -28,6 +38,54 @@ class ForumDetailController extends GetxController {
     if (topicId != null) {
       loadTopicDetail();
     }
+    _setupSyncListener();
+  }
+  
+  void _setupSyncListener() {
+    ever(_syncService.completedQueueIds, (Set<String> completed) async {
+      final completedQueueIds = completed.toSet();
+      
+      // Check if any completed queueIds are for replies in current topic
+      final shouldReload = pendingReplyQueueIds.keys.any((queueId) => 
+        completedQueueIds.contains(queueId)
+      );
+      
+      // Remove completed queueIds from tracking
+      pendingReplyQueueIds.removeWhere((queueId, replyId) {
+        if (completedQueueIds.contains(queueId)) {
+          return true;
+        }
+        if (!_syncService.isQueueIdPending(queueId)) {
+          return true;
+        }
+        return false;
+      });
+      
+      // Reload topic detail to get real replies after sync
+      // This will automatically replace optimistic replies with real ones
+      if (shouldReload && topicId != null) {
+        print('🔄 Reloading topic detail after successful sync');
+        Future.delayed(const Duration(milliseconds: 500), () {
+          loadTopicDetail();
+        });
+      }
+    });
+  }
+  
+  bool isReplyPending(String replyId) {
+    return pendingReplyQueueIds.values.contains(replyId);
+  }
+  
+  void _trackViewAsync(String topicId) {
+    _forumService.trackTopicView(topicId).then((success) {
+      if (success) {
+        print('✅ View tracked successfully');
+      } else {
+        print('⚠️ View tracking returned false');
+      }
+    }, onError: (error, stackTrace) {
+      print('⚠️ Failed to track view: $error');
+    });
   }
 
   /// Load topic with replies
@@ -35,10 +93,10 @@ class ForumDetailController extends GetxController {
     isLoading.value = true;
 
     try {
-      // Track view
-      await _forumService.trackTopicView(topicId!);
+      // Track view async (fire and forget, will be queued if offline)
+      _trackViewAsync(topicId!);
 
-      // Get topic detail with replies
+      // Get topic detail with replies (should use cache if available)
       final response = await _forumService.getTopicById(topicId!);
 
       if (response.success && response.data != null) {
@@ -66,26 +124,134 @@ class ForumDetailController extends GetxController {
 
     isPostingReply.value = true;
 
+    final replyText = replyContent.value.trim();
+    final now = DateTime.now();
+    final currentUser = _authService.user.value;
+
+    if (currentUser == null) {
+      Get.snackbar('Error', 'User information not available');
+      isPostingReply.value = false;
+      return;
+    }
+
+    // Create optimistic reply immediately
+    final optimisticReplyId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final optimisticReply = ForumReply(
+      id: optimisticReplyId,
+      topicId: topicId!,
+      parentReplyId: replyingTo.value?.id,
+      content: replyText,
+      author: ForumAuthor(
+        id: currentUser.id,
+        fullName: currentUser.fullName,
+        avatarUrl: currentUser.avatarUrl,
+        role: currentUser.role,
+      ),
+      likeCount: 0,
+      isLiked: false,
+      createdAt: now,
+      updatedAt: now,
+      attachments: null,
+      replies: null,
+    );
+
+    // Add optimistic reply to UI immediately
+    if (replyingTo.value != null) {
+      final parentIndex =
+          replies.indexWhere((r) => r.id == replyingTo.value!.id);
+      if (parentIndex != -1) {
+        final updatedParent = replies[parentIndex];
+        final updatedReplies =
+            List<ForumReply>.from(updatedParent.replies ?? []);
+        updatedReplies.add(optimisticReply);
+
+        replies[parentIndex] = ForumReply(
+          id: updatedParent.id,
+          topicId: updatedParent.topicId,
+          parentReplyId: updatedParent.parentReplyId,
+          content: updatedParent.content,
+          author: updatedParent.author,
+          likeCount: updatedParent.likeCount,
+          isLiked: updatedParent.isLiked,
+          createdAt: updatedParent.createdAt,
+          updatedAt: updatedParent.updatedAt,
+          attachments: updatedParent.attachments,
+          replies: updatedReplies,
+        );
+      }
+    } else {
+      replies.add(optimisticReply);
+    }
+
+    // Clear input immediately for better UX
+    replyContent.value = '';
+    final replyingToParent = replyingTo.value;
+    replyingTo.value = null;
+
+    // Update reply count optimistically
+    if (topic.value != null) {
+      topic.value = ForumTopic(
+        id: topic.value!.id,
+        title: topic.value!.title,
+        content: topic.value!.content,
+        author: topic.value!.author,
+        replyCount: topic.value!.replyCount + 1,
+        viewCount: topic.value!.viewCount,
+        isPinned: topic.value!.isPinned,
+        isLocked: topic.value!.isLocked,
+        createdAt: topic.value!.createdAt,
+        updatedAt: topic.value!.updatedAt,
+        attachments: topic.value!.attachments,
+      );
+    }
+
+    isPostingReply.value = false;
+
     try {
+      // Call API (will be queued if offline)
       final response = await _forumService.addReply(
         topicId: topicId!,
-        content: replyContent.value.trim(),
-        parentReplyId: replyingTo.value?.id,
+        content: replyText,
+        parentReplyId: replyingToParent?.id,
       );
 
+      String? queueId;
+      try {
+        queueId = PendingOperationTracker.getLatestQueueIdForPath('/forum/topics/$topicId/replies');
+        if (queueId == null) {
+          final pending = SyncQueueManager.getPending();
+          final latestPending = pending.where((op) =>
+              op.method == 'POST' &&
+              op.path.contains('/forum/topics/$topicId/replies') &&
+              op.data?['content'] == replyText).toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+          if (latestPending.isNotEmpty) {
+            queueId = latestPending.first.id;
+            PendingOperationTracker.setQueueIdForPath(
+                '/forum/topics/$topicId/replies', queueId);
+          }
+        }
+        print('📴 Found pending reply queueId: $queueId');
+      } catch (e) {
+        print('⚠️ Error checking pending operations: $e');
+      }
+
+      // If response has data (online success), replace optimistic reply
       if (response.success && response.data != null) {
-        // Add reply to list
-        if (replyingTo.value != null) {
-          // Nested reply - find parent and add to its replies
+        final realReply = response.data!;
+
+        // Remove optimistic reply
+        if (replyingToParent != null) {
           final parentIndex =
-              replies.indexWhere((r) => r.id == replyingTo.value!.id);
+              replies.indexWhere((r) => r.id == replyingToParent.id);
           if (parentIndex != -1) {
             final updatedParent = replies[parentIndex];
             final updatedReplies =
                 List<ForumReply>.from(updatedParent.replies ?? []);
-            updatedReplies.add(response.data!);
+            updatedReplies.removeWhere((r) => r.id == optimisticReplyId);
+            updatedReplies.add(realReply);
 
-            // Update parent with new nested reply
             replies[parentIndex] = ForumReply(
               id: updatedParent.id,
               topicId: updatedParent.topicId,
@@ -101,22 +267,84 @@ class ForumDetailController extends GetxController {
             );
           }
         } else {
-          // Top-level reply
-          replies.add(response.data!);
+          replies.removeWhere((r) => r.id == optimisticReplyId);
+          replies.add(realReply);
         }
 
-        // Clear input
-        replyContent.value = '';
-        replyingTo.value = null;
+        Get.snackbar('Success', 'Reply posted successfully');
+      } else {
+        // Offline case - track optimistic reply with queueId
+        if (queueId != null) {
+          pendingReplyQueueIds[queueId] = optimisticReplyId;
+          print('📴 Tracking pending optimistic reply: $optimisticReplyId -> $queueId');
+          Get.snackbar(
+              'Đã lưu', 'Phản hồi đã được lưu và sẽ được đồng bộ khi có mạng');
+        }
+      }
+    } catch (e) {
+      // Error case - still show optimistic reply but with pending status
+      String? queueId;
+      try {
+        queueId = PendingOperationTracker.getLatestQueueIdForPath('/forum/topics/$topicId/replies');
+        if (queueId == null) {
+          final pending = SyncQueueManager.getPending();
+          final latestPending = pending.where((op) =>
+              op.method == 'POST' &&
+              op.path.contains('/forum/topics/$topicId/replies') &&
+              op.data?['content'] == replyText).toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-        // Update reply count
+          if (latestPending.isNotEmpty) {
+            queueId = latestPending.first.id;
+            PendingOperationTracker.setQueueIdForPath(
+                '/forum/topics/$topicId/replies', queueId);
+          }
+        }
+      } catch (e2) {
+        print('⚠️ Error checking pending operations: $e2');
+      }
+
+      if (queueId != null) {
+        pendingReplyQueueIds[queueId] = optimisticReplyId;
+        Get.snackbar(
+            'Đã lưu', 'Phản hồi đã được lưu và sẽ được đồng bộ khi có mạng');
+      } else {
+        // If no queueId found, remove optimistic reply since it failed
+        if (replyingToParent != null) {
+          final parentIndex =
+              replies.indexWhere((r) => r.id == replyingToParent.id);
+          if (parentIndex != -1) {
+            final updatedParent = replies[parentIndex];
+            final updatedReplies =
+                List<ForumReply>.from(updatedParent.replies ?? []);
+            updatedReplies.removeWhere((r) => r.id == optimisticReplyId);
+
+            replies[parentIndex] = ForumReply(
+              id: updatedParent.id,
+              topicId: updatedParent.topicId,
+              parentReplyId: updatedParent.parentReplyId,
+              content: updatedParent.content,
+              author: updatedParent.author,
+              likeCount: updatedParent.likeCount,
+              isLiked: updatedParent.isLiked,
+              createdAt: updatedParent.createdAt,
+              updatedAt: updatedParent.updatedAt,
+              attachments: updatedParent.attachments,
+              replies: updatedReplies,
+            );
+          }
+        } else {
+          replies.removeWhere((r) => r.id == optimisticReplyId);
+        }
+
+        // Revert reply count
         if (topic.value != null) {
           topic.value = ForumTopic(
             id: topic.value!.id,
             title: topic.value!.title,
             content: topic.value!.content,
             author: topic.value!.author,
-            replyCount: topic.value!.replyCount + 1,
+            replyCount: topic.value!.replyCount - 1,
             viewCount: topic.value!.viewCount,
             isPinned: topic.value!.isPinned,
             isLocked: topic.value!.isLocked,
@@ -126,12 +354,8 @@ class ForumDetailController extends GetxController {
           );
         }
 
-        Get.snackbar('Success', 'Reply posted successfully');
+        Get.snackbar('Error', 'Failed to post reply: $e');
       }
-    } catch (e) {
-      Get.snackbar('Error', 'Failed to post reply: $e');
-    } finally {
-      isPostingReply.value = false;
     }
   }
 

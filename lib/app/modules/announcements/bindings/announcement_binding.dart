@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import 'package:dio/dio.dart';
 import 'package:classroom_mini/app/data/services/api_service.dart';
 import 'package:classroom_mini/app/data/services/announcement_api_service.dart';
 import 'package:classroom_mini/app/modules/announcements/controllers/announcement_controller.dart';
@@ -7,17 +6,15 @@ import 'package:classroom_mini/app/modules/announcements/controllers/announcemen
 class AnnouncementBinding extends Bindings {
   @override
   void dependencies() {
-    // Đăng ký Dio instance (singleton)
-    Get.lazyPut<Dio>(() => Dio());
-
+    // Sử dụng DioClient.dio thay vì tự init Dio
     // Đăng ký ApiService (retrofit)
     Get.lazyPut<ApiService>(
-      () => ApiService(Get.find<Dio>()),
+      () => ApiService(DioClient.dio),
     );
 
     // Đăng ký AnnouncementApiService
     Get.lazyPut<AnnouncementApiService>(
-      () => AnnouncementApiService(Get.find<Dio>()),
+      () => AnnouncementApiService(DioClient.dio),
     );
 
     // Đăng ký AnnouncementController

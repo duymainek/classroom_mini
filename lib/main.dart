@@ -1,6 +1,6 @@
 // @dart=3.0
 import 'package:classroom_mini/app/core/services/auth_service.dart';
-import 'package:flutter_gemini/flutter_gemini.dart'; // Import flutter_gemini
+import 'package:flutter_gemini/flutter_gemini.dart';
 import 'dart:ui' as ui show TextDirection;
 import 'package:classroom_mini/app/core/bindings/core_binding.dart';
 import 'package:classroom_mini/app/core/app_binding.dart';
@@ -11,6 +11,8 @@ import 'package:classroom_mini/app/modules/assignments/assignment_module.dart';
 import 'package:get/get.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:classroom_mini/app/data/services/api_service.dart';
+import 'package:classroom_mini/app/data/services/sync_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +24,8 @@ void main() async {
   // --- SharedPreferences Persistence Test --- END
 
   await CoreBinding().init();
+
+  await DioClient.initCache();
 
   // Initialize Flutter Gemini
   Gemini.init(
@@ -46,10 +50,37 @@ void main() async {
   runApp(MyApp(initialRoute: initialRoute));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final String initialRoute;
 
   const MyApp({super.key, required this.initialRoute});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && Get.isRegistered<SyncService>()) {
+      final syncService = Get.find<SyncService>();
+      Future.delayed(const Duration(milliseconds: 500), () {
+        syncService.syncQueue();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +92,7 @@ class MyApp extends StatelessWidget {
       ),
       debugShowCheckedModeBanner: false,
       getPages: AppPages.routes,
-      initialRoute: initialRoute,
+      initialRoute: widget.initialRoute,
       builder: (context, child) {
         return ResponsiveBreakpoints.builder(
           child: Directionality(

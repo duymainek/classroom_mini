@@ -29,15 +29,42 @@ class ResponsiveDashboardPage extends StatelessWidget {
         ],
       ),
       body: Obx(() {
+        print('🖥️ [DashboardView] Rebuilding UI');
+        print('   - isLoading: ${controller.isLoading.value}');
+        print('   - isRefreshing: ${controller.isRefreshing.value}');
+        print('   - isInstructor: ${controller.isInstructor.value}');
+        print('   - instructorDashboardData: ${controller.instructorDashboardData.value != null}');
+        print('   - studentDashboardData: ${controller.studentDashboardData.value != null}');
+        print('   - errorMessage: "${controller.errorMessage.value}"');
+        
+        if (controller.instructorDashboardData.value != null) {
+          final data = controller.instructorDashboardData.value!;
+          print('   📊 Instructor Data:');
+          print('      - stats.courses: ${data.statistics.totalCourses}');
+          print('      - stats.students: ${data.statistics.totalStudents}');
+          print('      - recentActivity: ${data.recentActivity.length}');
+        }
+        
+        if (controller.studentDashboardData.value != null) {
+          final data = controller.studentDashboardData.value!;
+          print('   📊 Student Data:');
+          print('      - enrolledCourses: ${data.enrolledCourses.length}');
+          print('      - upcomingAssignments: ${data.upcomingAssignments.length}');
+        }
+
         if (controller.isLoading.value &&
             controller.instructorDashboardData.value == null &&
             controller.studentDashboardData.value == null) {
+          print('🔄 [DashboardView] Showing LOADING state');
           return _buildLoadingState(context);
         }
 
         if (controller.errorMessage.value.isNotEmpty) {
+          print('❌ [DashboardView] Showing ERROR state: ${controller.errorMessage.value}');
           return _buildErrorState(context, controller);
         }
+        
+        print('✅ [DashboardView] Showing CONTENT state');
 
         return RefreshIndicator(
           onRefresh: controller.refreshDashboard,
@@ -526,7 +553,11 @@ class ResponsiveDashboardPage extends StatelessWidget {
   Widget _buildInstructorDashboard(
       BuildContext context, DashboardController controller) {
     final data = controller.instructorDashboardData.value;
+    print('🎨 [DashboardView] _buildInstructorDashboard called');
+    print('   - data: ${data != null}');
+    
     if (data == null) {
+      print('   ⚠️ [DashboardView] Instructor data is NULL - showing empty state');
       return _buildEmptyState(
         context,
         'Không có dữ liệu',
@@ -534,6 +565,10 @@ class ResponsiveDashboardPage extends StatelessWidget {
         Icons.dashboard_outlined,
       );
     }
+    
+    print('   ✅ [DashboardView] Instructor data exists - showing content');
+    print('      - Stats: courses=${data.statistics.totalCourses}, students=${data.statistics.totalStudents}');
+    print('      - Recent activity: ${data.recentActivity.length} items');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -772,7 +807,11 @@ class ResponsiveDashboardPage extends StatelessWidget {
   Widget _buildStudentDashboard(
       BuildContext context, DashboardController controller) {
     final data = controller.studentDashboardData.value;
+    print('🎨 [DashboardView] _buildStudentDashboard called');
+    print('   - data: ${data != null}');
+    
     if (data == null) {
+      print('   ⚠️ [DashboardView] Student data is NULL - showing empty state');
       return _buildEmptyState(
         context,
         'Không có dữ liệu',
@@ -780,6 +819,10 @@ class ResponsiveDashboardPage extends StatelessWidget {
         Icons.dashboard_outlined,
       );
     }
+    
+    print('   ✅ [DashboardView] Student data exists - showing content');
+    print('      - Enrolled courses: ${data.enrolledCourses.length}');
+    print('      - Upcoming assignments: ${data.upcomingAssignments.length}');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
