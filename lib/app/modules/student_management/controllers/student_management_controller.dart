@@ -16,8 +16,17 @@ import '../../../core/app_config.dart';
 
 class StudentManagementController extends GetxController {
   final RxBool isLoading = false.obs;
+  final RxBool isExporting = false.obs;
   final RxList<Map<String, dynamic>> students = <Map<String, dynamic>>[].obs;
   final RxString query = ''.obs;
+
+  // Filter State
+  final RxList<Course> filterCourses = <Course>[].obs;
+  final RxList<Group> filterGroups = <Group>[].obs;
+  final Rx<Course?> filterCourse = Rx<Course?>(null);
+  final Rx<Group?> filterGroup = Rx<Group?>(null);
+  final RxBool isLoadingFilterCourses = false.obs;
+  final RxBool isLoadingFilterGroups = false.obs;
 
   // Create Student Form State
   final RxBool isCreatingStudent = false.obs;
@@ -47,6 +56,12 @@ class StudentManagementController extends GetxController {
   final RxMap<int, Course?> rowCourseAssignments = <int, Course?>{}.obs;
   final RxMap<int, Group?> rowGroupAssignments = <int, Group?>{}.obs;
 
+  // Edit Student Dialog State
+  final RxList<Course> editCourses = <Course>[].obs;
+  final RxList<Group> editGroups = <Group>[].obs;
+  final RxBool isLoadingEditCourses = false.obs;
+  final RxBool isLoadingEditGroups = false.obs;
+
   late final StudentRepository _studentRepository;
   late final CourseRepository _courseRepository;
   late final MetadataService _metadataService;
@@ -62,6 +77,7 @@ class StudentManagementController extends GetxController {
     _courseRepository = CourseRepository(apiService);
     _metadataService = MetadataService(apiService);
     loadStudents();
+    loadFilterCourses();
   }
 
   Future<void> loadStudents() async {
@@ -93,18 +109,94 @@ class StudentManagementController extends GetxController {
   }
 
   List<Map<String, dynamic>> get filteredStudents {
+    var filtered = students.toList();
+
     final q = query.value.trim().toLowerCase();
-    if (q.isEmpty) return students;
-    return students.where((s) {
-      final username = (s['username'] ?? '').toString().toLowerCase();
-      final email = (s['email'] ?? '').toString().toLowerCase();
-      final fullName = (s['fullName'] ?? '').toString().toLowerCase();
-      return username.contains(q) || email.contains(q) || fullName.contains(q);
-    }).toList();
+    if (q.isNotEmpty) {
+      filtered = filtered.where((s) {
+        final username = (s['username'] ?? '').toString().toLowerCase();
+        final email = (s['email'] ?? '').toString().toLowerCase();
+        final fullName = (s['fullName'] ?? '').toString().toLowerCase();
+        return username.contains(q) ||
+            email.contains(q) ||
+            fullName.contains(q);
+      }).toList();
+    }
+
+    final selectedCourse = filterCourse.value;
+    if (selectedCourse != null) {
+      filtered = filtered.where((s) {
+        final courseId = s['courseId'];
+        return courseId == selectedCourse.id;
+      }).toList();
+    }
+
+    final selectedGroup = filterGroup.value;
+    if (selectedGroup != null) {
+      filtered = filtered.where((s) {
+        final groupId = s['groupId'];
+        return groupId == selectedGroup.id;
+      }).toList();
+    }
+
+    return filtered;
   }
 
   void setQuery(String value) {
     query.value = value;
+  }
+
+  Future<void> loadFilterCourses() async {
+    try {
+      isLoadingFilterCourses.value = true;
+      final courseResponse = await Get.find<ApiService>().getCourses();
+      if (courseResponse.success) {
+        filterCourses.assignAll(courseResponse.data.courses);
+      }
+    } catch (e) {
+      print('[StudentController] Error loading filter courses: $e');
+    } finally {
+      isLoadingFilterCourses.value = false;
+    }
+  }
+
+  void setFilterCourse(Course? course) {
+    filterCourse.value = course;
+    if (course != null) {
+      loadFilterGroupsForCourse(course.id);
+    } else {
+      filterGroup.value = null;
+      filterGroups.clear();
+    }
+  }
+
+  void setFilterGroup(Group? group) {
+    filterGroup.value = group;
+  }
+
+  Future<void> loadFilterGroupsForCourse(String courseId) async {
+    try {
+      isLoadingFilterGroups.value = true;
+      final groupResponse = await Get.find<ApiService>().getGroups();
+      if (groupResponse.success) {
+        filterGroups.assignAll(
+          groupResponse.data.groups
+              .where((g) => g.courseId == courseId)
+              .toList(),
+        );
+        filterGroup.value = null;
+      }
+    } catch (e) {
+      print('[StudentController] Error loading filter groups: $e');
+    } finally {
+      isLoadingFilterGroups.value = false;
+    }
+  }
+
+  void clearFilters() {
+    filterCourse.value = null;
+    filterGroup.value = null;
+    filterGroups.clear();
   }
 
   Future<void> refreshStudents() async {
@@ -164,32 +256,30 @@ class StudentManagementController extends GetxController {
   }
 
   Future<bool> exportStudents({String format = 'csv'}) async {
-    // Prefer direct bytes download and save for reliability across platforms
-    final (Uint8List? bytes, String filename) =
-        await _studentRepository.downloadStudentsCsv(format: format);
-    if (bytes == null) return false;
-
-    print('filename: $filename');
-    print('bytes: ${bytes.length}');
-    print('format: $format');
-
+    isExporting.value = true;
     try {
+      final (Uint8List? bytes, String filename) =
+          await _studentRepository.downloadStudentsCsv(format: format);
+      if (bytes == null) {
+        return false;
+      }
+
       await FileSaver.instance.saveFile(
         name: filename.replaceAll('.$format', ''),
         bytes: bytes,
         ext: format,
         mimeType: format == 'csv' ? MimeType.csv : MimeType.other,
       );
-      print('saved');
       return true;
-    } catch (_) {
-      print('error: $_');
+    } catch (e) {
+      print('Export error: $e');
       return false;
+    } finally {
+      isExporting.value = false;
     }
   }
 
   Future<bool> updateStudentName(String id, String fullName) async {
-    // Minimal sample edit flow: update fullName only
     final update = UpdateStudentRequest(fullName: fullName);
     final res = await _studentRepository.updateStudent(id, update);
     if (res.success) {
@@ -217,6 +307,53 @@ class StudentManagementController extends GetxController {
       return true;
     }
     return false;
+  }
+
+  Future<bool> updateStudent({
+    required String id,
+    required String email,
+    required String fullName,
+    required bool isActive,
+    String? groupId,
+    String? courseId,
+  }) async {
+    try {
+      final update = UpdateStudentRequest(
+        email: email,
+        fullName: fullName,
+        isActive: isActive,
+        groupId: groupId,
+        courseId: courseId,
+      );
+
+      final res = await _studentRepository.updateStudent(id, update);
+
+      if (res.success && res.student != null) {
+        final index = students.indexWhere((s) => s['id'] == id);
+        if (index != -1) {
+          final u = res.student!;
+          students[index] = {
+            'id': u.id,
+            'username': u.username,
+            'email': u.email,
+            'fullName': u.fullName,
+            'isActive': u.isActive,
+            'groupId': u.groupId,
+            'courseId': u.courseId,
+            'group': u.group,
+            'course': u.course,
+            'lastLoginAt': u.lastLoginAt?.toIso8601String(),
+            'createdAt': u.createdAt.toIso8601String(),
+            'updatedAt': u.updatedAt?.toIso8601String(),
+          };
+        }
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Error updating student: $e');
+      return false;
+    }
   }
 
   Future<Map<String, dynamic>?> previewImport(
@@ -318,10 +455,12 @@ class StudentManagementController extends GetxController {
 
   void updateRowCourseAssignment(int rowIndex, Course? course) {
     rowCourseAssignments[rowIndex] = course;
+    rowCourseAssignments.refresh();
   }
 
   void updateRowGroupAssignment(int rowIndex, Group? group) {
     rowGroupAssignments[rowIndex] = group;
+    rowGroupAssignments.refresh();
   }
 
   void removeImportRow(int index) {
@@ -651,6 +790,67 @@ class StudentManagementController extends GetxController {
       return null;
     } finally {
       isCreatingStudent.value = false;
+    }
+  }
+
+  Future<void> initializeEditStudentDialog() async {
+    editCourses.clear();
+    editGroups.clear();
+    await loadEditCourses();
+  }
+
+  Future<void> loadEditCourses() async {
+    try {
+      isLoadingEditCourses.value = true;
+      final cfg = AppConfig.instance;
+      String? semesterId;
+
+      if (cfg.hasSelectedSemester()) {
+        semesterId = cfg.selectedSemesterId;
+      } else {
+        final current = await Get.find<ApiService>().getCurrentSemester();
+        if (current.success && current.data?.currentSemester != null) {
+          semesterId = current.data!.currentSemester!.id;
+        }
+      }
+
+      if (semesterId != null) {
+        final res = await _courseRepository.getCourses(
+          page: 1,
+          limit: 100,
+          search: '',
+          status: 'active',
+          semesterId: semesterId,
+        );
+        editCourses.assignAll(res.data.courses);
+      }
+    } catch (e) {
+      print('[StudentController] Error loading edit courses: $e');
+    } finally {
+      isLoadingEditCourses.value = false;
+    }
+  }
+
+  Future<void> loadEditGroupsForCourse(String courseId) async {
+    try {
+      isLoadingEditGroups.value = true;
+      final groupsList = await _metadataService.loadGroupsForCourse(courseId);
+      editGroups.assignAll(
+        groupsList
+            .map((info) => Group(
+                  id: info.id,
+                  name: info.name,
+                  courseId: courseId,
+                  isActive: true,
+                  createdAt: DateTime.now(),
+                  updatedAt: DateTime.now(),
+                ))
+            .toList(),
+      );
+    } catch (e) {
+      print('[StudentController] Error loading edit groups: $e');
+    } finally {
+      isLoadingEditGroups.value = false;
     }
   }
 }

@@ -32,7 +32,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
         print('🖥️ [DashboardView] Rebuilding UI');
         print('   - isLoading: ${controller.isLoading.value}');
         print('   - isRefreshing: ${controller.isRefreshing.value}');
-        print('   - isInstructor: ${controller.isInstructor.value}');
+        print('   - isInstructor: ${controller.isInstructorRx.value}');
         print('   - instructorDashboardData: ${controller.instructorDashboardData.value != null}');
         print('   - studentDashboardData: ${controller.studentDashboardData.value != null}');
         print('   - errorMessage: "${controller.errorMessage.value}"');
@@ -75,7 +75,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
               _buildWelcomeHeader(context, controller),
 
               // Quick actions for instructors
-              if (controller.isInstructor.value) ...[
+              if (controller.isInstructorRx.value) ...[
                 _buildQuickActions(context, controller),
                 SliverToBoxAdapter(
                   child: Padding(
@@ -238,7 +238,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
-                    controller.isInstructor.value ? Icons.school : Icons.person,
+                    controller.isInstructorRx.value ? Icons.school : Icons.person,
                     color: Colors.white,
                     size: 24,
                   ),
@@ -249,7 +249,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        controller.isInstructor.value
+                        controller.isInstructorRx.value
                             ? 'Giảng viên'
                             : 'Sinh viên',
                         style: const TextStyle(

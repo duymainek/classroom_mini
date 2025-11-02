@@ -2,6 +2,7 @@ import 'package:classroom_mini/app/data/models/request/quiz_request.dart';
 import 'package:classroom_mini/app/data/models/response/quiz_response.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../data/services/connectivity_service.dart';
 import '../controllers/quiz_controller.dart';
 import '../views/shared/quiz_form.dart';
 
@@ -15,6 +16,47 @@ class QuizDetailView extends StatefulWidget {
 
 class _QuizDetailViewState extends State<QuizDetailView> {
   bool _isUpdating = false;
+
+  List<Widget> _buildAppBarActions(BuildContext context) {
+    if (_isUpdating) {
+      return [
+        IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => setState(() => _isUpdating = false),
+        ),
+      ];
+    }
+    return [
+      Obx(() {
+        final connectivityService = Get.find<ConnectivityService>();
+        if (!connectivityService.isOnline.value) {
+          return const SizedBox.shrink();
+        }
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () => setState(() => _isUpdating = true),
+            ),
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'delete') {
+                  _showDeleteDialog(context, widget.quizId);
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Text('Delete Quiz'),
+                ),
+              ],
+            ),
+          ],
+        );
+      }),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,32 +78,7 @@ class _QuizDetailViewState extends State<QuizDetailView> {
             quiz: quiz,
             onlyView: !_isUpdating,
             isUpdating: _isUpdating,
-            appBarActions: _isUpdating
-                ? [
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => setState(() => _isUpdating = false),
-                    ),
-                  ]
-                : [
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () => setState(() => _isUpdating = true),
-                    ),
-                    PopupMenuButton<String>(
-                      onSelected: (value) {
-                        if (value == 'delete') {
-                          _showDeleteDialog(context, widget.quizId);
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: Text('Delete Quiz'),
-                        ),
-                      ],
-                    ),
-                  ],
+            appBarActions: _buildAppBarActions(context),
             onSubmit: (formData) async {
               final request = QuizUpdateRequest(
                 id: quiz.id,

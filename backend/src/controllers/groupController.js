@@ -62,8 +62,26 @@ class GroupController {
       throw new AppError('Failed to create group', 500, 'GROUP_CREATION_FAILED');
     }
 
+    // Transform group: rename courses to course, and semesters to semester
+    const transformedGroup = {
+      id: newGroup.id,
+      name: newGroup.name,
+      courseId: newGroup.course_id,
+      isActive: newGroup.is_active,
+      createdAt: newGroup.created_at,
+      updatedAt: newGroup.updated_at,
+      course: newGroup.courses ? {
+        code: newGroup.courses.code,
+        name: newGroup.courses.name,
+        semester: newGroup.courses.semesters ? {
+          code: newGroup.courses.semesters.code,
+          name: newGroup.courses.semesters.name
+        } : null
+      } : null
+    };
+
     res.status(201).json(
-      buildResponse(true, 'Group created successfully', { group: newGroup })
+      buildResponse(true, 'Group created successfully', { group: transformedGroup })
     );
   });
 
@@ -129,9 +147,27 @@ class GroupController {
       throw new AppError('Failed to fetch groups', 500, 'GET_GROUPS_FAILED');
     }
 
+    // Transform groups: rename courses to course, and semesters to semester
+    const transformedGroups = (groups || []).map(group => ({
+      id: group.id,
+      name: group.name,
+      courseId: group.course_id,
+      isActive: group.is_active,
+      createdAt: group.created_at,
+      updatedAt: group.updated_at,
+      course: group.courses ? {
+        code: group.courses.code,
+        name: group.courses.name,
+        semester: group.courses.semesters ? {
+          code: group.courses.semesters.code,
+          name: group.courses.semesters.name
+        } : null
+      } : null
+    }));
+
     res.json(
       buildResponse(true, undefined, {
-        groups: groups || [],
+        groups: transformedGroups,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
@@ -163,7 +199,25 @@ class GroupController {
       throw new AppError('Group not found', 404, 'GROUP_NOT_FOUND');
     }
 
-    res.json(buildResponse(true, undefined, { group }));
+    // Transform group: rename courses to course, and semesters to semester
+    const transformedGroup = {
+      id: group.id,
+      name: group.name,
+      courseId: group.course_id,
+      isActive: group.is_active,
+      createdAt: group.created_at,
+      updatedAt: group.updated_at,
+      course: group.courses ? {
+        code: group.courses.code,
+        name: group.courses.name,
+        semester: group.courses.semesters ? {
+          code: group.courses.semesters.code,
+          name: group.courses.semesters.name
+        } : null
+      } : null
+    };
+
+    res.json(buildResponse(true, undefined, { group: transformedGroup }));
   });
 
   /**
@@ -238,8 +292,26 @@ class GroupController {
       throw new AppError('Failed to update group', 500, 'UPDATE_GROUP_FAILED');
     }
 
+    // Transform group: rename courses to course, and semesters to semester
+    const transformedGroup = {
+      id: updatedGroup.id,
+      name: updatedGroup.name,
+      courseId: updatedGroup.course_id,
+      isActive: updatedGroup.is_active,
+      createdAt: updatedGroup.created_at,
+      updatedAt: updatedGroup.updated_at,
+      course: updatedGroup.courses ? {
+        code: updatedGroup.courses.code,
+        name: updatedGroup.courses.name,
+        semester: updatedGroup.courses.semesters ? {
+          code: updatedGroup.courses.semesters.code,
+          name: updatedGroup.courses.semesters.name
+        } : null
+      } : null
+    };
+
     res.json(
-      buildResponse(true, 'Group updated successfully', { group: updatedGroup })
+      buildResponse(true, 'Group updated successfully', { group: transformedGroup })
     );
   });
 

@@ -5,6 +5,7 @@ import '../../../core/services/auth_service.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/services/connectivity_service.dart';
 import '../../../data/services/sync_service.dart';
+import '../../../routes/app_routes.dart';
 import '../controllers/profile_controller.dart';
 import 'edit_profile_view.dart';
 
@@ -54,6 +55,8 @@ class ProfileView extends GetView<ProfileController> {
             _buildActionsCard(),
             const SizedBox(height: 16),
             _buildCacheManagementCard(),
+            const SizedBox(height: 16),
+            _buildSyncQueueCard(),
           ],
         );
       }),
@@ -366,6 +369,86 @@ class ProfileView extends GetView<ProfileController> {
               );
             },
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSyncQueueCard() {
+    final syncService = Get.find<SyncService>();
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                const Icon(Icons.sync, color: Colors.blue),
+                const SizedBox(width: 12),
+                Text(
+                  'Sync Queue',
+                  style: Get.textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Obx(() {
+            final pendingCount = syncService.pendingCount.value;
+            final failedCount = syncService.failedCount.value;
+
+            return ListTile(
+              leading: Icon(
+                pendingCount > 0 || failedCount > 0
+                    ? Icons.cloud_queue
+                    : Icons.cloud_done,
+                color: failedCount > 0
+                    ? Colors.red
+                    : pendingCount > 0
+                        ? Colors.orange
+                        : Colors.green,
+              ),
+              title: const Text('Xem hàng đợi đồng bộ'),
+              subtitle: pendingCount > 0 || failedCount > 0
+                  ? Text(
+                      'Đang chờ: $pendingCount | Thất bại: $failedCount',
+                      style: Get.textTheme.bodySmall?.copyWith(
+                        color: failedCount > 0 ? Colors.red : Colors.orange,
+                      ),
+                    )
+                  : const Text('Tất cả đã được đồng bộ'),
+              trailing: pendingCount > 0 || failedCount > 0
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: failedCount > 0
+                            ? Colors.red.shade100
+                            : Colors.orange.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${pendingCount + failedCount}',
+                        style: TextStyle(
+                          color: failedCount > 0
+                              ? Colors.red.shade800
+                              : Colors.orange.shade800,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    )
+                  : null,
+              onTap: () {
+                Get.toNamed(Routes.SYNC_QUEUE);
+              },
+            );
+          }),
         ],
       ),
     );

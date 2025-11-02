@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:classroom_mini/app/data/models/response/announcement_response.dart';
 import 'package:classroom_mini/app/data/models/request/announcement_request.dart';
+import 'package:classroom_mini/app/data/services/connectivity_service.dart';
 import 'package:classroom_mini/app/routes/app_routes.dart';
 import '../../controllers/announcement_controller.dart';
 
@@ -93,10 +94,16 @@ class MobileAnnouncementDetailView extends StatelessWidget {
         ),
       ),
       actions: [
-        IconButton(
-          icon: Icon(Icons.edit, color: colorScheme.primary),
-          onPressed: () => _navigateToEdit(),
-        ),
+        Obx(() {
+          final connectivityService = Get.find<ConnectivityService>();
+          if (!connectivityService.isOnline.value) {
+            return const SizedBox.shrink();
+          }
+          return IconButton(
+            icon: Icon(Icons.edit, color: colorScheme.primary),
+            onPressed: () => _navigateToEdit(),
+          );
+        }),
       ],
     );
   }

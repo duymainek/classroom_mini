@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../data/services/storage_service.dart';
 import '../../data/services/chat_socket_service.dart';
 import '../../routes/app_routes.dart';
+import '../app_config.dart';
 
 class AuthService extends GetxService {
   final StorageService _storageService = Get.find();
@@ -25,7 +26,8 @@ class AuthService extends GetxService {
       if (userModel != null) {
         user.value = userModel;
         isAuthenticated.value = true;
-        print('[AuthService] User authenticated: true');
+        AppConfig.instance.setUserRole(userModel.isInstructor);
+        print('[AuthService] User authenticated: true, isInstructor: ${userModel.isInstructor}');
         
         // Connect to chat socket if user is authenticated
         try {
@@ -68,9 +70,14 @@ class AuthService extends GetxService {
     if (loggedInUser is UserModel) {
       user.value = loggedInUser;
       isAuthenticated.value = true;
+      AppConfig.instance.setUserRole(loggedInUser.isInstructor);
+      print('[AuthService] User logged in, isInstructor: ${loggedInUser.isInstructor}');
     } else if (loggedInUser is Map<String, dynamic>) {
-      user.value = UserModel.fromJson(loggedInUser);
+      final userModel = UserModel.fromJson(loggedInUser);
+      user.value = userModel;
       isAuthenticated.value = true;
+      AppConfig.instance.setUserRole(userModel.isInstructor);
+      print('[AuthService] User logged in, isInstructor: ${userModel.isInstructor}');
     } else {
       // Handle unexpected type, perhaps log an error
       print("AuthService Error: Could not parse user data on login.");
@@ -81,6 +88,7 @@ class AuthService extends GetxService {
   Future<void> logout() async {
     isAuthenticated.value = false;
     user.value = null;
+    AppConfig.instance.clearUserRole();
     
     // Disconnect chat socket
     try {

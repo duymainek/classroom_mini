@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:classroom_mini/app/data/models/response/announcement_response.dart';
+import 'package:classroom_mini/app/data/services/connectivity_service.dart';
 
 /**
  * Announcement Card Widget
@@ -325,23 +326,35 @@ class AnnouncementCard extends StatelessWidget {
     return Row(
       children: [
         Spacer(),
-        if (showDeleteButton && onDelete != null) ...[
-          const SizedBox(width: 12),
-          IconButton(
-            onPressed: onDelete,
-            icon: Icon(
-              Icons.delete,
-              color: colorScheme.error,
-            ),
-            style: IconButton.styleFrom(
-              backgroundColor: colorScheme.errorContainer.withOpacity(0.1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            tooltip: 'Xóa thông báo',
-          ),
-        ],
+        Obx(() {
+          final connectivityService = Get.find<ConnectivityService>();
+          if (!connectivityService.isOnline.value) {
+            return const SizedBox.shrink();
+          }
+          if (showDeleteButton && onDelete != null) {
+            return Row(
+              children: [
+                const SizedBox(width: 12),
+                IconButton(
+                  onPressed: onDelete,
+                  icon: Icon(
+                    Icons.delete,
+                    color: colorScheme.error,
+                  ),
+                  style: IconButton.styleFrom(
+                    backgroundColor:
+                        colorScheme.errorContainer.withOpacity(0.1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  tooltip: 'Xóa thông báo',
+                ),
+              ],
+            );
+          }
+          return const SizedBox.shrink();
+        }),
       ],
     );
   }

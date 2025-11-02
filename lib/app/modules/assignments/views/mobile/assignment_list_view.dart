@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:classroom_mini/app/routes/app_routes.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:classroom_mini/app/data/services/connectivity_service.dart';
 import 'dart:io';
 import '../../controllers/assignment_controller.dart';
 import '../../widgets/assignment_card.dart';
@@ -58,10 +59,16 @@ class MobileAssignmentListView extends StatelessWidget {
                     icon: Icon(Icons.filter_list, color: colorScheme.primary),
                     onPressed: () => _showFilterDialog(controller),
                   ),
-                  IconButton(
-                    icon: Icon(Icons.add, color: colorScheme.primary),
-                    onPressed: () => _navigateToCreateAssignment(),
-                  ),
+                  Obx(() {
+                    final connectivityService = Get.find<ConnectivityService>();
+                    if (!connectivityService.isOnline.value) {
+                      return const SizedBox.shrink();
+                    }
+                    return IconButton(
+                      icon: Icon(Icons.add, color: colorScheme.primary),
+                      onPressed: () => _navigateToCreateAssignment(),
+                    );
+                  }),
                 ],
               ),
               SliverPadding(
@@ -165,19 +172,29 @@ class MobileAssignmentListView extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: _navigateToCreateAssignment,
-              icon: const Icon(Icons.add),
-              label: const Text('Tạo bài tập'),
-              style: FilledButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
+            Obx(() {
+              final connectivityService = Get.find<ConnectivityService>();
+              if (!connectivityService.isOnline.value) {
+                return const SizedBox.shrink();
+              }
+              return Column(
+                children: [
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    onPressed: _navigateToCreateAssignment,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Tạo bài tập'),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 16, horizontal: 24),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }),
           ],
         ),
       ),

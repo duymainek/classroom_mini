@@ -15,6 +15,7 @@ class Routes {
   // Profile routes
   static const String PROFILE = '/profile';
   static const String EDIT_PROFILE = '/edit-profile';
+  static const String SYNC_QUEUE = '/sync-queue';
 
   // Settings routes
   static const String SETTINGS = '/settings';

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../student_management/controllers/student_management_controller.dart';
-import '../views/student_import_page.dart';
 import '../../../routes/app_routes.dart';
+import '../views/student_import_page.dart';
+import '../views/enhanced_edit_student_sheet.dart';
+import '../views/enhanced_student_detail_view.dart';
+import '../../../data/models/response/course_response.dart';
+import '../../../data/models/response/group_response.dart';
 
 class ResponsiveStudentManagementPage
     extends GetView<StudentManagementController> {
@@ -12,6 +16,7 @@ class ResponsiveStudentManagementPage
   Widget build(BuildContext context) {
     return Scaffold(
       body: _MobileView(controller: controller),
+      floatingActionButton: _FabActions(controller: controller),
     );
   }
 }
@@ -114,113 +119,68 @@ class _MobileView extends StatelessWidget {
               ),
             ),
 
-            // List Header Section (Material 3 section pattern)
+            // Filter Section
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               sliver: SliverToBoxAdapter(
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .outline
-                          .withOpacity(0.2),
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .shadow
-                            .withOpacity(0.05),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primaryContainer
-                              .withOpacity(0.3),
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(16),
-                            topRight: Radius.circular(16),
-                          ),
-                        ),
-                        child: Row(
+                child: Obx(() => Column(
+                      children: [
+                        Row(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                Icons.school_rounded,
-                                color: Theme.of(context).colorScheme.primary,
-                                size: 20,
+                            Expanded(
+                              child: _buildFilterDropdown<Course>(
+                                context,
+                                controller: controller,
+                                title: 'Khóa học',
+                                value: controller.filterCourse.value,
+                                items: controller.filterCourses,
+                                isLoading:
+                                    controller.isLoadingFilterCourses.value,
+                                onChanged: (course) {
+                                  controller.setFilterCourse(course);
+                                },
+                                itemBuilder: (course) =>
+                                    '${course.code} - ${course.name}',
+                                icon: Icons.school_outlined,
                               ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: Text(
-                                'Danh sách sinh viên',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
-                                    ),
+                              child: _buildFilterDropdown<Group>(
+                                context,
+                                controller: controller,
+                                title: 'Nhóm',
+                                value: controller.filterGroup.value,
+                                items: controller.filterGroups,
+                                isLoading:
+                                    controller.isLoadingFilterGroups.value,
+                                onChanged: (group) {
+                                  controller.setFilterGroup(group);
+                                },
+                                itemBuilder: (group) => group.name,
+                                icon: Icons.group_outlined,
                               ),
                             ),
                           ],
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Row(
-                          children: [
-                            Text(
-                              'Tổng: ' + data.length.toString(),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ),
-                            ),
-                            const Spacer(),
-                            OutlinedButton.icon(
-                              onPressed: controller.refreshStudents,
-                              icon: const Icon(Icons.refresh_rounded, size: 18),
-                              label: const Text('Tải lại'),
+                        if (controller.filterCourse.value != null ||
+                            controller.filterGroup.value != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: OutlinedButton.icon(
+                              onPressed: controller.clearFilters,
+                              icon: const Icon(Icons.clear, size: 18),
+                              label: const Text('Xóa bộ lọc'),
                               style: OutlinedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 10),
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                          ),
+                      ],
+                    )),
               ),
             ),
 
@@ -292,16 +252,14 @@ class _MobileView extends StatelessWidget {
             else
               // Student Cards
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                    16, 0, 16, 100), // Bottom padding for FAB
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                 sliver: SliverList.separated(
                   itemBuilder: (_, i) {
                     final s = data[i];
                     return _StudentCard(
                       student: s,
                       controller: controller,
-                      onTap: () => Get.toNamed(
-                          '${Routes.STUDENT_DETAILS}?id=${s['id']}'),
+                      onTap: () => _showDetailView(context, controller, s),
                     );
                   },
                   separatorBuilder: (_, __) => const SizedBox(height: 16),
@@ -452,10 +410,10 @@ class _StudentCard extends StatelessWidget {
                     onSelected: (value) {
                       switch (value) {
                         case 'view':
-                          _showDetailSheet(context, student);
+                          _showDetailView(context, controller, student);
                           break;
                         case 'edit':
-                          _showEditNameSheet(context, controller, student);
+                          _showEditSheet(context, controller, student);
                           break;
                         case 'delete':
                           _showDeleteDialog(context, controller, student);
@@ -605,104 +563,74 @@ class _FabActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton(
-      onPressed: () => _openActions(context),
-      child: const Icon(Icons.add_rounded, size: 20),
+      onPressed: () => _showActionMenu(context),
+      child: const Icon(Icons.add_rounded),
       backgroundColor: Theme.of(context).colorScheme.primary,
       foregroundColor: Theme.of(context).colorScheme.onPrimary,
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
     );
   }
 
-  void _openActions(BuildContext context) {
+  void _showActionMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (_) {
         return SafeArea(
           child: Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
+            padding: const EdgeInsets.all(20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
                   width: 40,
                   height: 4,
-                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.outline,
+                    color:
+                        Theme.of(context).colorScheme.outline.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      ListTile(
-                        leading: Icon(
-                          Icons.person_add_alt_1_rounded,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        title: const Text('Thêm sinh viên'),
-                        subtitle: const Text('Tạo sinh viên mới'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Get.toNamed(Routes.CREATE_STUDENT);
-                        },
-                      ),
-                      ListTile(
-                        leading: Icon(
-                          Icons.refresh_rounded,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        title: const Text('Tải lại'),
-                        subtitle: const Text('Làm mới danh sách sinh viên'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          controller.refreshStudents();
-                        },
-                      ),
-                      ListTile(
-                        leading: Icon(
-                          Icons.file_upload_rounded,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                        title: const Text('Import CSV'),
-                        subtitle: const Text('Nhập danh sách từ file CSV'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Get.to(() => const StudentImportPage());
-                        },
-                      ),
-                      ListTile(
-                        leading: Icon(
-                          Icons.file_download_rounded,
-                          color: Theme.of(context).colorScheme.tertiary,
-                        ),
-                        title: const Text('Export CSV'),
-                        subtitle: const Text('Xuất danh sách ra file CSV'),
-                        onTap: () async {
-                          Navigator.pop(context);
-                          final ok =
-                              await controller.exportStudents(format: 'csv');
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(ok
-                                    ? 'Đã yêu cầu xuất CSV (kiểm tra tải xuống)'
-                                    : 'Xuất CSV thất bại'),
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                    ],
+                ListTile(
+                  leading: Icon(
+                    Icons.person_add_rounded,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
+                  title: const Text('Thêm sinh viên mới'),
+                  subtitle: const Text('Tạo tài khoản sinh viên mới'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Get.toNamed(Routes.CREATE_STUDENT);
+                  },
                 ),
+                ListTile(
+                  leading: Icon(
+                    Icons.file_upload_rounded,
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
+                  title: const Text('Import CSV'),
+                  subtitle: const Text('Nhập danh sách từ file CSV'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Get.to(() => const StudentImportPage());
+                  },
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: Icon(
+                    Icons.file_download_rounded,
+                    color: Theme.of(context).colorScheme.tertiary,
+                  ),
+                  title: const Text('Export CSV'),
+                  subtitle: const Text('Xuất danh sách sinh viên'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    _exportStudents(context, controller);
+                  },
+                ),
+                const SizedBox(height: 10),
               ],
             ),
           ),
@@ -710,158 +638,6 @@ class _FabActions extends StatelessWidget {
       },
     );
   }
-}
-
-void _showAddStudentSheet(
-    BuildContext context, StudentManagementController controller) {
-  final usernameCtrl = TextEditingController();
-  final emailCtrl = TextEditingController();
-  final fullNameCtrl = TextEditingController();
-  final passwordCtrl = TextEditingController();
-  final formKey = GlobalKey<FormState>();
-
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    builder: (_) {
-      return SafeArea(
-        child: Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-            top: 20,
-          ),
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Thêm sinh viên mới',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: fullNameCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Họ tên',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
-                  ),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Nhập họ tên' : null,
-                  autofocus: true,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: usernameCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Username',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
-                  ),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Nhập username' : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: emailCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (v) => (v == null || !v.contains('@'))
-                      ? 'Email không hợp lệ'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: passwordCtrl,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: 'Mật khẩu tạm',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
-                  ),
-                  validator: (v) =>
-                      (v == null || v.length < 6) ? 'Ít nhất 6 ký tự' : null,
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        child: const Text('Huỷ'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: () async {
-                          if (!formKey.currentState!.validate()) return;
-                          final created = await controller.createStudent(
-                            username: usernameCtrl.text.trim(),
-                            password: passwordCtrl.text,
-                            email: emailCtrl.text.trim(),
-                            fullName: fullNameCtrl.text.trim(),
-                          );
-                          if (context.mounted) {
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(created != null
-                                    ? 'Đã tạo sinh viên mới'
-                                    : 'Tạo thất bại'),
-                                backgroundColor: created != null
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Theme.of(context).colorScheme.error,
-                              ),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.person_add_rounded),
-                        label: const Text('Tạo sinh viên'),
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    },
-  );
 }
 
 Widget _statusIndicator(bool isActive) {
@@ -932,166 +708,71 @@ String _initials(String nameOrEmail) {
   final parts = source.contains(' ')
       ? source.split(RegExp(r"\s+")).where((p) => p.isNotEmpty).toList()
       : source.split('@').first.split('.');
-  final first = parts.isNotEmpty ? parts.first.characters.first : '';
-  final last = parts.length > 1 ? parts.last.characters.first : '';
+  final first =
+      parts.isNotEmpty && parts.first.isNotEmpty ? parts.first[0] : '';
+  final last = parts.length > 1 && parts.last.isNotEmpty ? parts.last[0] : '';
   return (first + last).toUpperCase();
 }
 
-void _showDetailSheet(BuildContext context, Map<String, dynamic> s) {
+void _showDetailView(BuildContext context,
+    StudentManagementController controller, Map<String, dynamic> student) {
   showModalBottomSheet(
     context: context,
-    showDragHandle: true,
     isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    enableDrag: true,
     builder: (_) {
-      return SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
+      return Container(
+        height: MediaQuery.of(context).size.height * 0.9,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor:
-                        Theme.of(context).colorScheme.primaryContainer,
-                    child: Text(
-                      _initials(s['fullName'] ?? s['email'] ?? ''),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 18,
-                      ),
+                  const Text(
+                    'Chi tiết sinh viên',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          s['fullName'] ?? '',
-                          style:
-                              Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          s['email'] ?? '',
-                          style:
-                              Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  _statusIndicator(s['isActive'] ?? true),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // Details
-              _DetailRow(
-                icon: Icons.person_outline_rounded,
-                label: 'Username',
-                value: s['username'] ?? '',
-              ),
-              const SizedBox(height: 12),
-              _DetailRow(
-                icon: Icons.badge_outlined,
-                label: 'ID',
-                value: s['id'] ?? '',
-              ),
-              const SizedBox(height: 24),
-
-              // Actions
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        final controller =
-                            Get.find<StudentManagementController>();
-                        _showEditNameSheet(context, controller, s);
-                      },
-                      icon: const Icon(Icons.edit_rounded),
-                      label: const Text('Chỉnh sửa'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _showDeleteDialog(context,
-                            Get.find<StudentManagementController>(), s);
-                      },
-                      icon: const Icon(Icons.delete_rounded),
-                      label: const Text('Xoá'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.error,
-                        foregroundColor: Theme.of(context).colorScheme.onError,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, color: Colors.white),
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+            Expanded(
+              child: EnhancedStudentDetailView(
+                student: student,
+                onEdit: () {
+                  Navigator.pop(context);
+                  _showEditSheet(context, controller, student);
+                },
+                onDelete: () {
+                  Navigator.pop(context);
+                  _showDeleteDialog(context, controller, student);
+                },
+              ),
+            ),
+          ],
         ),
       );
     },
   );
-}
-
-class _DetailRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _DetailRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 20,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-        const SizedBox(width: 12),
-        Text(
-          '$label: ',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ),
-      ],
-    );
-  }
 }
 
 void _showDeleteDialog(BuildContext context,
@@ -1140,91 +821,226 @@ void _showDeleteDialog(BuildContext context,
   );
 }
 
-void _showEditNameSheet(BuildContext context,
-    StudentManagementController controller, Map<String, dynamic> s) {
-  final textController = TextEditingController(text: s['fullName'] ?? '');
-  showModalBottomSheet(
-    context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
-    builder: (_) {
-      return SafeArea(
+void _exportStudents(
+    BuildContext context, StudentManagementController controller) async {
+  Get.dialog(
+    const Center(
+      child: Card(
         child: Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-          ),
+          padding: EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Chỉnh sửa họ tên',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: textController,
-                decoration: InputDecoration(
-                  labelText: 'Họ tên',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor:
-                      Theme.of(context).colorScheme.surfaceContainerHighest,
-                ),
-                autofocus: true,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text('Huỷ'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () async {
-                        final newName = textController.text.trim();
-                        if (newName.isEmpty) return;
-                        final ok = await controller.updateStudentName(
-                            s['id'] as String, newName);
-                        if (context.mounted) {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                  ok ? 'Đã cập nhật' : 'Cập nhật thất bại'),
-                              backgroundColor: ok
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Theme.of(context).colorScheme.error,
-                            ),
-                          );
-                        }
-                      },
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text('Lưu'),
-                    ),
-                  ),
-                ],
-              ),
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Đang xuất file CSV...'),
             ],
           ),
         ),
-      );
+      ),
+    ),
+    barrierDismissible: false,
+  );
+
+  final success = await controller.exportStudents();
+
+  if (Get.isDialogOpen == true) {
+    Get.back();
+  }
+
+  if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+            success ? 'Đã xuất file CSV thành công' : 'Xuất file thất bại'),
+        backgroundColor: success
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.error,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+}
+
+Widget _buildFilterDropdown<T>(
+  BuildContext context, {
+  required StudentManagementController controller,
+  required String title,
+  required T? value,
+  required List<T> items,
+  required bool isLoading,
+  required ValueChanged<T?> onChanged,
+  required String Function(T) itemBuilder,
+  required IconData icon,
+}) {
+  final theme = Theme.of(context);
+  final colorScheme = theme.colorScheme;
+
+  return Container(
+    decoration: BoxDecoration(
+      color: colorScheme.surfaceVariant.withOpacity(0.3),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(
+        color: colorScheme.outline.withOpacity(0.2),
+      ),
+    ),
+    child: ListTile(
+      dense: true,
+      leading: isLoading
+          ? SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: colorScheme.primary,
+              ),
+            )
+          : Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(icon, color: colorScheme.primary, size: 16),
+            ),
+      title: Text(
+        title,
+        style: theme.textTheme.bodySmall?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      subtitle: value != null
+          ? Text(
+              itemBuilder(value),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            )
+          : Text(
+              'Tất cả',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+              ),
+            ),
+      trailing: const Icon(Icons.arrow_drop_down, size: 18),
+      onTap: isLoading
+          ? null
+          : () => _showFilterDropdownDialog<T>(
+                context,
+                title: title,
+                items: items,
+                currentValue: value,
+                onChanged: onChanged,
+                itemBuilder: itemBuilder,
+              ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+    ),
+  );
+}
+
+void _showFilterDropdownDialog<T>(
+  BuildContext context, {
+  required String title,
+  required List<T> items,
+  required T? currentValue,
+  required ValueChanged<T?> onChanged,
+  required String Function(T) itemBuilder,
+}) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(title),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: items.length + 1,
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              return ListTile(
+                dense: true,
+                title: const Text('Tất cả'),
+                leading: const Icon(Icons.clear, size: 18),
+                selected: currentValue == null,
+                onTap: () {
+                  onChanged(null);
+                  Navigator.of(context).pop();
+                },
+              );
+            }
+            final item = items[index - 1];
+            return ListTile(
+              dense: true,
+              title: Text(itemBuilder(item)),
+              selected: currentValue == item,
+              onTap: () {
+                onChanged(item);
+                Navigator.of(context).pop();
+              },
+            );
+          },
+        ),
+      ),
+    ),
+  );
+}
+
+void _showEditSheet(
+    BuildContext context,
+    StudentManagementController controller,
+    Map<String, dynamic> student) async {
+  await controller.initializeEditStudentDialog();
+
+  final courseId = student['courseId'];
+  if (courseId != null) {
+    await controller.loadEditGroupsForCourse(courseId);
+  }
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    enableDrag: true,
+    builder: (_) {
+      return Obx(() => EnhancedEditStudentSheet(
+            student: student,
+            courses: controller.editCourses,
+            groups: controller.editGroups,
+            isLoadingCourses: controller.isLoadingEditCourses.value,
+            isLoadingGroups: controller.isLoadingEditGroups.value,
+            onCourseChanged: (courseId) async {
+              await controller.loadEditGroupsForCourse(courseId);
+            },
+            onSubmit: (email, fullName, isActive, groupId, courseId) async {
+              final success = await controller.updateStudent(
+                id: student['id'] as String,
+                email: email,
+                fullName: fullName,
+                isActive: isActive,
+                groupId: groupId,
+                courseId: courseId,
+              );
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(success
+                        ? 'Đã cập nhật sinh viên'
+                        : 'Cập nhật thất bại'),
+                    backgroundColor: success
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.error,
+                  ),
+                );
+              }
+
+              if (success) {
+                await controller.refreshStudents();
+              }
+            },
+          ));
     },
   );
 }

@@ -59,7 +59,10 @@ class CourseRepository {
   Future<Course> getCourseById(String courseId) async {
     try {
       final response = await _apiService.getCourseById(courseId);
-      return response.course;
+      if (response.data?.course == null) {
+        throw Exception('Course data is null in response');
+      }
+      return response.data!.course;
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -69,7 +72,10 @@ class CourseRepository {
   Future<Course> createCourse(CourseCreateRequest request) async {
     try {
       final response = await _apiService.createCourse(request);
-      return response.course;
+      if (response.data?.course == null) {
+        throw Exception('Course data is null in response');
+      }
+      return response.data!.course;
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -80,7 +86,10 @@ class CourseRepository {
       String courseId, CourseUpdateRequest request) async {
     try {
       final response = await _apiService.updateCourse(courseId, request);
-      return response.course;
+      if (response.data?.course == null) {
+        throw Exception('Course data is null in response');
+      }
+      return response.data!.course;
     } on DioException catch (e) {
       throw _handleError(e);
     }

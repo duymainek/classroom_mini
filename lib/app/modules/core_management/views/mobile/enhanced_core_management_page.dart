@@ -1,15 +1,15 @@
 import 'package:classroom_mini/app/modules/core_management/controllers/core_management_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../shared/semester_form_widget.dart';
-import '../shared/course_form_widget.dart';
-import '../shared/group_form_widget.dart';
 import 'widgets/enhanced_app_bar.dart';
 import 'widgets/enhanced_tab_bar.dart';
 import 'widgets/enhanced_semester_content.dart';
 import 'widgets/enhanced_course_content.dart';
 import 'widgets/enhanced_group_content.dart';
 import 'widgets/enhanced_fab.dart';
+import 'widgets/enhanced_create_semester_sheet.dart';
+import 'widgets/enhanced_create_course_sheet.dart';
+import 'widgets/enhanced_create_group_sheet.dart';
 
 class EnhancedCoreManagementPage extends StatefulWidget {
   const EnhancedCoreManagementPage({Key? key}) : super(key: key);
@@ -70,6 +70,13 @@ class _EnhancedCoreManagementPageState extends State<EnhancedCoreManagementPage>
             ),
           ],
         ),
+        floatingActionButton: EnhancedFAB(
+          currentTab: controller.currentTab,
+          onSemesterCreate: () =>
+              _showCreateSemesterDialog(context, controller),
+          onCourseCreate: () => _showCreateCourseDialog(context, controller),
+          onGroupCreate: () => _showCreateGroupDialog(context, controller),
+        ),
       ),
     );
   }
@@ -110,14 +117,14 @@ class _EnhancedCoreManagementPageState extends State<EnhancedCoreManagementPage>
     }
   }
 
-  // Dialog methods
   void _showCreateSemesterDialog(
       BuildContext context, CoreManagementController controller) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => SemesterFormWidget(
-        title: 'Thêm Học kỳ Mới',
-        submitText: 'Tạo',
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      enableDrag: true,
+      builder: (context) => EnhancedCreateSemesterSheet(
         onSubmit: (code, name, isActive) {
           controller.createSemester(code, name);
         },
@@ -127,12 +134,13 @@ class _EnhancedCoreManagementPageState extends State<EnhancedCoreManagementPage>
 
   void _showCreateCourseDialog(
       BuildContext context, CoreManagementController controller) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => CourseFormWidget(
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      enableDrag: true,
+      builder: (context) => EnhancedCreateCourseSheet(
         semesters: controller.semesters,
-        title: 'Thêm Khóa học Mới',
-        submitText: 'Tạo',
         onSubmit: (code, name, sessionCount, semesterId, isActive) {
           controller.createCourse(code, name, sessionCount, semesterId);
         },
@@ -142,12 +150,13 @@ class _EnhancedCoreManagementPageState extends State<EnhancedCoreManagementPage>
 
   void _showCreateGroupDialog(
       BuildContext context, CoreManagementController controller) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => GroupFormWidget(
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      enableDrag: true,
+      builder: (context) => EnhancedCreateGroupSheet(
         courses: controller.courses,
-        title: 'Thêm Nhóm Mới',
-        submitText: 'Tạo',
         onSubmit: (name, courseId, isActive) {
           controller.createGroup(name, courseId);
         },

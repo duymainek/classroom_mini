@@ -680,11 +680,20 @@ class StudentController {
       { name: 'username', label: 'username' },
       { name: 'email', label: 'email' },
       { name: 'full_name', label: 'fullName' },
-      { name: 'is_active', label: 'isActive', transform: (v) => (v ? 'true' : 'false') },
+      { name: 'is_active', label: 'isActive', filter: (v) => (v ? 'true' : 'false') },
       { name: 'created_at', label: 'createdAt' },
       { name: 'last_login_at', label: 'lastLoginAt' }
     ];
-    const csv = await jsoncsv.buffered(students || [], { fields, encoding: 'utf8', ignoreHeader: false });
+    
+    const csv = await new Promise((resolve, reject) => {
+      jsoncsv.toCSV({
+        data: students || [],
+        fields: fields
+      }, (err, csvString) => {
+        if (err) reject(err);
+        else resolve(csvString);
+      });
+    });
 
     const filename = `students_${new Date().toISOString().slice(0,19).replace(/[:T]/g, '-')}.csv`;
     // Add BOM for Excel compatibility
@@ -785,6 +794,13 @@ class StudentController {
    */
   importStudents = catchAsync(async (req, res) => {
     const { records, globalCourseId, globalGroupId, assignments } = req.body || {};
+    
+    console.log('[importStudents] Request received');
+    console.log('[importStudents] records count:', records?.length || 0);
+    console.log('[importStudents] globalCourseId:', globalCourseId);
+    console.log('[importStudents] globalGroupId:', globalGroupId);
+    console.log('[importStudents] assignments:', JSON.stringify(assignments, null, 2));
+    
     if (!Array.isArray(records) || records.length === 0) {
       return res.status(400).json({
         success: false,
@@ -794,7 +810,8 @@ class StudentController {
 
     // Normalize
     const normalized = records.map((r, idx) => ({
-      rowNumber: idx + 1,
+      originalIndex: idx, // 0-based index for assignments lookup
+      rowNumber: idx + 1, // 1-based row number for results
       fullName: (r.fullName || '').toString().trim(),
       email: (r.email || '').toString().toLowerCase().trim(),
       username: (r.username || '').toString().toLowerCase().trim(),
@@ -844,7 +861,8 @@ class StudentController {
       const chunk = normalized.slice(i, i + chunkSize);
       // Prepare rows to insert
       const rowsToInsert = [];
-      const chunkIndexMap = new Map();
+      const chunkIndexMap = new Map(); // Maps insertIndex -> rowNumber (for results)
+      const chunkOriginalIndexMap = new Map(); // Maps insertIndex -> originalIndex (for assignments)
       for (const r of chunk) {
         const rowErrors = [];
         if (!r.fullName || r.fullName.length < 2 || r.fullName.length > 50) rowErrors.push('invalid fullName');
@@ -866,6 +884,7 @@ class StudentController {
           : Math.random().toString(36).slice(-10);
         const { hash: password_hash, salt } = await hashPassword(passwordPlain, 12);
 
+        const insertIndex = rowsToInsert.length;
         rowsToInsert.push({
           username: r.username,
           email: r.email,
@@ -875,8 +894,12 @@ class StudentController {
           role: 'student',
           is_active: true
         });
-        chunkIndexMap.set(rowsToInsert.length - 1, r.rowNumber);
+        chunkIndexMap.set(insertIndex, r.rowNumber);
+        chunkOriginalIndexMap.set(insertIndex, r.originalIndex);
       }
+
+      console.log(`[importStudents] Chunk ${i / chunkSize + 1} - chunkIndexMap:`, Array.from(chunkIndexMap.entries()));
+      console.log(`[importStudents] Chunk ${i / chunkSize + 1} - chunkOriginalIndexMap:`, Array.from(chunkOriginalIndexMap.entries()));
 
       if (rowsToInsert.length === 0) continue;
 
@@ -894,8 +917,17 @@ class StudentController {
           results.push({ rowNumber, status: 'CREATED', studentId: inserted[k].id });
         }
         
+        console.log(`[importStudents] Calling handleStudentAssignments with:`, {
+          insertedCount: inserted.length,
+          chunkIndexMap: Array.from(chunkIndexMap.entries()),
+          chunkOriginalIndexMap: Array.from(chunkOriginalIndexMap.entries()),
+          globalCourseId,
+          globalGroupId,
+          assignments: JSON.stringify(assignments, null, 2)
+        });
+        
         // Handle course/group assignments for created students
-        await this.handleStudentAssignments(inserted, chunkIndexMap, globalCourseId, globalGroupId, assignments);
+        await this.handleStudentAssignments(inserted, chunkOriginalIndexMap, globalCourseId, globalGroupId, assignments);
       } else {
         // Fallback per-row to isolate errors
         for (let k = 0; k < rowsToInsert.length; k++) {
@@ -914,7 +946,9 @@ class StudentController {
             created++;
             
             // Handle course/group assignment for single student
-            await this.handleStudentAssignments([single], new Map([[0, rowNumber]]), globalCourseId, globalGroupId, assignments);
+            const singleOriginalIndex = chunkOriginalIndexMap.get(k);
+            console.log(`[importStudents] Single insert - calling handleStudentAssignments with originalIndex: ${singleOriginalIndex}`);
+            await this.handleStudentAssignments([single], new Map([[0, singleOriginalIndex]]), globalCourseId, globalGroupId, assignments);
           }
         }
       }
@@ -942,26 +976,55 @@ class StudentController {
   /**
    * Handle course/group assignments for imported students
    */
-  handleStudentAssignments = async (students, chunkIndexMap, globalCourseId, globalGroupId, assignments) => {
-    if (!students || students.length === 0) return;
+  handleStudentAssignments = async (students, originalIndexMap, globalCourseId, globalGroupId, assignments) => {
+    console.log('[handleStudentAssignments] START');
+    console.log('[handleStudentAssignments] students count:', students?.length || 0);
+    console.log('[handleStudentAssignments] globalCourseId:', globalCourseId);
+    console.log('[handleStudentAssignments] globalGroupId:', globalGroupId);
+    console.log('[handleStudentAssignments] assignments:', JSON.stringify(assignments, null, 2));
+    console.log('[handleStudentAssignments] originalIndexMap:', Array.from(originalIndexMap.entries()));
+    
+    if (!students || students.length === 0) {
+      console.log('[handleStudentAssignments] No students, exiting');
+      return;
+    }
 
     for (let i = 0; i < students.length; i++) {
       const student = students[i];
-      const rowNumber = chunkIndexMap.get(i);
+      const originalIndex = originalIndexMap.get(i);
+      
+      console.log(`[handleStudentAssignments] Processing student ${i}:`, {
+        studentId: student.id,
+        username: student.username,
+        insertIndex: i,
+        originalIndex: originalIndex
+      });
       
       // Determine course and group for this student
       let courseId = globalCourseId;
       let groupId = globalGroupId;
       
-      // Check for individual assignment
-      if (assignments && assignments[rowNumber]) {
-        const assignment = assignments[rowNumber];
+      // Check for individual assignment - use originalIndex as string key (0-based)
+      const assignmentKey = originalIndex?.toString();
+      console.log(`[handleStudentAssignments] Checking assignments["${assignmentKey}"]:`, assignments?.[assignmentKey]);
+      if (assignments && originalIndex !== undefined && assignments[assignmentKey]) {
+        const assignment = assignments[assignmentKey];
+        console.log(`[handleStudentAssignments] Found individual assignment for originalIndex ${originalIndex}:`, assignment);
         if (assignment.courseId) courseId = assignment.courseId;
         if (assignment.groupId) groupId = assignment.groupId;
       }
       
+      console.log(`[handleStudentAssignments] Final assignment for student ${student.id}:`, {
+        courseId,
+        groupId,
+        hadIndividualAssignment: !!(assignments && originalIndex !== undefined && assignments[assignmentKey])
+      });
+      
       // Skip if no assignment provided
-      if (!courseId && !groupId) continue;
+      if (!courseId && !groupId) {
+        console.log(`[handleStudentAssignments] Skipping student ${student.id} - no assignment`);
+        continue;
+      }
       
       try {
         // If only courseId provided, we need to find a default group or create one
@@ -1019,23 +1082,32 @@ class StudentController {
           }
           
           // Create new enrollment
-          const { error: enrollError } = await supabase
+          const enrollmentData = {
+            student_id: student.id,
+            group_id: groupId,
+            semester_id: courseInfo ? courseInfo.semester_id : null,
+            is_active: true
+          };
+          console.log(`[handleStudentAssignments] Creating enrollment for student ${student.id}:`, enrollmentData);
+          
+          const { data: enrollmentResult, error: enrollError } = await supabase
             .from('student_enrollments')
-            .insert({
-              student_id: student.id,
-              group_id: groupId,
-              semester_id: courseInfo ? courseInfo.semester_id : null,
-              is_active: true
-            });
+            .insert(enrollmentData)
+            .select();
           
           if (enrollError) {
-            console.error('Enrollment creation error for student', student.id, ':', enrollError);
+            console.error(`[handleStudentAssignments] Enrollment creation error for student ${student.id}:`, enrollError);
+          } else {
+            console.log(`[handleStudentAssignments] Successfully created enrollment for student ${student.id}:`, enrollmentResult);
           }
+        } else {
+          console.log(`[handleStudentAssignments] Skipping enrollment creation for student ${student.id} - missing courseId or groupId`);
         }
       } catch (error) {
-        console.error('Assignment error for student', student.id, ':', error);
+        console.error(`[handleStudentAssignments] Assignment error for student ${student.id}:`, error);
       }
     }
+    console.log('[handleStudentAssignments] END');
   };
 }
 

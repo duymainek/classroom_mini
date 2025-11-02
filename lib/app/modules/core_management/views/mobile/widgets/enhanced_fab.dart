@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:classroom_mini/app/data/services/connectivity_service.dart';
 
 class EnhancedFAB extends StatefulWidget {
   final String currentTab;
@@ -61,22 +63,28 @@ class _EnhancedFABState extends State<EnhancedFAB>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _scaleAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value,
-          child: FloatingActionButton.extended(
-            onPressed: _onTap,
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            foregroundColor: Colors.white,
-            elevation: 8,
-            icon: const Icon(Icons.add),
-            label: Text(_getLabel()),
-          ),
-        );
-      },
-    );
+    final connectivityService = Get.find<ConnectivityService>();
+    return Obx(() {
+      if (!connectivityService.isOnline.value) {
+        return const SizedBox.shrink();
+      }
+      return AnimatedBuilder(
+        animation: _scaleAnimation,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: FloatingActionButton.extended(
+              onPressed: _onTap,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Colors.white,
+              elevation: 8,
+              icon: const Icon(Icons.add),
+              label: Text(_getLabel()),
+            ),
+          );
+        },
+      );
+    });
   }
 
   String _getLabel() {

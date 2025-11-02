@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:classroom_mini/app/data/models/response/forum_response.dart';
+import 'package:classroom_mini/app/data/services/connectivity_service.dart';
 import 'package:classroom_mini/app/core/utils/timeago.dart';
 import 'package:classroom_mini/app/modules/forum/controllers/forum_detail_controller.dart';
 
@@ -108,27 +109,33 @@ class ForumReplyWidget extends StatelessWidget {
                     ],
                   ),
                 ),
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    switch (value) {
-                      case 'delete':
-                        onDelete?.call();
-                        break;
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete),
-                          SizedBox(width: 8),
-                          Text('Delete'),
-                        ],
+                Obx(() {
+                  final connectivityService = Get.find<ConnectivityService>();
+                  if (!connectivityService.isOnline.value) {
+                    return const SizedBox.shrink();
+                  }
+                  return PopupMenuButton<String>(
+                    onSelected: (value) {
+                      switch (value) {
+                        case 'delete':
+                          onDelete?.call();
+                          break;
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete),
+                            SizedBox(width: 8),
+                            Text('Delete'),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  );
+                }),
               ],
             ),
             const SizedBox(height: 8),

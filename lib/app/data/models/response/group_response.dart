@@ -1,10 +1,10 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'course_response.dart';
 import 'semester_response.dart';
+import 'package:classroom_mini/app/data/models/response/auth_response.dart';
 
 part 'group_response.g.dart';
 
-@JsonSerializable()
 class Group {
   final String id;
   final String name;
@@ -24,8 +24,46 @@ class Group {
     this.courseBrief,
   });
 
-  factory Group.fromJson(Map<String, dynamic> json) => _$GroupFromJson(json);
-  Map<String, dynamic> toJson() => _$GroupToJson(this);
+  factory Group.fromJson(Map<String, dynamic> json) {
+    final courseData = json['course'] ?? json['courses'];
+    
+    GroupCourseBrief? courseBrief;
+    if (courseData != null && courseData is Map<String, dynamic>) {
+      final semesterData = courseData['semester'] ?? courseData['semesters'];
+      CourseSemesterBrief? semesterBrief;
+      if (semesterData != null && semesterData is Map<String, dynamic>) {
+        semesterBrief = CourseSemesterBrief.fromJson(semesterData);
+      }
+      
+      courseBrief = GroupCourseBrief(
+        code: courseData['code'] as String,
+        name: courseData['name'] as String,
+        semesterBrief: semesterBrief,
+      );
+    }
+    
+    return Group(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      courseId: json['courseId'] as String?,
+      isActive: json['isActive'] as bool,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      courseBrief: courseBrief,
+    );
+  }
+  
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'courseId': courseId,
+      'isActive': isActive,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'course': courseBrief?.toJson(),
+    };
+  }
 
   Group copyWith({
     String? id,
@@ -78,12 +116,14 @@ class GroupListData {
 }
 
 @JsonSerializable()
-class GroupListResponse {
-  final bool success;
+class GroupListResponse extends BaseResponse {
   final GroupListData data;
 
-  const GroupListResponse({
-    required this.success,
+  GroupListResponse({
+    required super.success,
+    super.message,
+    super.code,
+    super.errors,
     required this.data,
   });
 
@@ -93,19 +133,37 @@ class GroupListResponse {
 }
 
 @JsonSerializable()
-class GroupResponse {
-  final Group group;
+class GroupResponse extends BaseResponse {
+  final GroupData? data;
 
-  const GroupResponse({
-    required this.group,
+  GroupResponse({
+    required super.success,
+    super.message,
+    super.code,
+    super.errors,
+    this.data,
   });
 
   factory GroupResponse.fromJson(Map<String, dynamic> json) =>
       _$GroupResponseFromJson(json);
   Map<String, dynamic> toJson() => _$GroupResponseToJson(this);
+
+  Group? get group => data?.group;
 }
 
 @JsonSerializable()
+class GroupData {
+  final Group group;
+
+  const GroupData({
+    required this.group,
+  });
+
+  factory GroupData.fromJson(Map<String, dynamic> json) =>
+      _$GroupDataFromJson(json);
+  Map<String, dynamic> toJson() => _$GroupDataToJson(this);
+}
+
 class GroupCourseBrief {
   final String code;
   final String name;
@@ -117,7 +175,11 @@ class GroupCourseBrief {
     this.semesterBrief,
   });
 
-  factory GroupCourseBrief.fromJson(Map<String, dynamic> json) =>
-      _$GroupCourseBriefFromJson(json);
-  Map<String, dynamic> toJson() => _$GroupCourseBriefToJson(this);
+  Map<String, dynamic> toJson() {
+    return {
+      'code': code,
+      'name': name,
+      'semester': semesterBrief?.toJson(),
+    };
+  }
 }

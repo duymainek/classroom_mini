@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:classroom_mini/app/data/services/connectivity_service.dart';
 import 'package:classroom_mini/app/modules/forum/controllers/forum_detail_controller.dart';
 import 'package:classroom_mini/app/modules/forum/widgets/forum_reply_widget.dart';
 import 'package:classroom_mini/app/modules/forum/widgets/forum_reply_form.dart';
@@ -19,40 +20,46 @@ class ForumDetailView extends GetView<ForumDetailController> {
       appBar: AppBar(
         title: const Text('Forum'),
         actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              switch (value) {
-                case 'edit':
-                  _showEditDialog(context);
-                  break;
-                case 'delete':
-                  _showDeleteDialog(context);
-                  break;
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'edit',
-                child: Row(
-                  children: [
-                    Icon(Icons.edit),
-                    SizedBox(width: 8),
-                    Text('Edit Topic'),
-                  ],
+          Obx(() {
+            final connectivityService = Get.find<ConnectivityService>();
+            if (!connectivityService.isOnline.value) {
+              return const SizedBox.shrink();
+            }
+            return PopupMenuButton<String>(
+              onSelected: (value) {
+                switch (value) {
+                  case 'edit':
+                    _showEditDialog(context);
+                    break;
+                  case 'delete':
+                    _showDeleteDialog(context);
+                    break;
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit),
+                      SizedBox(width: 8),
+                      Text('Edit Topic'),
+                    ],
+                  ),
                 ),
-              ),
-              const PopupMenuItem(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete),
-                    SizedBox(width: 8),
-                    Text('Delete Topic'),
-                  ],
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete),
+                      SizedBox(width: 8),
+                      Text('Delete Topic'),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            );
+          }),
         ],
       ),
       body: Obx(() {

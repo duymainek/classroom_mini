@@ -5,6 +5,7 @@ import 'package:classroom_mini/app/modules/forum/controllers/forum_controller.da
 import 'package:classroom_mini/app/modules/forum/widgets/forum_topic_card.dart';
 import 'package:classroom_mini/app/modules/forum/widgets/forum_topic_form.dart';
 import 'package:classroom_mini/app/modules/forum/design/forum_design_system.dart';
+import 'package:classroom_mini/app/data/services/connectivity_service.dart';
 
 /**
  * Enhanced Forum List View
@@ -226,19 +227,25 @@ class _ForumListViewState extends State<ForumListView>
   }
 
   Widget _buildCreateButton(BuildContext context) {
-    return IconButton(
-      onPressed: () => _showCreateTopicDialog(context),
-      icon: Icon(
-        Icons.add,
-        color: ForumDesignSystem.primary,
-      ),
-      style: IconButton.styleFrom(
-        backgroundColor: ForumDesignSystem.primary.withOpacity(0.1),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ForumDesignSystem.radiusMD),
+    final connectivityService = Get.find<ConnectivityService>();
+    return Obx(() {
+      if (!connectivityService.isOnline.value) {
+        return const SizedBox.shrink();
+      }
+      return IconButton(
+        onPressed: () => _showCreateTopicDialog(context),
+        icon: Icon(
+          Icons.add,
+          color: ForumDesignSystem.primary,
         ),
-      ),
-    );
+        style: IconButton.styleFrom(
+          backgroundColor: ForumDesignSystem.primary.withOpacity(0.1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(ForumDesignSystem.radiusMD),
+          ),
+        ),
+      );
+    });
   }
 
   Widget _buildBody(BuildContext context, bool isTablet) {
@@ -311,24 +318,34 @@ class _ForumListViewState extends State<ForumListView>
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: ForumDesignSystem.spacingLG),
-            ElevatedButton.icon(
-              onPressed: () => _showCreateTopicDialog(context),
-              icon: Icon(Icons.add),
-              label: Text('Create First Topic'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: ForumDesignSystem.primary,
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(
-                  horizontal: ForumDesignSystem.spacingLG,
-                  vertical: ForumDesignSystem.spacingMD,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(ForumDesignSystem.radiusMD),
-                ),
-              ),
-            ),
+            Obx(() {
+              final connectivityService = Get.find<ConnectivityService>();
+              if (!connectivityService.isOnline.value) {
+                return const SizedBox.shrink();
+              }
+              return Column(
+                children: [
+                  SizedBox(height: ForumDesignSystem.spacingLG),
+                  ElevatedButton.icon(
+                    onPressed: () => _showCreateTopicDialog(context),
+                    icon: Icon(Icons.add),
+                    label: Text('Create First Topic'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ForumDesignSystem.primary,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: ForumDesignSystem.spacingLG,
+                        vertical: ForumDesignSystem.spacingMD,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(ForumDesignSystem.radiusMD),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }),
           ],
         ),
       ),
@@ -362,18 +379,24 @@ class _ForumListViewState extends State<ForumListView>
   }
 
   Widget _buildFloatingActionButton(BuildContext context) {
-    return ScaleTransition(
-      scale: _fabScaleAnimation,
-      child: FloatingActionButton.extended(
-        heroTag: 'forum_fab',
-        onPressed: () => _showCreateTopicDialog(context),
-        backgroundColor: ForumDesignSystem.primary,
-        foregroundColor: Colors.white,
-        icon: Icon(Icons.add),
-        label: Text('New Topic'),
-        elevation: ForumDesignSystem.elevationLG,
-      ),
-    );
+    final connectivityService = Get.find<ConnectivityService>();
+    return Obx(() {
+      if (!connectivityService.isOnline.value) {
+        return const SizedBox.shrink();
+      }
+      return ScaleTransition(
+        scale: _fabScaleAnimation,
+        child: FloatingActionButton.extended(
+          heroTag: 'forum_fab',
+          onPressed: () => _showCreateTopicDialog(context),
+          backgroundColor: ForumDesignSystem.primary,
+          foregroundColor: Colors.white,
+          icon: Icon(Icons.add),
+          label: Text('New Topic'),
+          elevation: ForumDesignSystem.elevationLG,
+        ),
+      );
+    });
   }
 
   void _showCreateTopicDialog(BuildContext context) {

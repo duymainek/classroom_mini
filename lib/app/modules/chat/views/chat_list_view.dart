@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../controllers/chat_list_controller.dart';
 import '../../../data/models/response/chat_response.dart';
+import '../../../data/services/connectivity_service.dart';
 
 class ChatListView extends StatelessWidget {
   const ChatListView({super.key});
@@ -63,7 +64,8 @@ class ChatListView extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
+                const Icon(Icons.chat_bubble_outline,
+                    size: 64, color: Colors.grey),
                 const SizedBox(height: 16),
                 const Text('No conversations yet'),
                 const SizedBox(height: 8),
@@ -85,17 +87,24 @@ class ChatListView extends StatelessWidget {
               return _ConversationTile(
                 conversation: conversation,
                 onTap: () => controller.openChatRoom(conversation),
-                onLongPress: () => controller.hideConversation(conversation.roomId),
+                onLongPress: () =>
+                    controller.hideConversation(conversation.roomId),
               );
             },
           ),
         );
       }),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'chat_fab',
-        onPressed: () => controller.openNewChat(),
-        child: const Icon(Icons.chat),
-      ),
+      floatingActionButton: Obx(() {
+        final connectivityService = Get.find<ConnectivityService>();
+        if (!connectivityService.isOnline.value) {
+          return const SizedBox.shrink();
+        }
+        return FloatingActionButton(
+          heroTag: 'chat_fab',
+          onPressed: () => controller.openNewChat(),
+          child: const Icon(Icons.chat),
+        );
+      }),
     );
   }
 }
@@ -187,4 +196,3 @@ class _ConversationTile extends StatelessWidget {
     );
   }
 }
-

@@ -120,6 +120,16 @@ class CacheInterceptor extends Interceptor {
   ) async {
     final method = response.requestOptions.method.toUpperCase();
     
+    // Clear cache for POST/PUT/DELETE requests
+    if (method == 'POST' || method == 'PUT' || method == 'DELETE') {
+      if (response.statusCode != null && 
+          response.statusCode! >= 200 && 
+          response.statusCode! < 300) {
+        final path = _normalizePath(response.requestOptions.path);
+        await _clearRelatedCache(path, method);
+      }
+    }
+    
     // Clear cache for topic detail when view is tracked
     if (method == 'POST' && 
         response.statusCode == 200 &&
@@ -274,5 +284,134 @@ class CacheInterceptor extends Interceptor {
   String? _extractTopicId(String path) {
     final match = RegExp(r'/forum/topics/([^/]+)').firstMatch(path);
     return match?.group(1);
+  }
+
+  Future<void> _clearRelatedCache(String path, String method) async {
+    try {
+      final patternsToClear = <String>[];
+      
+      // Extract resource name and ID from path
+      // Examples:
+      // /auth/student/create → students
+      // /students → students
+      // /students/123 → students, students/123
+      // /courses → courses
+      // /groups/course/123 → groups, groups/course/123
+      
+      // Pattern matching rules
+      if (path.contains('/auth/student/create') || path.contains('/students')) {
+        patternsToClear.add('/students');
+        
+        // Extract student ID if exists (e.g., /students/123)
+        final studentIdMatch = RegExp(r'/students/([^/]+)').firstMatch(path);
+        if (studentIdMatch != null) {
+          final studentId = studentIdMatch.group(1);
+          patternsToClear.add('/students/$studentId');
+        }
+        
+        // Also clear dashboard if student-related
+        patternsToClear.add('/dashboard');
+      }
+      
+      if (path.contains('/courses')) {
+        patternsToClear.add('/courses');
+        
+        final courseIdMatch = RegExp(r'/courses/([^/]+)').firstMatch(path);
+        if (courseIdMatch != null) {
+          final courseId = courseIdMatch.group(1);
+          // Don't clear if it's a sub-resource like /courses/semester/123
+          if (!path.contains('/courses/semester/') && 
+              !path.contains('/courses/course/')) {
+            patternsToClear.add('/courses/$courseId');
+          }
+        }
+        
+        // Clear courses by semester if path contains semester
+        if (path.contains('/courses/semester/')) {
+          final semesterIdMatch = RegExp(r'/courses/semester/([^/]+)').firstMatch(path);
+          if (semesterIdMatch != null) {
+            patternsToClear.add('/courses/semester/${semesterIdMatch.group(1)}');
+          }
+        }
+        
+        patternsToClear.add('/dashboard');
+      }
+      
+      if (path.contains('/groups')) {
+        patternsToClear.add('/groups');
+        
+        final groupIdMatch = RegExp(r'/groups/([^/]+)').firstMatch(path);
+        if (groupIdMatch != null) {
+          final groupId = groupIdMatch.group(1);
+          // Don't clear if it's a sub-resource like /groups/course/123
+          if (!path.contains('/groups/course/')) {
+            patternsToClear.add('/groups/$groupId');
+          }
+        }
+        
+        // Clear groups by course if path contains course
+        if (path.contains('/groups/course/')) {
+          final courseIdMatch = RegExp(r'/groups/course/([^/]+)').firstMatch(path);
+          if (courseIdMatch != null) {
+            patternsToClear.add('/groups/course/${courseIdMatch.group(1)}');
+          }
+        }
+      }
+      
+      if (path.contains('/semesters')) {
+        patternsToClear.add('/semesters');
+        
+        final semesterIdMatch = RegExp(r'/semesters/([^/]+)').firstMatch(path);
+        if (semesterIdMatch != null) {
+          final semesterId = semesterIdMatch.group(1);
+          patternsToClear.add('/semesters/$semesterId');
+        }
+        
+        patternsToClear.add('/dashboard');
+      }
+      
+      if (path.contains('/assignments')) {
+        patternsToClear.add('/assignments');
+        
+        final assignmentIdMatch = RegExp(r'/assignments/([^/]+)').firstMatch(path);
+        if (assignmentIdMatch != null) {
+          final assignmentId = assignmentIdMatch.group(1);
+          patternsToClear.add('/assignments/$assignmentId');
+        }
+      }
+      
+      if (path.contains('/materials')) {
+        patternsToClear.add('/materials');
+        
+        final materialIdMatch = RegExp(r'/materials/([^/]+)').firstMatch(path);
+        if (materialIdMatch != null) {
+          final materialId = materialIdMatch.group(1);
+          patternsToClear.add('/materials/$materialId');
+        }
+      }
+      
+      if (path.contains('/announcements')) {
+        patternsToClear.add('/announcements');
+        
+        final announcementIdMatch = RegExp(r'/announcements/([^/]+)').firstMatch(path);
+        if (announcementIdMatch != null) {
+          final announcementId = announcementIdMatch.group(1);
+          patternsToClear.add('/announcements/$announcementId');
+        }
+      }
+      
+      if (path.contains('/profile') || path.contains('/auth/me')) {
+        patternsToClear.add('/profile');
+        patternsToClear.add('/auth/me');
+      }
+      
+      // Clear cache by pattern for each matched path
+      for (final pattern in patternsToClear) {
+        await CacheManager.clearByPathPattern(pattern);
+        print('🗑️ Cleared cache pattern: $pattern (after $method $path)');
+      }
+    } catch (e) {
+      print('❌ Error clearing related cache: $e');
+    }
   }
 }

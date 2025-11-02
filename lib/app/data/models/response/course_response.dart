@@ -1,9 +1,9 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'semester_response.dart';
+import 'package:classroom_mini/app/data/models/response/auth_response.dart';
 
 part 'course_response.g.dart';
 
-@JsonSerializable()
 class Course {
   final String id;
   final String code;
@@ -13,7 +13,6 @@ class Course {
   final bool isActive;
   final DateTime createdAt;
   final DateTime updatedAt;
-  // Backend returns nested object under key "semesters" with only code & name
   final CourseSemesterBrief? semesterBrief;
 
   const Course({
@@ -28,8 +27,39 @@ class Course {
     this.semesterBrief,
   });
 
-  factory Course.fromJson(Map<String, dynamic> json) => _$CourseFromJson(json);
-  Map<String, dynamic> toJson() => _$CourseToJson(this);
+  factory Course.fromJson(Map<String, dynamic> json) {
+    final semesterData = json['semester'] ?? json['semesters'];
+    
+    CourseSemesterBrief? semesterBrief;
+    if (semesterData != null && semesterData is Map<String, dynamic>) {
+      semesterBrief = CourseSemesterBrief.fromJson(semesterData);
+    }
+    
+    return Course(
+      id: json['id'] as String,
+      code: json['code'] as String,
+      name: json['name'] as String,
+      sessionCount: (json['sessionCount'] as num).toInt(),
+      semesterId: json['semesterId'] as String,
+      isActive: json['isActive'] as bool,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      semesterBrief: semesterBrief,
+    );
+  }
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'code': code,
+      'name': name,
+      'sessionCount': sessionCount,
+      'semesterId': semesterId,
+      'isActive': isActive,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'semester': semesterBrief?.toJson(),
+    };
+  }
 
   Course copyWith({
     String? id,
@@ -101,12 +131,14 @@ class CourseListData {
 }
 
 @JsonSerializable()
-class CourseListResponse {
-  final bool success;
+class CourseListResponse extends BaseResponse {
   final CourseListData data;
 
-  const CourseListResponse({
-    required this.success,
+  CourseListResponse({
+    required super.success,
+    super.message,
+    super.code,
+    super.errors,
     required this.data,
   });
 
@@ -116,14 +148,33 @@ class CourseListResponse {
 }
 
 @JsonSerializable()
-class CourseResponse {
-  final Course course;
+class CourseResponse extends BaseResponse {
+  final CourseData? data;
 
-  const CourseResponse({
-    required this.course,
+  CourseResponse({
+    required super.success,
+    super.message,
+    super.code,
+    super.errors,
+    this.data,
   });
 
   factory CourseResponse.fromJson(Map<String, dynamic> json) =>
       _$CourseResponseFromJson(json);
   Map<String, dynamic> toJson() => _$CourseResponseToJson(this);
+
+  Course? get course => data?.course;
+}
+
+@JsonSerializable()
+class CourseData {
+  final Course course;
+
+  const CourseData({
+    required this.course,
+  });
+
+  factory CourseData.fromJson(Map<String, dynamic> json) =>
+      _$CourseDataFromJson(json);
+  Map<String, dynamic> toJson() => _$CourseDataToJson(this);
 }

@@ -45,11 +45,15 @@ class UpdateStudentRequest {
   final String? email;
   final String? fullName;
   final bool? isActive;
+  final String? groupId;
+  final String? courseId;
 
   UpdateStudentRequest({
     this.email,
     this.fullName,
     this.isActive,
+    this.groupId,
+    this.courseId,
   });
 
   factory UpdateStudentRequest.fromJson(Map<String, dynamic> json) =>

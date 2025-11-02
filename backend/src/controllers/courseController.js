@@ -152,9 +152,22 @@ class CourseController {
       throw new AppError('Failed to fetch courses', 500, 'GET_COURSES_FAILED');
     }
 
+    // Transform courses: rename semesters to semester to match schema
+    const transformedCourses = (courses || []).map(course => ({
+      id: course.id,
+      code: course.code,
+      name: course.name,
+      sessionCount: course.session_count,
+      semesterId: course.semester_id,
+      isActive: course.is_active,
+      createdAt: course.created_at,
+      updatedAt: course.updated_at,
+      semester: course.semesters || null
+    }));
+
     res.json(
       buildResponse(true, undefined, {
-        courses: courses || [],
+        courses: transformedCourses,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
@@ -185,7 +198,20 @@ class CourseController {
       throw new AppError('Course not found', 404, 'COURSE_NOT_FOUND');
     }
 
-    res.json(buildResponse(true, undefined, { course }));
+    // Transform course: rename semesters to semester to match schema
+    const transformedCourse = {
+      id: course.id,
+      code: course.code,
+      name: course.name,
+      sessionCount: course.session_count,
+      semesterId: course.semester_id,
+      isActive: course.is_active,
+      createdAt: course.created_at,
+      updatedAt: course.updated_at,
+      semester: course.semesters || null
+    };
+
+    res.json(buildResponse(true, undefined, { course: transformedCourse }));
   });
 
   /**
@@ -276,8 +302,21 @@ class CourseController {
       throw new AppError('Failed to update course', 500, 'UPDATE_COURSE_FAILED');
     }
 
+    // Transform course: rename semesters to semester to match schema
+    const transformedCourse = {
+      id: updatedCourse.id,
+      code: updatedCourse.code,
+      name: updatedCourse.name,
+      sessionCount: updatedCourse.session_count,
+      semesterId: updatedCourse.semester_id,
+      isActive: updatedCourse.is_active,
+      createdAt: updatedCourse.created_at,
+      updatedAt: updatedCourse.updated_at,
+      semester: updatedCourse.semesters || null
+    };
+
     res.json(
-      buildResponse(true, 'Course updated successfully', { course: updatedCourse })
+      buildResponse(true, 'Course updated successfully', { course: transformedCourse })
     );
   });
 
@@ -376,9 +415,21 @@ class CourseController {
       throw new AppError('Failed to fetch courses', 500, 'GET_COURSES_FAILED');
     }
 
+    // Transform courses: convert snake_case to camelCase
+    const transformedCourses = (courses || []).map(course => ({
+      id: course.id,
+      code: course.code,
+      name: course.name,
+      sessionCount: course.session_count,
+      semesterId: semesterId,
+      isActive: course.is_active,
+      createdAt: course.created_at,
+      updatedAt: course.updated_at
+    }));
+
     res.json(
       buildResponse(true, undefined, {
-        courses: courses || [],
+        courses: transformedCourses,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),

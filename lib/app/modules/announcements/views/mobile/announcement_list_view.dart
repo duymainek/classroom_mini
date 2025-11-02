@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:classroom_mini/app/routes/app_routes.dart';
+import 'package:classroom_mini/app/data/services/connectivity_service.dart';
 import '../../controllers/announcement_controller.dart';
 import '../../widgets/announcement_card.dart';
 
@@ -281,14 +282,20 @@ class MobileAnnouncementListView extends StatelessWidget {
 
   Widget _buildFloatingActionButton(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final connectivityService = Get.find<ConnectivityService>();
 
-    return FloatingActionButton.extended(
-      onPressed: _navigateToCreateAnnouncement,
-      icon: const Icon(Icons.add),
-      label: const Text('Tạo thông báo'),
-      backgroundColor: colorScheme.primary,
-      foregroundColor: colorScheme.onPrimary,
-    );
+    return Obx(() {
+      if (!connectivityService.isOnline.value) {
+        return const SizedBox.shrink();
+      }
+      return FloatingActionButton.extended(
+        onPressed: _navigateToCreateAnnouncement,
+        icon: const Icon(Icons.add),
+        label: const Text('Tạo thông báo'),
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+      );
+    });
   }
 
   void _showSearchDialog(AnnouncementController controller) {

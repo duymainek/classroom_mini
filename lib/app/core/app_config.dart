@@ -14,12 +14,14 @@ class AppConfig {
   String _selectedSemesterName = '';
   String _selectedSemesterCode = '';
   bool _isSemesterSelected = false;
+  bool _isInstructor = false;
 
   // Getters
   String get selectedSemesterId => _selectedSemesterId;
   String get selectedSemesterName => _selectedSemesterName;
   String get selectedSemesterCode => _selectedSemesterCode;
   bool get isSemesterSelected => _isSemesterSelected;
+  bool get isInstructor => _isInstructor;
 
   /**
    * Thiết lập học kì đang được chọn
@@ -66,5 +68,20 @@ class AppConfig {
       'name': _selectedSemesterName,
       'code': _selectedSemesterCode,
     };
+  }
+
+  /**
+   * Thiết lập role của user
+   * @param {bool} isInstructor - true nếu là instructor, false nếu là student
+   */
+  void setUserRole(bool isInstructor) {
+    _isInstructor = isInstructor;
+  }
+
+  /**
+   * Xóa thông tin role của user (khi logout)
+   */
+  void clearUserRole() {
+    _isInstructor = false;
   }
 }

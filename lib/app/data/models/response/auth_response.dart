@@ -117,20 +117,41 @@ class StudentsListResponse extends BaseResponse {
 }
 
 @JsonSerializable()
-class StudentUpdateResponse extends BaseResponse {
+class StudentUpdateData {
   final UserModel? student;
+  final String? groupId;
+  final String? courseId;
+
+  StudentUpdateData({
+    this.student,
+    this.groupId,
+    this.courseId,
+  });
+
+  factory StudentUpdateData.fromJson(Map<String, dynamic> json) =>
+      _$StudentUpdateDataFromJson(json);
+  Map<String, dynamic> toJson() => _$StudentUpdateDataToJson(this);
+}
+
+@JsonSerializable()
+class StudentUpdateResponse extends BaseResponse {
+  final StudentUpdateData? data;
 
   StudentUpdateResponse({
     required super.success,
     super.message,
     super.code,
     super.errors,
-    this.student,
+    this.data,
   });
 
   factory StudentUpdateResponse.fromJson(Map<String, dynamic> json) =>
       _$StudentUpdateResponseFromJson(json);
   Map<String, dynamic> toJson() => _$StudentUpdateResponseToJson(this);
+
+  UserModel? get student => data?.student;
+  String? get groupId => data?.groupId;
+  String? get courseId => data?.courseId;
 }
 
 @JsonSerializable()

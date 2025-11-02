@@ -6,33 +6,6 @@ part of 'course_response.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Course _$CourseFromJson(Map<String, dynamic> json) => Course(
-      id: json['id'] as String,
-      code: json['code'] as String,
-      name: json['name'] as String,
-      sessionCount: (json['sessionCount'] as num).toInt(),
-      semesterId: json['semesterId'] as String,
-      isActive: json['isActive'] as bool,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
-      semesterBrief: json['semesterBrief'] == null
-          ? null
-          : CourseSemesterBrief.fromJson(
-              json['semesterBrief'] as Map<String, dynamic>),
-    );
-
-Map<String, dynamic> _$CourseToJson(Course instance) => <String, dynamic>{
-      'id': instance.id,
-      'code': instance.code,
-      'name': instance.name,
-      'sessionCount': instance.sessionCount,
-      'semesterId': instance.semesterId,
-      'isActive': instance.isActive,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'updatedAt': instance.updatedAt.toIso8601String(),
-      'semesterBrief': instance.semesterBrief,
-    };
-
 CourseSemesterBrief _$CourseSemesterBriefFromJson(Map<String, dynamic> json) =>
     CourseSemesterBrief(
       code: json['code'] as String,
@@ -64,21 +37,48 @@ Map<String, dynamic> _$CourseListDataToJson(CourseListData instance) =>
 CourseListResponse _$CourseListResponseFromJson(Map<String, dynamic> json) =>
     CourseListResponse(
       success: json['success'] as bool,
+      message: json['message'] as String?,
+      code: json['code'] as String?,
+      errors:
+          (json['errors'] as List<dynamic>?)?.map((e) => e as String).toList(),
       data: CourseListData.fromJson(json['data'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$CourseListResponseToJson(CourseListResponse instance) =>
     <String, dynamic>{
       'success': instance.success,
+      'message': instance.message,
+      'code': instance.code,
+      'errors': instance.errors,
       'data': instance.data,
     };
 
 CourseResponse _$CourseResponseFromJson(Map<String, dynamic> json) =>
     CourseResponse(
-      course: Course.fromJson(json['course'] as Map<String, dynamic>),
+      success: json['success'] as bool,
+      message: json['message'] as String?,
+      code: json['code'] as String?,
+      errors:
+          (json['errors'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      data: json['data'] == null
+          ? null
+          : CourseData.fromJson(json['data'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$CourseResponseToJson(CourseResponse instance) =>
+    <String, dynamic>{
+      'success': instance.success,
+      'message': instance.message,
+      'code': instance.code,
+      'errors': instance.errors,
+      'data': instance.data,
+    };
+
+CourseData _$CourseDataFromJson(Map<String, dynamic> json) => CourseData(
+      course: Course.fromJson(json['course'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$CourseDataToJson(CourseData instance) =>
     <String, dynamic>{
       'course': instance.course,
     };

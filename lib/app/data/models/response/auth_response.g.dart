@@ -119,6 +119,22 @@ Map<String, dynamic> _$StudentsListResponseToJson(
       'data': instance.data,
     };
 
+StudentUpdateData _$StudentUpdateDataFromJson(Map<String, dynamic> json) =>
+    StudentUpdateData(
+      student: json['student'] == null
+          ? null
+          : UserModel.fromJson(json['student'] as Map<String, dynamic>),
+      groupId: json['groupId'] as String?,
+      courseId: json['courseId'] as String?,
+    );
+
+Map<String, dynamic> _$StudentUpdateDataToJson(StudentUpdateData instance) =>
+    <String, dynamic>{
+      'student': instance.student,
+      'groupId': instance.groupId,
+      'courseId': instance.courseId,
+    };
+
 StudentUpdateResponse _$StudentUpdateResponseFromJson(
         Map<String, dynamic> json) =>
     StudentUpdateResponse(
@@ -127,9 +143,9 @@ StudentUpdateResponse _$StudentUpdateResponseFromJson(
       code: json['code'] as String?,
       errors:
           (json['errors'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      student: json['student'] == null
+      data: json['data'] == null
           ? null
-          : UserModel.fromJson(json['student'] as Map<String, dynamic>),
+          : StudentUpdateData.fromJson(json['data'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$StudentUpdateResponseToJson(
@@ -139,7 +155,7 @@ Map<String, dynamic> _$StudentUpdateResponseToJson(
       'message': instance.message,
       'code': instance.code,
       'errors': instance.errors,
-      'student': instance.student,
+      'data': instance.data,
     };
 
 SimpleResponse _$SimpleResponseFromJson(Map<String, dynamic> json) =>

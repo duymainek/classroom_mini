@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:classroom_mini/app/data/models/response/forum_response.dart';
+import 'package:classroom_mini/app/data/services/connectivity_service.dart';
 
 /**
  * Forum Reply Form Widget
@@ -88,29 +90,35 @@ class ForumReplyForm extends StatelessWidget {
           const SizedBox(height: 12),
 
           // Post button
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              if (replyingTo != null) ...[
-                TextButton(
-                  onPressed: onCancelReply,
-                  child: const Text('Cancel'),
+          Obx(() {
+            final connectivityService = Get.find<ConnectivityService>();
+            if (!connectivityService.isOnline.value) {
+              return const SizedBox.shrink();
+            }
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (replyingTo != null) ...[
+                  TextButton(
+                    onPressed: onCancelReply,
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                ElevatedButton(
+                  onPressed:
+                      content.trim().isNotEmpty && !isPosting ? onPost : null,
+                  child: isPosting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Post'),
                 ),
-                const SizedBox(width: 8),
               ],
-              ElevatedButton(
-                onPressed:
-                    content.trim().isNotEmpty && !isPosting ? onPost : null,
-                child: isPosting
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Post'),
-              ),
-            ],
-          ),
+            );
+          }),
         ],
       ),
     );

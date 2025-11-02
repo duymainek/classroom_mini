@@ -802,19 +802,30 @@ class AssignmentController {
       });
     }
 
+    // Flatten submissions data for CSV export
+    const flattenedSubmissions = submissions.map(sub => ({
+      username: sub.users?.username || '',
+      full_name: sub.users?.full_name || '',
+      email: sub.users?.email || '',
+      group_name: sub.assignments?.assignment_groups?.[0]?.groups?.name || 'N/A',
+      attempt_number: sub.attempt_number || '',
+      submitted_at: sub.submitted_at || '',
+      is_late: sub.is_late ? 'Yes' : 'No',
+      grade: sub.grade || '',
+      feedback: sub.feedback || '',
+      submission_text: sub.submission_text || ''
+    }));
+
     // Generate enhanced CSV with conditional fields
     const jsoncsv = require('json-csv');
     const fields = [
       { name: 'username', label: 'Username' },
       { name: 'full_name', label: 'Full Name' },
       { name: 'email', label: 'Email' },
-      { name: 'group_name', label: 'Group', transform: (v, row) => {
-        // Extract group name from nested structure
-        return row.assignments?.assignment_groups?.[0]?.groups?.name || 'N/A';
-      }},
+      { name: 'group_name', label: 'Group' },
       { name: 'attempt_number', label: 'Attempt' },
       { name: 'submitted_at', label: 'Submitted At' },
-      { name: 'is_late', label: 'Is Late', transform: (v) => v ? 'Yes' : 'No' }
+      { name: 'is_late', label: 'Is Late' }
     ];
 
     // Add conditional fields based on query parameters
@@ -828,7 +839,15 @@ class AssignmentController {
       fields.push({ name: 'submission_text', label: 'Submission Text' });
     }
 
-    const csv = await jsoncsv.buffered(submissions, { fields, encoding: 'utf8' });
+    const csv = await new Promise((resolve, reject) => {
+      jsoncsv.toCSV({
+        data: flattenedSubmissions || [],
+        fields: fields
+      }, (err, csvString) => {
+        if (err) reject(err);
+        else resolve(csvString);
+      });
+    });
     const filename = `assignment_${assignmentId}_submissions_${new Date().toISOString().slice(0,19).replace(/[:T]/g, '-')}.csv`;
 
     // Add BOM for Excel compatibility
@@ -990,7 +1009,15 @@ class AssignmentController {
       { name: 'latestIsLate', label: 'Latest Is Late' }
     ];
 
-    const csv = await jsoncsv.buffered(filteredData, { fields, encoding: 'utf8' });
+    const csv = await new Promise((resolve, reject) => {
+      jsoncsv.toCSV({
+        data: filteredData || [],
+        fields: fields
+      }, (err, csvString) => {
+        if (err) reject(err);
+        else resolve(csvString);
+      });
+    });
     const filename = `assignment_${assignmentId}_tracking_${new Date().toISOString().slice(0,19).replace(/[:T]/g, '-')}.csv`;
 
     // Add BOM for Excel compatibility
@@ -1076,7 +1103,7 @@ class AssignmentController {
       { name: 'due_date', label: 'Due Date' },
       { name: 'late_due_date', label: 'Late Due Date' },
       { name: 'max_attempts', label: 'Max Attempts' },
-      { name: 'is_active', label: 'Active', transform: (v) => v ? 'Yes' : 'No' }
+      { name: 'is_active', label: 'Active', filter: (v) => v ? 'Yes' : 'No' }
     ];
 
     if (includeSubmissions === 'true') {
@@ -1091,7 +1118,15 @@ class AssignmentController {
       fields.push({ name: 'averageGrade', label: 'Average Grade' });
     }
 
-    const csv = await jsoncsv.buffered(assignmentsWithStats, { fields, encoding: 'utf8' });
+    const csv = await new Promise((resolve, reject) => {
+      jsoncsv.toCSV({
+        data: assignmentsWithStats || [],
+        fields: fields
+      }, (err, csvString) => {
+        if (err) reject(err);
+        else resolve(csvString);
+      });
+    });
     const filename = `assignments_export_${new Date().toISOString().slice(0,19).replace(/[:T]/g, '-')}.csv`;
 
     // Add BOM for Excel compatibility

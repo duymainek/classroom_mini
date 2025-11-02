@@ -584,32 +584,34 @@ class _StudentImportPageState extends State<StudentImportPage> {
               ),
               if (!_controller.useGlobalAssignment.value) ...[
                 DataCell(
-                  _buildCompactDropdown<Course>(
-                    context,
-                    title: 'Khóa học',
-                    value: _controller.rowCourseAssignments[i],
-                    items: _controller.importCourses,
-                    onChanged: (course) =>
-                        _controller.updateRowCourseAssignment(i, course),
-                    itemBuilder: (course) => '${course.code} - ${course.name}',
-                  ),
+                  Obx(() => _buildCompactDropdown<Course>(
+                        context,
+                        title: 'Khóa học',
+                        value: _controller.rowCourseAssignments[i],
+                        items: _controller.importCourses,
+                        onChanged: (course) =>
+                            _controller.updateRowCourseAssignment(i, course),
+                        itemBuilder: (course) =>
+                            '${course.code} - ${course.name}',
+                      )),
                 ),
                 DataCell(
-                  _buildCompactDropdown<Group>(
-                    context,
-                    title: 'Nhóm',
-                    value: _controller.rowGroupAssignments[i],
-                    items: _controller.rowCourseAssignments[i] != null
-                        ? _controller.importGroups
-                            .where((g) =>
-                                g.courseId ==
-                                _controller.rowCourseAssignments[i]!.id)
-                            .toList()
-                        : _controller.importGroups,
-                    onChanged: (group) =>
-                        _controller.updateRowGroupAssignment(i, group),
-                    itemBuilder: (group) => group.name,
-                  ),
+                  Obx(() {
+                    final courseId = _controller.rowCourseAssignments[i]?.id;
+                    return _buildCompactDropdown<Group>(
+                      context,
+                      title: 'Nhóm',
+                      value: _controller.rowGroupAssignments[i],
+                      items: courseId != null
+                          ? _controller.importGroups
+                              .where((g) => g.courseId == courseId)
+                              .toList()
+                          : _controller.importGroups,
+                      onChanged: (group) =>
+                          _controller.updateRowGroupAssignment(i, group),
+                      itemBuilder: (group) => group.name,
+                    );
+                  }),
                 ),
               ],
               DataCell(
@@ -632,6 +634,7 @@ class _StudentImportPageState extends State<StudentImportPage> {
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
       itemBuilder: (_, i) {
         final r = _controller.importRows[i];
         final original = (r['_rowNumber'] as num?)?.toInt();
@@ -785,36 +788,38 @@ class _StudentImportPageState extends State<StudentImportPage> {
                           Row(
                             children: [
                               Expanded(
-                                child: _buildCompactDropdown<Course>(
-                                  context,
-                                  title: 'Khóa học',
-                                  value: _controller.rowCourseAssignments[i],
-                                  items: _controller.importCourses,
-                                  onChanged: (course) => _controller
-                                      .updateRowCourseAssignment(i, course),
-                                  itemBuilder: (course) =>
-                                      '${course.code} - ${course.name}',
-                                ),
+                                child: Obx(() => _buildCompactDropdown<Course>(
+                                      context,
+                                      title: 'Khóa học',
+                                      value:
+                                          _controller.rowCourseAssignments[i],
+                                      items: _controller.importCourses,
+                                      onChanged: (course) => _controller
+                                          .updateRowCourseAssignment(i, course),
+                                      itemBuilder: (course) =>
+                                          '${course.code} - ${course.name}',
+                                    )),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
-                                child: _buildCompactDropdown<Group>(
-                                  context,
-                                  title: 'Nhóm',
-                                  value: _controller.rowGroupAssignments[i],
-                                  items: _controller.rowCourseAssignments[i] !=
-                                          null
-                                      ? _controller.importGroups
-                                          .where((g) =>
-                                              g.courseId ==
-                                              _controller
-                                                  .rowCourseAssignments[i]!.id)
-                                          .toList()
-                                      : _controller.importGroups,
-                                  onChanged: (group) => _controller
-                                      .updateRowGroupAssignment(i, group),
-                                  itemBuilder: (group) => group.name,
-                                ),
+                                child: Obx(() {
+                                  final courseId =
+                                      _controller.rowCourseAssignments[i]?.id;
+                                  return _buildCompactDropdown<Group>(
+                                    context,
+                                    title: 'Nhóm',
+                                    value: _controller.rowGroupAssignments[i],
+                                    items: courseId != null
+                                        ? _controller.importGroups
+                                            .where(
+                                                (g) => g.courseId == courseId)
+                                            .toList()
+                                        : _controller.importGroups,
+                                    onChanged: (group) => _controller
+                                        .updateRowGroupAssignment(i, group),
+                                    itemBuilder: (group) => group.name,
+                                  );
+                                }),
                               ),
                             ],
                           ),

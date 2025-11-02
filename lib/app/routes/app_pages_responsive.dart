@@ -13,7 +13,6 @@ import '../modules/auth/bindings/auth_binding.dart';
 import '../modules/core_management/views/responsive_core_management_page.dart';
 import '../modules/core_management/bindings/core_management_binding.dart';
 import '../modules/student_management/views/responsive_student_management_page.dart';
-import '../modules/student_management/views/student_detail_page.dart';
 import '../modules/student_management/views/create_student_page.dart';
 import '../modules/student_management/bindings/student_management_binding.dart';
 
@@ -50,6 +49,10 @@ import '../modules/chat/views/chat_room_view.dart';
 import '../modules/chat/views/new_chat_view.dart';
 import '../modules/chat/bindings/chat_binding.dart';
 
+// Profile imports
+import '../modules/profile/bindings/profile_binding.dart';
+import '../modules/profile/views/sync_queue_view.dart';
+
 class AppPages {
   static const String INITIAL = Routes.HOME;
 
@@ -75,15 +78,6 @@ class AppPages {
     ),
 
     GetPage(
-      name: Routes.STUDENT_DETAILS,
-      page: () {
-        final id = Get.parameters['id'] ?? '';
-        return StudentDetailPage(studentId: id);
-      },
-      binding: StudentManagementBinding(),
-    ),
-
-    GetPage(
       name: Routes.CREATE_STUDENT,
       page: () => const CreateStudentPage(),
       binding: StudentManagementBinding(),
@@ -104,6 +98,12 @@ class AppPages {
     GetPage(
       name: Routes.EDIT_PROFILE,
       page: () => const PlaceholderPage(title: 'Edit Profile'),
+    ),
+    GetPage(
+      name: Routes.SYNC_QUEUE,
+      page: () => const SyncQueueView(),
+      binding: ProfileBinding(),
+      transition: Transition.rightToLeft,
     ),
 
     // Settings

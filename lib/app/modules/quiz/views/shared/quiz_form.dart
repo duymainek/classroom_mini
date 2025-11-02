@@ -2,6 +2,7 @@ import 'package:classroom_mini/app/data/models/request/quiz_request.dart';
 import 'package:classroom_mini/app/data/models/response/quiz_response.dart';
 import 'package:classroom_mini/app/data/models/response/assignment_response.dart';
 import 'package:classroom_mini/app/data/services/metadata_service.dart';
+import 'package:classroom_mini/app/data/services/connectivity_service.dart';
 import 'package:classroom_mini/app/modules/quiz/controllers/quiz_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -728,53 +729,60 @@ class _QuizFormState extends State<QuizForm> {
                 ),
                 // Action Buttons trong Header - chỉ hiển thị khi có thể edit
                 if (_isEditable)
-                  Row(
-                    children: [
-                      // Add Question Button
-                      IconButton(
-                        onPressed: () => _showAddQuestionDialog(context),
-                        icon: Icon(
-                          Icons.add_rounded,
-                          color: colorScheme.primary,
-                        ),
-                        tooltip: 'Add Question',
-                        style: IconButton.styleFrom(
-                          backgroundColor: colorScheme.primary.withOpacity(0.1),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                  Obx(() {
+                    final connectivityService = Get.find<ConnectivityService>();
+                    if (!connectivityService.isOnline.value) {
+                      return const SizedBox.shrink();
+                    }
+                    return Row(
+                      children: [
+                        // Add Question Button
+                        IconButton(
+                          onPressed: () => _showAddQuestionDialog(context),
+                          icon: Icon(
+                            Icons.add_rounded,
+                            color: colorScheme.primary,
+                          ),
+                          tooltip: 'Add Question',
+                          style: IconButton.styleFrom(
+                            backgroundColor:
+                                colorScheme.primary.withOpacity(0.1),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Generate with AI Button
-                      Obx(() => IconButton(
-                            onPressed: controller.isGeneratingQuiz
-                                ? null
-                                : () => _showGeminiGenerationDialog(context),
-                            icon: controller.isGeneratingQuiz
-                                ? SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: colorScheme.primary,
+                        const SizedBox(width: 8),
+                        // Generate with AI Button
+                        Obx(() => IconButton(
+                              onPressed: controller.isGeneratingQuiz
+                                  ? null
+                                  : () => _showGeminiGenerationDialog(context),
+                              icon: controller.isGeneratingQuiz
+                                  ? SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: colorScheme.primary,
+                                      ),
+                                    )
+                                  : Icon(
+                                      Icons.auto_awesome_rounded,
+                                      color: colorScheme.secondary,
                                     ),
-                                  )
-                                : Icon(
-                                    Icons.auto_awesome_rounded,
-                                    color: colorScheme.secondary,
-                                  ),
-                            tooltip: 'Generate with AI',
-                            style: IconButton.styleFrom(
-                              backgroundColor:
-                                  colorScheme.secondary.withOpacity(0.1),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                              tooltip: 'Generate with AI',
+                              style: IconButton.styleFrom(
+                                backgroundColor:
+                                    colorScheme.secondary.withOpacity(0.1),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
-                            ),
-                          )),
-                    ],
-                  ),
+                            )),
+                      ],
+                    );
+                  }),
               ],
             ),
           ),
@@ -1286,223 +1294,229 @@ class _QuizFormState extends State<QuizForm> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Dismissible(
-      key: Key('question_${question.questionText}_$index'),
-      direction:
-          _isEditable ? DismissDirection.endToStart : DismissDirection.none,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        decoration: BoxDecoration(
-          color: colorScheme.errorContainer.withOpacity(0.3),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.delete_outline,
-              color: colorScheme.error,
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Swipe to delete',
-              style: TextStyle(
+    return Obx(() {
+      final connectivityService = Get.find<ConnectivityService>();
+      final canEdit = _isEditable && connectivityService.isOnline.value;
+
+      return Dismissible(
+        key: Key('question_${question.questionText}_$index'),
+        direction:
+            canEdit ? DismissDirection.endToStart : DismissDirection.none,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          decoration: BoxDecoration(
+            color: colorScheme.errorContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.delete_outline,
                 color: colorScheme.error,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+                size: 24,
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                'Swipe to delete',
+                style: TextStyle(
+                  color: colorScheme.error,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      confirmDismiss: (direction) async {
-        return await Get.dialog<bool>(
-              AlertDialog(
-                title: Row(
-                  children: [
-                    Icon(
-                      Icons.warning_outlined,
-                      color: colorScheme.error,
+        confirmDismiss: (direction) async {
+          return await Get.dialog<bool>(
+                AlertDialog(
+                  title: Row(
+                    children: [
+                      Icon(
+                        Icons.warning_outlined,
+                        color: colorScheme.error,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Delete Question'),
+                    ],
+                  ),
+                  content: const Text(
+                    'Are you sure you want to delete this question? This action cannot be undone.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Get.back(result: false),
+                      child: const Text('Cancel'),
                     ),
-                    const SizedBox(width: 8),
-                    const Text('Delete Question'),
+                    FilledButton(
+                      onPressed: () => Get.back(result: true),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: colorScheme.error,
+                        foregroundColor: colorScheme.onError,
+                      ),
+                      child: const Text('Delete'),
+                    ),
                   ],
                 ),
-                content: const Text(
-                  'Are you sure you want to delete this question? This action cannot be undone.',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Get.back(result: false),
-                    child: const Text('Cancel'),
-                  ),
-                  FilledButton(
-                    onPressed: () => Get.back(result: true),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: colorScheme.error,
-                      foregroundColor: colorScheme.onError,
-                    ),
-                    child: const Text('Delete'),
-                  ),
-                ],
+              ) ??
+              false;
+        },
+        onDismissed: (direction) {
+          setState(() {
+            _generatedQuestions.removeAt(index);
+          });
+          Get.snackbar(
+            'Deleted',
+            'Question removed successfully',
+            backgroundColor: colorScheme.surface,
+            colorText: colorScheme.onSurface,
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: colorScheme.outline.withOpacity(0.2),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: colorScheme.shadow.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-            ) ??
-            false;
-      },
-      onDismissed: (direction) {
-        setState(() {
-          _generatedQuestions.removeAt(index);
-        });
-        Get.snackbar(
-          'Deleted',
-          'Question removed successfully',
-          backgroundColor: colorScheme.surface,
-          colorText: colorScheme.onSurface,
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: colorScheme.outline.withOpacity(0.2),
+            ],
           ),
-          boxShadow: [
-            BoxShadow(
-              color: colorScheme.shadow.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Question Header
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Question Header
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceVariant.withOpacity(0.3),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${index + 1}',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        question.questionText,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (canEdit)
+                      IconButton(
+                        onPressed: () =>
+                            _showEditQuestionDialog(context, index),
+                        icon: Icon(
+                          Icons.edit_outlined,
+                          color: colorScheme.primary,
+                        ),
+                        tooltip: 'Edit question',
+                        style: IconButton.styleFrom(
+                          backgroundColor: colorScheme.primary.withOpacity(0.1),
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '${index + 1}',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      question.questionText,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  if (_isEditable)
-                    IconButton(
-                      onPressed: () => _showEditQuestionDialog(context, index),
-                      icon: Icon(
-                        Icons.edit_outlined,
-                        color: colorScheme.primary,
-                      ),
-                      tooltip: 'Edit question',
-                      style: IconButton.styleFrom(
-                        backgroundColor: colorScheme.primary.withOpacity(0.1),
-                      ),
-                    ),
-                ],
-              ),
-            ),
 
-            // Question Content
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Question Type Badge
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: question.questionType == 'multiple_choice'
-                          ? colorScheme.primaryContainer.withOpacity(0.5)
-                          : colorScheme.secondaryContainer.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          question.questionType == 'multiple_choice'
-                              ? Icons.quiz_outlined
-                              : Icons.text_fields_outlined,
-                          size: 16,
-                          color: question.questionType == 'multiple_choice'
-                              ? colorScheme.primary
-                              : colorScheme.secondary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          question.questionType.toUpperCase(),
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+              // Question Content
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Question Type Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: question.questionType == 'multiple_choice'
+                            ? colorScheme.primaryContainer.withOpacity(0.5)
+                            : colorScheme.secondaryContainer.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            question.questionType == 'multiple_choice'
+                                ? Icons.quiz_outlined
+                                : Icons.text_fields_outlined,
+                            size: 16,
                             color: question.questionType == 'multiple_choice'
                                 ? colorScheme.primary
                                 : colorScheme.secondary,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Options (if multiple choice)
-                  if (question.options?.isNotEmpty == true) ...[
-                    const SizedBox(height: 16),
-                    Text(
-                      'Answer Options:',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurfaceVariant,
+                          const SizedBox(width: 4),
+                          Text(
+                            question.questionType.toUpperCase(),
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: question.questionType == 'multiple_choice'
+                                  ? colorScheme.primary
+                                  : colorScheme.secondary,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    ...question.options!.asMap().entries.map((entry) {
-                      final optionIndex = entry.key;
-                      final option = entry.value;
-                      return _buildModernOptionTile(
-                        context,
-                        option: option,
-                        optionIndex: optionIndex,
-                        isCorrect: option.isCorrect,
-                      );
-                    }),
+
+                    // Options (if multiple choice)
+                    if (question.options?.isNotEmpty == true) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        'Answer Options:',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...question.options!.asMap().entries.map((entry) {
+                        final optionIndex = entry.key;
+                        final option = entry.value;
+                        return _buildModernOptionTile(
+                          context,
+                          option: option,
+                          optionIndex: optionIndex,
+                          isCorrect: option.isCorrect,
+                        );
+                      }),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildModernOptionTile(

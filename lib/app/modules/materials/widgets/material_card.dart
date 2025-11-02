@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:classroom_mini/app/data/services/connectivity_service.dart';
 import 'package:classroom_mini/app/data/models/response/material_response.dart'
     as material_resp;
 
@@ -128,53 +130,60 @@ class MaterialCard extends StatelessWidget {
           ),
         ),
 
-        // Actions menu
-        Container(
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceVariant.withOpacity(0.5),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: PopupMenuButton<String>(
-            onSelected: (value) {
-              switch (value) {
-                case 'edit':
-                  onEdit?.call();
-                  break;
-                case 'delete':
-                  _showDeleteDialog(context);
-                  break;
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'edit',
-                child: Row(
-                  children: [
-                    Icon(Icons.edit_outlined),
-                    SizedBox(width: 12),
-                    Text('Chỉnh sửa'),
-                  ],
+        Obx(
+          () {
+            final connectivityService = Get.find<ConnectivityService>();
+            if (!connectivityService.isOnline.value) {
+              return const SizedBox.shrink();
+            }
+            return Container(
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceVariant.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: PopupMenuButton<String>(
+                onSelected: (value) {
+                  switch (value) {
+                    case 'edit':
+                      onEdit?.call();
+                      break;
+                    case 'delete':
+                      _showDeleteDialog(context);
+                      break;
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit_outlined),
+                        SizedBox(width: 12),
+                        Text('Chỉnh sửa'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline, color: Colors.red),
+                        SizedBox(width: 12),
+                        Text('Xóa', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
+                  ),
+                ],
+                icon: Icon(
+                  Icons.more_vert,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              const PopupMenuItem(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete_outline, color: Colors.red),
-                    SizedBox(width: 12),
-                    Text('Xóa', style: TextStyle(color: Colors.red)),
-                  ],
-                ),
-              ),
-            ],
-            icon: Icon(
-              Icons.more_vert,
-              color: colorScheme.onSurfaceVariant,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
+            );
+          },
         ),
       ],
     );

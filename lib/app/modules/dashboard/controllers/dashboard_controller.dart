@@ -26,33 +26,30 @@ class DashboardController extends GetxController {
   final instructorDashboardData = Rxn<InstructorDashboardData>();
   final studentDashboardData = Rxn<StudentDashboardData>();
 
-  // User info
-  final isInstructor = false.obs;
+  // User info - reactive variable để view có thể dùng Obx, sync với AppConfig
+  final _isInstructor = false.obs;
+  bool get isInstructor => _isInstructor.value;
+  RxBool get isInstructorRx => _isInstructor;
 
-  @override
-  void onInit() {
-    super.onInit();
-    print('🚀 [DashboardController] onInit started');
-    _initializeServices();
-    _loadUserInfoAndDashboard();
-  }
-  
   Future<void> _loadUserInfoAndDashboard() async {
     print('👤 [DashboardController] Loading user info first...');
-    final oldIsInstructor = isInstructor.value;
+    final oldIsInstructor = isInstructor;
     await _loadUserInfo();
-    final newIsInstructor = isInstructor.value;
-    print('✅ [DashboardController] User info loaded. isInstructor=$newIsInstructor (was: $oldIsInstructor)');
-    
+    final newIsInstructor = isInstructor;
+    print(
+        '✅ [DashboardController] User info loaded. isInstructor=$newIsInstructor (was: $oldIsInstructor)');
+
     // If role changed or dashboard data doesn't match role, reload
-    if (oldIsInstructor != newIsInstructor || 
+    if (oldIsInstructor != newIsInstructor ||
         (newIsInstructor && instructorDashboardData.value == null) ||
         (!newIsInstructor && studentDashboardData.value == null)) {
-      print('🔄 [DashboardController] Role changed or wrong data - reloading dashboard...');
+      print(
+          '🔄 [DashboardController] Role changed or wrong data - reloading dashboard...');
       print('🚀 [DashboardController] Starting loadDashboardAsync...');
       await loadDashboardAsync();
     } else {
-      print('✅ [DashboardController] Dashboard data already matches role - no reload needed');
+      print(
+          '✅ [DashboardController] Dashboard data already matches role - no reload needed');
     }
   }
 
@@ -73,14 +70,17 @@ class DashboardController extends GetxController {
       print('👤 [DashboardController] Loading user info...');
       final user = await _storageService.getUserData();
       if (user != null) {
-        final wasInstructor = isInstructor.value;
+        final wasInstructor = isInstructor;
         final newIsInstructor = user.isInstructor;
-        
-        isInstructor.value = newIsInstructor;
-        print('✅ [DashboardController] User info loaded: isInstructor=$newIsInstructor (was: $wasInstructor)');
-        
+
+        // Update cả AppConfig và reactive variable
+        AppConfig.instance.setUserRole(newIsInstructor);
+        _isInstructor.value = newIsInstructor;
+        print(
+            '✅ [DashboardController] User info loaded: isInstructor=$newIsInstructor (was: $wasInstructor)');
+
         // If role changed or wrong dashboard data exists, clear it
-        if (wasInstructor != newIsInstructor || 
+        if (wasInstructor != newIsInstructor ||
             (newIsInstructor && studentDashboardData.value != null) ||
             (!newIsInstructor && instructorDashboardData.value != null)) {
           print('🔄 [DashboardController] Clearing wrong dashboard data');
@@ -99,33 +99,47 @@ class DashboardController extends GetxController {
     }
   }
 
+  @override
+  void onInit() {
+    super.onInit();
+    print('🚀 [DashboardController] onInit started');
+    _initializeServices();
+
+    // Sync isInstructor từ AppConfig khi init (nếu đã có trong AppConfig)
+    _isInstructor.value = AppConfig.instance.isInstructor;
+
+    _loadUserInfoAndDashboard();
+  }
+
   /// Load dashboard data asynchronously without blocking UI
   Future<void> loadDashboardAsync() async {
     print('🚀 [DashboardController] loadDashboardAsync started');
-    print('   - Current isInstructor value: ${isInstructor.value}');
+    print('   - Current isInstructor value: ${isInstructor}');
     clearError();
-    
+
     try {
       // Load semester data first (doesn't depend on role)
       await _loadSemesterData();
-      
+
       // Then load dashboard data based on CURRENT role
       await _loadDashboardData();
-      
+
       print('✅ [DashboardController] loadDashboardAsync completed');
       print('📊 [DashboardController] Final state:');
-      print('   - isInstructor: ${isInstructor.value}');
+      print('   - isInstructor: $isInstructor');
       print('   - currentSemester: ${currentSemester.value != null}');
-      print('   - instructorDashboardData: ${instructorDashboardData.value != null}');
+      print(
+          '   - instructorDashboardData: ${instructorDashboardData.value != null}');
       print('   - studentDashboardData: ${studentDashboardData.value != null}');
     } catch (e, stackTrace) {
       AppLogger.error('Failed to load dashboard', error: e);
       print('❌ [DashboardController] loadDashboardAsync error: $e');
       print('❌ [DashboardController] Stack trace: $stackTrace');
-      if (currentSemester.value == null && 
-          instructorDashboardData.value == null && 
+      if (currentSemester.value == null &&
+          instructorDashboardData.value == null &&
           studentDashboardData.value == null) {
-        errorMessage.value = 'Không thể tải dữ liệu dashboard. Vui lòng thử lại.';
+        errorMessage.value =
+            'Không thể tải dữ liệu dashboard. Vui lòng thử lại.';
       }
     }
   }
@@ -153,17 +167,18 @@ class DashboardController extends GetxController {
 
   /// Load dashboard data based on role
   Future<void> _loadDashboardData() async {
-    print('🔍 [DashboardController] Loading dashboard data, isInstructor: ${isInstructor.value}');
-    
+    print(
+        '🔍 [DashboardController] Loading dashboard data, isInstructor: $isInstructor');
+
     // Wait a bit to ensure isInstructor is set
-    if (!isInstructor.value) {
+    if (!isInstructor) {
       print('⏳ [DashboardController] Waiting for isInstructor to be set...');
       await Future.delayed(const Duration(milliseconds: 100));
-      print('🔍 [DashboardController] After wait, isInstructor: ${isInstructor.value}');
+      print('🔍 [DashboardController] After wait, isInstructor: $isInstructor');
     }
-    
+
     try {
-      if (isInstructor.value) {
+      if (isInstructor) {
         print('👨‍🏫 [DashboardController] Loading INSTRUCTOR dashboard');
         await _loadInstructorDashboard();
       } else {
@@ -184,7 +199,8 @@ class DashboardController extends GetxController {
       print('📅 [DashboardController] Loading semester data...');
       // Get current semester
       final current = await _dashboardRepository.getCurrentSemester();
-      print('✅ [DashboardController] Current semester loaded: ${current != null}');
+      print(
+          '✅ [DashboardController] Current semester loaded: ${current != null}');
       if (current != null) {
         print('   - Semester: ${current.name} (${current.id})');
       }
@@ -225,18 +241,21 @@ class DashboardController extends GetxController {
     try {
       print('🔍 [DashboardController] Loading instructor dashboard...');
       final data = await _dashboardRepository.getInstructorDashboard();
-      print('✅ [DashboardController] Instructor dashboard loaded: ${data != null}');
+      print(
+          '✅ [DashboardController] Instructor dashboard loaded: ${data != null}');
       if (data != null) {
-        print('📊 [DashboardController] Stats: courses=${data.statistics.totalCourses}, students=${data.statistics.totalStudents}');
+        print(
+            '📊 [DashboardController] Stats: courses=${data.statistics.totalCourses}, students=${data.statistics.totalStudents}');
       }
       instructorDashboardData.value = data;
       print('✅ [DashboardController] instructorDashboardData.value SET');
       print('   - Value after set: ${instructorDashboardData.value != null}');
       if (instructorDashboardData.value != null) {
         final stats = instructorDashboardData.value!.statistics;
-        print('   - Stats after set: courses=${stats.totalCourses}, students=${stats.totalStudents}');
+        print(
+            '   - Stats after set: courses=${stats.totalCourses}, students=${stats.totalStudents}');
       }
-      
+
       // Force update to trigger Obx rebuild
       update();
       print('✅ [DashboardController] update() called to trigger UI rebuild');
@@ -263,7 +282,7 @@ class DashboardController extends GetxController {
   Future<void> _reloadDashboardData() async {
     try {
       // Load dashboard data based on role
-      if (isInstructor.value) {
+      if (isInstructor) {
         await _loadInstructorDashboard();
       } else {
         await _loadStudentDashboard();

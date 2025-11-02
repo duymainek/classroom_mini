@@ -45,6 +45,8 @@ UpdateStudentRequest _$UpdateStudentRequestFromJson(
       email: json['email'] as String?,
       fullName: json['fullName'] as String?,
       isActive: json['isActive'] as bool?,
+      groupId: json['groupId'] as String?,
+      courseId: json['courseId'] as String?,
     );
 
 Map<String, dynamic> _$UpdateStudentRequestToJson(
@@ -53,6 +55,8 @@ Map<String, dynamic> _$UpdateStudentRequestToJson(
       'email': instance.email,
       'fullName': instance.fullName,
       'isActive': instance.isActive,
+      'groupId': instance.groupId,
+      'courseId': instance.courseId,
     };
 
 BulkOperationRequest _$BulkOperationRequestFromJson(

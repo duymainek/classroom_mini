@@ -4,6 +4,7 @@ import 'package:classroom_mini/app/data/models/response/material_response.dart'
     as material_resp;
 import 'package:classroom_mini/app/modules/materials/controllers/material_controller.dart';
 import 'package:classroom_mini/app/routes/app_routes.dart';
+import 'package:classroom_mini/app/data/services/connectivity_service.dart';
 import '../../widgets/material_card.dart';
 import '../../widgets/material_form.dart';
 
@@ -158,26 +159,32 @@ class _MaterialListViewState extends State<MaterialListView> {
           ),
         ],
       ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: colorScheme.primary.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: FloatingActionButton.extended(
-          onPressed: _createMaterial,
-          icon: const Icon(Icons.add),
-          label: const Text('Tạo tài liệu'),
-          backgroundColor: colorScheme.primary,
-          foregroundColor: colorScheme.onPrimary,
-          elevation: 0,
-        ),
-      ),
+      floatingActionButton: Obx(() {
+        final connectivityService = Get.find<ConnectivityService>();
+        if (!connectivityService.isOnline.value) {
+          return const SizedBox.shrink();
+        }
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: colorScheme.primary.withOpacity(0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: FloatingActionButton.extended(
+            onPressed: _createMaterial,
+            icon: const Icon(Icons.add),
+            label: const Text('Tạo tài liệu'),
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
+            elevation: 0,
+          ),
+        );
+      }),
     );
   }
 
@@ -263,23 +270,33 @@ class _MaterialListViewState extends State<MaterialListView> {
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _createMaterial,
-              icon: const Icon(Icons.add),
-              label: const Text('Tạo tài liệu đầu tiên'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colorScheme.primary,
-                foregroundColor: colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
+            Obx(() {
+              final connectivityService = Get.find<ConnectivityService>();
+              if (!connectivityService.isOnline.value) {
+                return const SizedBox.shrink();
+              }
+              return Column(
+                children: [
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: _createMaterial,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Tạo tài liệu đầu tiên'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }),
           ],
         ),
       ),

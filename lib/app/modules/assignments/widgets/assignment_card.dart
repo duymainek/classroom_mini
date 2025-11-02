@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:classroom_mini/app/data/models/response/assignment_response.dart';
+import 'package:classroom_mini/app/data/services/connectivity_service.dart';
 
 class AssignmentCard extends StatelessWidget {
   final Assignment assignment;
@@ -439,36 +441,48 @@ class AssignmentCard extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        if (onEdit != null) ...[
-          const SizedBox(width: 8),
-          OutlinedButton.icon(
-            onPressed: onEdit,
-            icon: const Icon(Icons.edit, size: 16),
-            label: const Text('Sửa'),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-        ],
-        if (onDelete != null) ...[
-          const SizedBox(width: 8),
-          FilledButton.icon(
-            onPressed: onDelete,
-            icon: const Icon(Icons.delete, size: 16),
-            label: const Text('Xóa'),
-            style: FilledButton.styleFrom(
-              backgroundColor: colorScheme.error,
-              foregroundColor: colorScheme.onError,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-        ],
+        Obx(() {
+          final connectivityService = Get.find<ConnectivityService>();
+          if (!connectivityService.isOnline.value) {
+            return const SizedBox.shrink();
+          }
+          return Row(
+            children: [
+              if (onEdit != null) ...[
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  onPressed: onEdit,
+                  icon: const Icon(Icons.edit, size: 16),
+                  label: const Text('Sửa'),
+                  style: OutlinedButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+              if (onDelete != null) ...[
+                const SizedBox(width: 8),
+                FilledButton.icon(
+                  onPressed: onDelete,
+                  icon: const Icon(Icons.delete, size: 16),
+                  label: const Text('Xóa'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colorScheme.error,
+                    foregroundColor: colorScheme.onError,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          );
+        }),
       ],
     );
   }

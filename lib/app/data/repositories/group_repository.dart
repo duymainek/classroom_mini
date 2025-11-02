@@ -59,7 +59,10 @@ class GroupRepository {
   Future<Group> getGroupById(String groupId) async {
     try {
       final response = await _apiService.getGroupById(groupId);
-      return response.group;
+      if (response.data?.group == null) {
+        throw Exception('Group data is null in response');
+      }
+      return response.data!.group;
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -69,7 +72,10 @@ class GroupRepository {
   Future<Group> createGroup(GroupCreateRequest request) async {
     try {
       final response = await _apiService.createGroup(request);
-      return response.group;
+      if (response.data?.group == null) {
+        throw Exception('Group data is null in response');
+      }
+      return response.data!.group;
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -79,7 +85,10 @@ class GroupRepository {
   Future<Group> updateGroup(String groupId, GroupUpdateRequest request) async {
     try {
       final response = await _apiService.updateGroup(groupId, request);
-      return response.group;
+      if (response.data?.group == null) {
+        throw Exception('Group data is null in response');
+      }
+      return response.data!.group;
     } on DioException catch (e) {
       throw _handleError(e);
     }
