@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
-import '../models/profile_model.dart';
+import 'package:classroom_mini/app/data/models/request/profile_request.dart';
+import 'package:classroom_mini/app/data/models/response/profile_response.dart';
 import 'dart:io';
 
 part 'profile_api_service.g.dart';

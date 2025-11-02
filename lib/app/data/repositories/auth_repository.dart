@@ -1,7 +1,9 @@
+import 'package:classroom_mini/app/data/models/request/auth_request.dart';
+import 'package:classroom_mini/app/data/models/request/profile_request.dart';
+import 'package:classroom_mini/app/data/models/response/user_response.dart';
+
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
-import '../models/request_models.dart';
-import '../models/user_model.dart';
 
 class AuthResult {
   final bool success;
@@ -184,8 +186,8 @@ class AuthRepository {
 
       // If not in storage, try to fetch from API
       final user = await _apiService.getCurrentUser();
-      await _storageService.saveUserData(user);
-      return user;
+      await _storageService.saveUserData(user.data.user);
+      return user.data.user;
     } catch (e) {
       return null;
     }
@@ -217,9 +219,8 @@ class AuthRepository {
       final refreshToken = await _storageService.getRefreshToken();
       if (refreshToken == null) return false;
 
-      final response = await _apiService.refreshToken({
-        'refreshToken': refreshToken,
-      });
+      final response = await _apiService
+          .refreshToken(RefreshTokenRequest(refreshToken: refreshToken));
 
       if (response.success && response.data != null) {
         await _storageService.saveTokens(
@@ -241,11 +242,12 @@ class AuthRepository {
   // Update profile
   Future<AuthResult> updateProfile(UpdateProfileRequest profileData) async {
     try {
-      final updatedUser = await _apiService.updateProfile(profileData);
-      await _storageService.saveUserData(updatedUser);
+      final updatedUser = await _apiService.updateProfile(UpdateProfileRequest(
+          fullName: profileData.fullName, email: profileData.email));
+      await _storageService.saveUserData(updatedUser.data.user);
 
       return AuthResult.success(
-        user: updatedUser,
+        user: updatedUser.data.user,
         message: 'Profile updated successfully',
       );
     } catch (e) {

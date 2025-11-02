@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
-import '../models/quiz_model.dart';
+import 'package:classroom_mini/app/data/models/request/quiz_request.dart';
+import 'package:classroom_mini/app/data/models/response/quiz_response.dart';
 
 part 'quiz_api_service.g.dart';
 

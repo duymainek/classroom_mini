@@ -1,0 +1,6 @@
+---
+alwaysApply: true
+---
+
+
+Tất cả những truy vấn, migration, update, create, view vào database đều phải dùng supabase mcp.

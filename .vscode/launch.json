@@ -1,0 +1,35 @@
+{
+    // FVM-enabled run configuration for classroom_mini Flutter app
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Flutter: classroom_mini (debug)",
+            "program": "lib/main.dart",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+        },
+        {
+            "name": "Flutter: classroom_mini (profile)",
+            "program": "lib/main.dart",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile",
+        },
+        {
+            "name": "Flutter: classroom_mini (release)",
+            "program": "lib/main.dart",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release",
+        },
+        {
+            "name": "Flutter: classroom_mini (Flutter iPhone 16)",
+            "program": "${workspaceFolder}/lib/main.dart",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "deviceId": "iphone-16",
+        }
+    ]
+}

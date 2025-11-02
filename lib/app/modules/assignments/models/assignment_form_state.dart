@@ -1,4 +1,5 @@
-import 'package:classroom_mini/app/data/models/assignment_model.dart';
+import 'package:classroom_mini/app/data/models/response/course_response.dart';
+import 'package:classroom_mini/app/data/models/response/group_response.dart';
 
 class AssignmentFormState {
   String? title;
@@ -12,8 +13,8 @@ class AssignmentFormState {
   List<String> fileFormats;
   int maxFileSize;
   Set<String> selectedGroupIds;
-  List<CourseInfo> courses;
-  List<GroupInfo> groups;
+  List<Course> courses;
+  List<Group> groups;
 
   AssignmentFormState({
     this.title,
@@ -27,12 +28,12 @@ class AssignmentFormState {
     List<String>? fileFormats,
     this.maxFileSize = 10,
     Set<String>? selectedGroupIds,
-    List<CourseInfo>? courses,
-    List<GroupInfo>? groups,
+    List<Course>? courses,
+    List<Group>? groups,
   })  : fileFormats = fileFormats ?? <String>[],
         selectedGroupIds = selectedGroupIds ?? <String>{},
-        courses = courses ?? const <CourseInfo>[],
-        groups = groups ?? const <GroupInfo>[];
+        courses = courses ?? const <Course>[],
+        groups = groups ?? const <Group>[];
 
   AssignmentFormState copyWith({
     String? title,
@@ -46,8 +47,8 @@ class AssignmentFormState {
     List<String>? fileFormats,
     int? maxFileSize,
     Set<String>? selectedGroupIds,
-    List<CourseInfo>? courses,
-    List<GroupInfo>? groups,
+    List<Course>? courses,
+    List<Group>? groups,
   }) {
     return AssignmentFormState(
       title: title ?? this.title,
@@ -62,8 +63,8 @@ class AssignmentFormState {
       maxFileSize: maxFileSize ?? this.maxFileSize,
       selectedGroupIds:
           selectedGroupIds ?? Set<String>.from(this.selectedGroupIds),
-      courses: courses ?? List<CourseInfo>.from(this.courses),
-      groups: groups ?? List<GroupInfo>.from(this.groups),
+      courses: courses ?? List<Course>.from(this.courses),
+      groups: groups ?? List<Group>.from(this.groups),
     );
   }
 

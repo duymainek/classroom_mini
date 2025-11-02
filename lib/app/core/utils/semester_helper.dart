@@ -1,9 +1,9 @@
+import 'package:classroom_mini/app/data/models/response/semester_response.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '../app_config.dart';
 import '../../data/repositories/semester_repository.dart';
 import '../../data/services/api_service.dart';
-import '../../data/models/semester_model.dart';
 import '../utils/logger.dart';
 
 /// Helper class để làm việc với thông tin học kì

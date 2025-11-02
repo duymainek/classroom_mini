@@ -1,5 +1,5 @@
+import 'package:classroom_mini/app/data/models/response/dashboard_response.dart';
 import 'package:flutter/material.dart';
-import '../../../../data/models/dashboard_model.dart';
 
 class StudentCourseCard extends StatelessWidget {
   final EnrolledCourse enrolledCourse;

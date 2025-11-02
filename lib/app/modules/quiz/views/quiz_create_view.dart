@@ -1,8 +1,8 @@
+import 'package:classroom_mini/app/data/models/request/quiz_request.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/quiz_controller.dart';
 import '../views/shared/quiz_form.dart';
-import '../../../data/models/quiz_model.dart';
 
 class QuizCreateView extends GetView<QuizController> {
   const QuizCreateView({Key? key}) : super(key: key);
@@ -11,6 +11,8 @@ class QuizCreateView extends GetView<QuizController> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: QuizForm(
+        onlyView: false,
+        isUpdating: false,
         onSubmit: (formData) async {
           final request = QuizCreateRequest(
             title: formData.title,

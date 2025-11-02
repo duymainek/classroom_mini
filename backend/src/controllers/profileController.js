@@ -1,6 +1,7 @@
 const { supabase } = require('../services/supabaseClient');
 const { AppError, catchAsync } = require('../middleware/errorHandler');
 const { validateProfileUpdate } = require('../utils/validators');
+const { buildResponse } = require('../utils/response');
 const multer = require('multer');
 const sharp = require('sharp');
 
@@ -37,10 +38,11 @@ class ProfileController {
       throw new AppError('User not found', 404, 'USER_NOT_FOUND');
     }
 
-    res.json({
-      success: true,
-      data: { user },
-    });
+    res.json(
+      buildResponse(true, undefined, {
+        user,
+      })
+    );
   });
 
   /**
@@ -81,11 +83,11 @@ class ProfileController {
       throw new AppError('Failed to update profile', 500, 'PROFILE_UPDATE_FAILED');
     }
 
-    res.json({
-      success: true,
-      message: 'Profile updated successfully',
-      data: { user: updatedUser },
-    });
+    res.json(
+      buildResponse(true, 'Profile updated successfully', {
+        user: updatedUser,
+      })
+    );
   });
 
   /**
@@ -174,11 +176,11 @@ class ProfileController {
       throw new AppError('Failed to update user profile with new avatar', 500, 'AVATAR_UPDATE_FAILED');
     }
 
-    res.json({
-      success: true,
-      message: 'Avatar uploaded successfully',
-      data: { avatar_url },
-    });
+    res.json(
+      buildResponse(true, 'Avatar uploaded successfully', {
+        avatar_url,
+      })
+    );
   });
 
   // Middleware for multer

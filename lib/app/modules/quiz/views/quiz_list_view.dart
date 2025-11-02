@@ -1,4 +1,6 @@
 import 'package:classroom_mini/app/routes/app_routes.dart';
+import 'package:classroom_mini/app/core/app_config.dart';
+import 'package:classroom_mini/app/data/services/connectivity_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -14,6 +16,22 @@ class QuizListView extends GetView<QuizController> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
+      floatingActionButton: Obx(() {
+        final connectivityService = Get.find<ConnectivityService>();
+        final isInstructor = AppConfig.instance.isInstructor;
+
+        if (!isInstructor || !connectivityService.isOnline.value) {
+          return const SizedBox.shrink();
+        }
+
+        return FloatingActionButton.extended(
+          onPressed: () => Get.toNamed(Routes.QUIZZES_CREATE),
+          icon: const Icon(Icons.add),
+          label: const Text('Tạo Quiz'),
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+        );
+      }),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -86,13 +104,6 @@ class QuizListView extends GetView<QuizController> {
             }),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Get.toNamed(Routes.QUIZZES_CREATE),
-        icon: const Icon(Icons.add),
-        label: const Text('Create Quiz'),
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
       ),
     );
   }
@@ -221,7 +232,6 @@ class QuizListView extends GetView<QuizController> {
     final int? questionCount = quiz.questionCount ?? quiz.questions?.length;
     final String questionCountText =
         questionCount != null ? '$questionCount' : '—';
-    quiz.questions?.fold<int>(0, (sum, q) => sum + (q.points ?? 0)) ?? 0;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),

@@ -29,6 +29,21 @@ class ApiEndpoints {
   static String deleteStudent(String studentId) => '/students/$studentId';
   static String resetStudentPassword(String studentId) =>
       '/students/$studentId/reset-password';
+
+  // Chat endpoints
+  static const String chatConversations = '/chat/conversations';
+  static const String chatUnreadCount = '/chat/unread-count';
+  static const String chatDirectRoom = '/chat/rooms/direct';
+  static const String chatUsersSearch = '/chat/users/search';
+  static String chatRoom(String roomId) => '/chat/rooms/$roomId';
+  static String chatRoomMessages(String roomId) => '/chat/rooms/$roomId/messages';
+  static String chatRoomSearch(String roomId) => '/chat/rooms/$roomId/search';
+  static String chatRoomHide(String roomId) => '/chat/rooms/$roomId/hide';
+  static String chatRoomMute(String roomId) => '/chat/rooms/$roomId/mute';
+  static String chatRoomRead(String roomId) => '/chat/rooms/$roomId/read';
+  
+  // Socket.IO URL (same as baseUrl but without /api)
+  static const String socketUrl = 'http://localhost:3131';
 }
 
 class StorageKeys {

@@ -1,11 +1,12 @@
 import 'dart:typed_data';
+import 'package:classroom_mini/app/data/models/request/auth_request.dart';
+import 'package:classroom_mini/app/data/models/response/auth_response.dart';
+import 'package:classroom_mini/app/data/models/response/semester_response.dart';
+import 'package:classroom_mini/app/data/models/response/user_response.dart';
 import 'package:dio/dio.dart';
 import '../services/api_service.dart';
 import '../../core/constants/api_endpoints.dart';
 import '../services/storage_service.dart';
-import '../models/request_models.dart';
-import '../models/response_models.dart';
-import '../models/user_model.dart';
 
 class StudentResult {
   final bool success;
@@ -49,6 +50,9 @@ class StudentsListResult {
   final List<UserModel>? students;
   final PaginationInfo? pagination;
   final List<String>? errors;
+  // Nested relation objects aligned by students order
+  final List<Map<String, dynamic>?>? groups;
+  final List<Map<String, dynamic>?>? courses;
 
   StudentsListResult({
     required this.success,
@@ -56,18 +60,24 @@ class StudentsListResult {
     this.students,
     this.pagination,
     this.errors,
+    this.groups,
+    this.courses,
   });
 
   factory StudentsListResult.success({
     List<UserModel>? students,
     PaginationInfo? pagination,
     String? message,
+    List<Map<String, dynamic>?>? groups,
+    List<Map<String, dynamic>?>? courses,
   }) {
     return StudentsListResult(
       success: true,
       students: students,
       pagination: pagination,
       message: message,
+      groups: groups,
+      courses: courses,
     );
   }
 
@@ -133,6 +143,8 @@ class StudentRepository {
     required String password,
     required String email,
     required String fullName,
+    String? groupId,
+    String? courseId,
   }) async {
     try {
       final request = CreateStudentRequest(
@@ -140,6 +152,8 @@ class StudentRepository {
         password: password,
         email: email,
         fullName: fullName,
+        groupId: groupId,
+        courseId: courseId,
       );
 
       final response = await _apiService.createStudent(request);
@@ -181,10 +195,13 @@ class StudentRepository {
         sortOrder: sortOrder,
       );
 
+      // Group and course objects are now parsed directly in UserModel
+      // No need for additional extraction since UserModel.fromJson handles them
+
       if (response.success) {
         return StudentsListResult.success(
-          students: response.students ?? [],
-          pagination: response.pagination,
+          students: response.data.students,
+          pagination: response.data.pagination,
           message: 'Students loaded successfully',
         );
       } else {
@@ -440,13 +457,21 @@ class StudentRepository {
 
   // Import students (raw response: includes results per row)
   Future<ImportResponse> importStudentsRaw(List<Map<String, dynamic>> rows,
-      {String? idempotencyKey}) async {
+      [Map<String, dynamic>? assignmentData, String? idempotencyKey]) async {
     try {
-      final request = ImportStudentsRequest(
-        records: rows,
-        idempotencyKey: idempotencyKey,
-      );
-      final response = await _apiService.importStudents(request);
+      // Create request body with assignment data
+      final requestBody = {
+        'records': rows,
+        if (idempotencyKey != null) 'idempotencyKey': idempotencyKey,
+      };
+
+      // Add assignment data to request body
+      if (assignmentData != null) {
+        requestBody.addAll(assignmentData.cast<String, Object>());
+      }
+
+      final response =
+          await _apiService.importStudentsWithAssignments(requestBody);
       return response;
     } catch (e) {
       return ImportResponse(

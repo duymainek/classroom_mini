@@ -12,17 +12,46 @@ import '../modules/auth/views/responsive_login_page.dart';
 import '../modules/auth/bindings/auth_binding.dart';
 import '../modules/core_management/views/responsive_core_management_page.dart';
 import '../modules/core_management/bindings/core_management_binding.dart';
-import '../modules/dashboard/views/responsive_dashboard_page.dart';
-import '../modules/dashboard/bindings/dashboard_binding.dart';
 import '../modules/student_management/views/responsive_student_management_page.dart';
-import '../modules/student_management/views/student_detail_page.dart';
+import '../modules/student_management/views/create_student_page.dart';
 import '../modules/student_management/bindings/student_management_binding.dart';
 
 import 'package:responsive_framework/responsive_framework.dart';
-import 'package:classroom_mini/app/data/models/assignment_model.dart';
+import 'package:classroom_mini/app/data/models/response/assignment_response.dart';
 import '../modules/assignments/views/mobile/assignment_list_view.dart';
-import '../modules/assignments/views/desktop/assignment_list_view.dart';
 import '../modules/assignments/views/responsive/assignment_pages.dart';
+import '../modules/assignments/bindings/assignment_binding.dart';
+import '../modules/assignments/views/mobile/assignment_tracking_page.dart';
+
+// Announcement imports
+import '../modules/announcements/bindings/announcement_binding.dart';
+import '../modules/announcements/views/mobile/announcement_list_view.dart';
+import '../modules/announcements/views/mobile/announcement_create_view.dart';
+import '../modules/announcements/views/mobile/announcement_detail_view.dart';
+import '../modules/announcements/views/mobile/announcement_tracking_view.dart';
+import '../modules/announcements/views/mobile/announcement_file_tracking_view.dart';
+import 'package:classroom_mini/app/data/models/response/announcement_response.dart';
+
+// Material imports
+import '../modules/materials/bindings/material_binding.dart';
+import '../modules/materials/views/mobile/material_list_view.dart';
+import '../modules/materials/views/mobile/material_detail_view.dart';
+import '../modules/materials/widgets/material_form.dart';
+import 'package:classroom_mini/app/data/models/response/material_response.dart'
+    as material_resp;
+
+// Forum imports
+import '../modules/forum/bindings/forum_binding.dart';
+import '../modules/forum/views/forum_list_view.dart';
+import '../modules/forum/views/forum_detail_view.dart';
+import '../modules/chat/views/chat_list_view.dart';
+import '../modules/chat/views/chat_room_view.dart';
+import '../modules/chat/views/new_chat_view.dart';
+import '../modules/chat/bindings/chat_binding.dart';
+
+// Profile imports
+import '../modules/profile/bindings/profile_binding.dart';
+import '../modules/profile/views/sync_queue_view.dart';
 
 class AppPages {
   static const String INITIAL = Routes.HOME;
@@ -41,18 +70,16 @@ class AppPages {
       binding: AuthBinding(),
     ),
 
+    // Student Management Routes
     GetPage(
-      name: Routes.STUDENT_DETAILS,
-      page: () {
-        final id = Get.parameters['id'] ?? '';
-        return StudentDetailPage(studentId: id);
-      },
+      name: Routes.STUDENTS_LIST,
+      page: () => const ResponsiveStudentManagementPage(),
       binding: StudentManagementBinding(),
     ),
 
     GetPage(
       name: Routes.CREATE_STUDENT,
-      page: () => const PlaceholderPage(title: 'Create Student'),
+      page: () => const CreateStudentPage(),
       binding: StudentManagementBinding(),
     ),
 
@@ -71,6 +98,12 @@ class AppPages {
     GetPage(
       name: Routes.EDIT_PROFILE,
       page: () => const PlaceholderPage(title: 'Edit Profile'),
+    ),
+    GetPage(
+      name: Routes.SYNC_QUEUE,
+      page: () => const SyncQueueView(),
+      binding: ProfileBinding(),
+      transition: Transition.rightToLeft,
     ),
 
     // Settings
@@ -107,11 +140,13 @@ class AppPages {
     GetPage(
       name: Routes.ASSIGNMENTS_LIST,
       page: () => _getResponsiveAssignmentList(),
+      binding: AssignmentBinding(),
       transition: Transition.fadeIn,
     ),
     GetPage(
       name: Routes.ASSIGNMENTS_CREATE,
       page: () => const ResponsiveAssignmentCreatePage(),
+      binding: AssignmentBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
@@ -125,6 +160,7 @@ class AppPages {
         }
         return ResponsiveAssignmentEditPage(assignment: assignment);
       },
+      binding: AssignmentBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
@@ -138,11 +174,31 @@ class AppPages {
         }
         return ResponsiveAssignmentDetailPage(assignment: assignment);
       },
+      binding: AssignmentBinding(),
       transition: Transition.rightToLeft,
     ),
+
+    // Assignment Tracking Route
+    GetPage(
+      name: Routes.ASSIGNMENTS_TRACKING,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>? ?? {};
+        final assignmentId = args['assignmentId'] as String? ?? '';
+        final assignmentTitle =
+            args['assignmentTitle'] as String? ?? 'Theo dõi nộp bài';
+        return AssignmentTrackingPage(
+          assignmentId: assignmentId,
+          assignmentTitle: assignmentTitle,
+        );
+      },
+      binding: AssignmentBinding(),
+      transition: Transition.rightToLeft,
+    ),
+
     GetPage(
       name: Routes.ASSIGNMENTS_STUDENT_LIST,
       page: () => const MobileStudentAssignmentListView(),
+      binding: AssignmentBinding(),
       transition: Transition.fadeIn,
     ),
 
@@ -177,13 +233,177 @@ class AppPages {
       binding: QuizBinding(),
       transition: Transition.rightToLeft,
     ),
+
+    // Announcement Routes
+    GetPage(
+      name: Routes.ANNOUNCEMENTS_LIST,
+      page: () => const MobileAnnouncementListView(),
+      binding: AnnouncementBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: Routes.ANNOUNCEMENTS_CREATE,
+      page: () => const MobileAnnouncementCreateView(),
+      binding: AnnouncementBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.ANNOUNCEMENTS_EDIT,
+      page: () {
+        final announcement = Get.arguments as Announcement?;
+        if (announcement == null) {
+          return const Scaffold(
+            body: Center(child: Text('Thông báo không tìm thấy')),
+          );
+        }
+        return const PlaceholderPage(title: 'Chỉnh sửa thông báo');
+      },
+      binding: AnnouncementBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.ANNOUNCEMENTS_DETAIL,
+      page: () {
+        final announcement = Get.arguments as Announcement?;
+        if (announcement == null) {
+          return const Scaffold(
+            body: Center(child: Text('Thông báo không tìm thấy')),
+          );
+        }
+        return MobileAnnouncementDetailView(announcement: announcement);
+      },
+      binding: AnnouncementBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.ANNOUNCEMENTS_TRACKING,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>? ?? {};
+        final announcementId = args['announcementId'] as String? ?? '';
+        final announcementTitle =
+            args['announcementTitle'] as String? ?? 'Theo dõi thông báo';
+        return MobileAnnouncementTrackingView(
+          announcementId: announcementId,
+          announcementTitle: announcementTitle,
+        );
+      },
+      binding: AnnouncementBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.ANNOUNCEMENTS_FILE_TRACKING,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>? ?? {};
+        final announcementId = args['announcementId'] as String? ?? '';
+        final announcementTitle =
+            args['announcementTitle'] as String? ?? 'Theo dõi file';
+        return MobileAnnouncementFileTrackingView(
+          announcementId: announcementId,
+          announcementTitle: announcementTitle,
+        );
+      },
+      binding: AnnouncementBinding(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // Material Routes
+    GetPage(
+      name: Routes.MATERIALS_LIST,
+      page: () => const MaterialListView(),
+      binding: MaterialBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: Routes.MATERIALS_CREATE,
+      page: () => const MaterialForm(),
+      binding: MaterialBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.MATERIALS_EDIT,
+      page: () {
+        final material = Get.arguments as material_resp.Material?;
+        if (material == null) {
+          return const Scaffold(
+            body: Center(child: Text('Tài liệu không tìm thấy')),
+          );
+        }
+        return MaterialForm(material: material, isEditing: true);
+      },
+      binding: MaterialBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.MATERIALS_DETAIL,
+      page: () {
+        final materialId = Get.parameters['id'] ?? '';
+        if (materialId.isEmpty) {
+          return const Scaffold(
+            body: Center(child: Text('ID tài liệu không hợp lệ')),
+          );
+        }
+        return MaterialDetailView(materialId: materialId);
+      },
+      binding: MaterialBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.MATERIALS_TRACKING,
+      page: () {
+        return const PlaceholderPage(title: 'Theo dõi tài liệu');
+      },
+      binding: MaterialBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.MATERIALS_FILE_TRACKING,
+      page: () {
+        return const PlaceholderPage(title: 'Theo dõi file tài liệu');
+      },
+      binding: MaterialBinding(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // Forum Routes
+    GetPage(
+      name: Routes.FORUM_LIST,
+      page: () => const ForumListView(),
+      binding: ForumBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: Routes.FORUM_DETAIL,
+      page: () => const ForumDetailView(),
+      binding: ForumBinding(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // Chat Routes
+    GetPage(
+      name: Routes.CHAT_LIST,
+      page: () => const ChatListView(),
+      binding: ChatBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: Routes.CHAT_ROOM,
+      page: () => const ChatRoomView(),
+      binding: ChatBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.CHAT_NEW,
+      page: () => const NewChatView(),
+      binding: ChatBinding(),
+      transition: Transition.rightToLeft,
+    ),
   ];
 
   static Widget _getResponsiveAssignmentList() {
     return Builder(
       builder: (context) {
         if (ResponsiveBreakpoints.of(context).isDesktop) {
-          return const DesktopAssignmentListView();
+          return const MobileAssignmentListView();
         } else if (ResponsiveBreakpoints.of(context).isTablet) {
           return const MobileAssignmentListView();
         } else {

@@ -1,4 +1,6 @@
 const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
@@ -16,10 +18,17 @@ const assignmentRoutes = require('./src/routes/assignments');
 const submissionRoutes = require('./src/routes/submissions');
 const profileRoutes = require('./src/routes/profile');
 const quizRoutes = require('./src/routes/quizzes');
+const announcementRoutes = require('./src/routes/announcements');
+const materialRoutes = require('./src/routes/materials');
+const forumRoutes = require('./src/routes/forum');
+const fileUploadRoutes = require('./src/routes/fileUploadRoutes');
+const chatRoutes = require('./src/routes/chatRoutes');
 const { errorHandler, notFoundHandler } = require('./src/middleware/errorHandler');
 const { testConnection, initializeAdminUser } = require('./src/services/supabaseClient');
+const { initializeChatSocket } = require('./src/sockets/chatSocket');
 
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 
 // Trust proxy (important for rate limiting and IP detection)
@@ -32,12 +41,23 @@ app.use(helmet({
 
 
 // TEMPORARY: Allow all origins for testing
-app.use(cors({
+const corsOptions = {
   origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
+};
+
+app.use(cors(corsOptions));
+
+// Socket.IO configuration
+const io = socketIo(server, {
+  cors: corsOptions,
+  transports: ['websocket', 'polling']
+});
+
+// Initialize Socket.IO handlers
+initializeChatSocket(io);
 
 // Compression middleware
 app.use(compression());
@@ -97,6 +117,11 @@ app.use('/api/assignments', assignmentRoutes);
 app.use('/api/submissions', submissionRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/quizzes', quizRoutes);
+app.use('/api/announcements', announcementRoutes);
+app.use('/api/materials', materialRoutes);
+app.use('/api/forum', forumRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api', fileUploadRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -115,7 +140,11 @@ app.get('/', (req, res) => {
       dashboard: '/api/dashboard',
       assignments: '/api/assignments',
       submissions: '/api/submissions',
-      quizzes: '/api/quizzes'
+      quizzes: '/api/quizzes',
+      announcements: '/api/announcements',
+      materials: '/api/materials',
+      forum: '/api/forum',
+      chat: '/api/chat'
     }
   });
 });
@@ -168,12 +197,13 @@ async function startServer() {
     await initializeAdminUser();
 
     // Start the server
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`✅ Server is running on port ${PORT}`);
       console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`📍 API URL: http://localhost:${PORT}`);
       console.log(`🏥 Health Check: http://localhost:${PORT}/health`);
       console.log(`🔐 Auth Endpoints: http://localhost:${PORT}/api/auth`);
+      console.log(`💬 Socket.IO ready for connections at /chat namespace`);
       
       if (process.env.NODE_ENV === 'development') {
         console.log(`🧪 Test Endpoint: http://localhost:${PORT}/api/auth/test`);
@@ -189,4 +219,4 @@ async function startServer() {
 // Start the server
 startServer();
 
-module.exports = app;
+module.exports = { app, server, io };

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:classroom_mini/app/data/services/connectivity_service.dart';
 
 class EnhancedCourseCard extends StatefulWidget {
   final dynamic course;
@@ -213,44 +215,49 @@ class _EnhancedCourseCardState extends State<EnhancedCourseCard>
                           ),
                         ),
 
-                        // Actions
-                        PopupMenuButton(
-                          icon: Icon(
-                            Icons.more_vert,
-                            color: Colors.grey[600],
-                          ),
-                          itemBuilder: (context) => [
-                            PopupMenuItem(
-                              value: 'edit',
-                              child: const Row(
-                                children: [
-                                  Icon(Icons.edit, size: 20),
-                                  SizedBox(width: 8),
-                                  Text('Chỉnh sửa'),
-                                ],
-                              ),
+                        Obx(() {
+                          final connectivityService = Get.find<ConnectivityService>();
+                          if (!connectivityService.isOnline.value) {
+                            return const SizedBox.shrink();
+                          }
+                          return PopupMenuButton(
+                            icon: Icon(
+                              Icons.more_vert,
+                              color: Colors.grey[600],
                             ),
-                            PopupMenuItem(
-                              value: 'delete',
-                              child: const Row(
-                                children: [
-                                  Icon(Icons.delete,
-                                      size: 20, color: Colors.red),
-                                  SizedBox(width: 8),
-                                  Text('Xóa',
-                                      style: TextStyle(color: Colors.red)),
-                                ],
+                            itemBuilder: (context) => [
+                              PopupMenuItem(
+                                value: 'edit',
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.edit, size: 20),
+                                    SizedBox(width: 8),
+                                    Text('Chỉnh sửa'),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
-                          onSelected: (value) {
-                            if (value == 'edit') {
-                              widget.onEdit();
-                            } else if (value == 'delete') {
-                              widget.onDelete();
-                            }
-                          },
-                        ),
+                              PopupMenuItem(
+                                value: 'delete',
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.delete,
+                                        size: 20, color: Colors.red),
+                                    SizedBox(width: 8),
+                                    Text('Xóa',
+                                        style: TextStyle(color: Colors.red)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            onSelected: (value) {
+                              if (value == 'edit') {
+                                widget.onEdit();
+                              } else if (value == 'delete') {
+                                widget.onDelete();
+                              }
+                            },
+                          );
+                        }),
                       ],
                     ),
                   ),

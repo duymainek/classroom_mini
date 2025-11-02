@@ -4,6 +4,7 @@ import '../../../core/services/auth_service.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/services/storage_service.dart';
+import '../../../data/services/chat_socket_service.dart';
 import '../../../routes/app_routes.dart';
 
 class LoginController extends GetxController {
@@ -84,6 +85,21 @@ class LoginController extends GetxController {
 
         // Update the reactive authentication state
         _authService.login(result.user);
+
+        // Connect to chat socket after login
+        if (result.accessToken != null) {
+          try {
+            final chatSocketService = Get.isRegistered<ChatSocketService>()
+                ? Get.find<ChatSocketService>()
+                : null;
+            if (chatSocketService != null) {
+              await chatSocketService.connect(result.accessToken!);
+            }
+          } catch (e) {
+            print('Failed to connect chat socket: $e');
+          }
+        }
+
         await _navigateAfterLogin(result.user);
       } else {
         if (!isClosed) {

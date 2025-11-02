@@ -1,6 +1,9 @@
 const { supabase } = require('../services/supabaseClient');
-const { validateCourseCreation, validateCourseUpdate } = require('../models/course');
+const { validate } = require('../utils/validators');
+const { createCourseSchema, updateCourseSchema } = require('../schemas/courseSchema');
 const { AppError, catchAsync } = require('../middleware/errorHandler');
+const { buildResponse } = require('../utils/response');
+require('../types/course.type');
 
 class CourseController {
   /**
@@ -10,7 +13,7 @@ class CourseController {
     const { code, name, sessionCount, semesterId } = req.body;
 
     // Validate input
-    const validation = validateCourseCreation({ code, name, sessionCount, semesterId });
+    const validation = validate(createCourseSchema, req.body);
     if (!validation.isValid) {
       return res.status(400).json({
         success: false,
@@ -72,10 +75,8 @@ class CourseController {
       throw new AppError('Failed to create course', 500, 'COURSE_CREATION_FAILED');
     }
 
-    res.status(201).json({
-      success: true,
-      message: 'Course created successfully',
-      data: {
+    res.status(201).json(
+      buildResponse(true, 'Course created successfully', {
         course: {
           id: newCourse.id,
           code: newCourse.code,
@@ -87,8 +88,8 @@ class CourseController {
           updatedAt: newCourse.updated_at,
           semester: newCourse.semesters
         }
-      }
-    });
+      })
+    );
   });
 
   /**
@@ -151,18 +152,30 @@ class CourseController {
       throw new AppError('Failed to fetch courses', 500, 'GET_COURSES_FAILED');
     }
 
-    res.json({
-      success: true,
-      data: {
-        courses: courses || [],
+    // Transform courses: rename semesters to semester to match schema
+    const transformedCourses = (courses || []).map(course => ({
+      id: course.id,
+      code: course.code,
+      name: course.name,
+      sessionCount: course.session_count,
+      semesterId: course.semester_id,
+      isActive: course.is_active,
+      createdAt: course.created_at,
+      updatedAt: course.updated_at,
+      semester: course.semesters || null
+    }));
+
+    res.json(
+      buildResponse(true, undefined, {
+        courses: transformedCourses,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
           total: count || 0,
           pages: Math.ceil((count || 0) / parseInt(limit))
         }
-      }
-    });
+      })
+    );
   });
 
   /**
@@ -185,12 +198,20 @@ class CourseController {
       throw new AppError('Course not found', 404, 'COURSE_NOT_FOUND');
     }
 
-    res.json({
-      success: true,
-      data: {
-        course
-      }
-    });
+    // Transform course: rename semesters to semester to match schema
+    const transformedCourse = {
+      id: course.id,
+      code: course.code,
+      name: course.name,
+      sessionCount: course.session_count,
+      semesterId: course.semester_id,
+      isActive: course.is_active,
+      createdAt: course.created_at,
+      updatedAt: course.updated_at,
+      semester: course.semesters || null
+    };
+
+    res.json(buildResponse(true, undefined, { course: transformedCourse }));
   });
 
   /**
@@ -201,7 +222,7 @@ class CourseController {
     const { code, name, sessionCount, semesterId, isActive } = req.body;
 
     // Validate input
-    const validation = validateCourseUpdate(req.body);
+    const validation = validate(updateCourseSchema, req.body);
     if (!validation.isValid) {
       return res.status(400).json({
         success: false,
@@ -281,13 +302,22 @@ class CourseController {
       throw new AppError('Failed to update course', 500, 'UPDATE_COURSE_FAILED');
     }
 
-    res.json({
-      success: true,
-      message: 'Course updated successfully',
-      data: {
-        course: updatedCourse
-      }
-    });
+    // Transform course: rename semesters to semester to match schema
+    const transformedCourse = {
+      id: updatedCourse.id,
+      code: updatedCourse.code,
+      name: updatedCourse.name,
+      sessionCount: updatedCourse.session_count,
+      semesterId: updatedCourse.semester_id,
+      isActive: updatedCourse.is_active,
+      createdAt: updatedCourse.created_at,
+      updatedAt: updatedCourse.updated_at,
+      semester: updatedCourse.semesters || null
+    };
+
+    res.json(
+      buildResponse(true, 'Course updated successfully', { course: transformedCourse })
+    );
   });
 
   /**
@@ -333,10 +363,7 @@ class CourseController {
       throw new AppError('Failed to delete course', 500, 'DELETE_COURSE_FAILED');
     }
 
-    res.json({
-      success: true,
-      message: 'Course deleted successfully'
-    });
+    res.json(buildResponse(true, 'Course deleted successfully'));
   });
 
   /**
@@ -388,18 +415,29 @@ class CourseController {
       throw new AppError('Failed to fetch courses', 500, 'GET_COURSES_FAILED');
     }
 
-    res.json({
-      success: true,
-      data: {
-        courses: courses || [],
+    // Transform courses: convert snake_case to camelCase
+    const transformedCourses = (courses || []).map(course => ({
+      id: course.id,
+      code: course.code,
+      name: course.name,
+      sessionCount: course.session_count,
+      semesterId: semesterId,
+      isActive: course.is_active,
+      createdAt: course.created_at,
+      updatedAt: course.updated_at
+    }));
+
+    res.json(
+      buildResponse(true, undefined, {
+        courses: transformedCourses,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
           total: count || 0,
           pages: Math.ceil((count || 0) / parseInt(limit))
         }
-      }
-    });
+      })
+    );
   });
 
   /**
@@ -432,10 +470,7 @@ class CourseController {
         inactive_courses: inactiveCount || 0
       };
 
-      res.json({
-        success: true,
-        data: statistics
-      });
+      res.json(buildResponse(true, undefined, statistics));
     } catch (error) {
       console.error('Get course statistics error:', error);
       throw new AppError('Failed to get statistics', 500, 'GET_STATISTICS_FAILED');

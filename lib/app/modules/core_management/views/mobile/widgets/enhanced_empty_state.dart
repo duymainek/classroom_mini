@@ -98,37 +98,6 @@ class EnhancedEmptyState extends StatelessWidget {
               );
             },
           ),
-
-          const SizedBox(height: 32),
-
-          // Action Button
-          TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 200),
-            builder: (context, value, child) {
-              return Opacity(
-                opacity: value,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    // Handle create action
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Tạo mới'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
         ],
       ),
     );

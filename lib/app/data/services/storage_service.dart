@@ -1,7 +1,7 @@
 import 'dart:convert';
+import 'package:classroom_mini/app/data/models/response/user_response.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/api_endpoints.dart';
-import '../models/user_model.dart';
 
 class StorageService {
   static StorageService? _instance;
@@ -10,7 +10,8 @@ class StorageService {
   static Future<StorageService> getInstance() async {
     _instance ??= StorageService._internal();
     _preferences ??= await SharedPreferences.getInstance();
-    print('[StorageService] SharedPreferences instance initialized. Hash: ${_preferences.hashCode}');
+    print(
+        '[StorageService] SharedPreferences instance initialized. Hash: ${_preferences.hashCode}');
     return _instance!;
   }
 
@@ -18,19 +19,23 @@ class StorageService {
 
   // Token management
   Future<void> saveTokens(String accessToken, String refreshToken) async {
-    print('[StorageService] Saving tokens with key: ${StorageKeys.accessToken}. Prefs Hash: ${_preferences.hashCode}');
+    print(
+        '[StorageService] Saving tokens with key: ${StorageKeys.accessToken}. Prefs Hash: ${_preferences.hashCode}');
     await _preferences!.setString(StorageKeys.accessToken, accessToken);
     await _preferences!.setString(StorageKeys.refreshToken, refreshToken);
     await _preferences!.setBool(StorageKeys.isLoggedIn, true);
-    print('[StorageService] Tokens saved. AccessToken: ${accessToken.substring(0, 10)}..., RefreshToken: ${refreshToken.substring(0, 10)}...');
+    print(
+        '[StorageService] Tokens saved. AccessToken: ${accessToken.substring(0, 10)}..., RefreshToken: ${refreshToken.substring(0, 10)}...');
     // Save dummy value for persistence test
     await _preferences!.setString('dummy_test_key', 'test_value_persisted');
   }
 
   Future<String?> getAccessToken() async {
-    print('[StorageService] Retrieving AccessToken with key: ${StorageKeys.accessToken}. Prefs Hash: ${_preferences.hashCode}');
+    print(
+        '[StorageService] Retrieving AccessToken with key: ${StorageKeys.accessToken}. Prefs Hash: ${_preferences.hashCode}');
     final token = _preferences!.getString(StorageKeys.accessToken);
-    print('[StorageService] Retrieving AccessToken. Found: ${token != null ? "Yes" : "No"}');
+    print(
+        '[StorageService] Retrieving AccessToken. Found: ${token != null ? "Yes" : "No"}');
     return token;
   }
 

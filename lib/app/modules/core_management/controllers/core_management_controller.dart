@@ -1,7 +1,10 @@
+import 'package:classroom_mini/app/data/models/request/course_request.dart';
+import 'package:classroom_mini/app/data/models/request/group_request.dart';
+import 'package:classroom_mini/app/data/models/request/semester_request.dart';
+import 'package:classroom_mini/app/data/models/response/course_response.dart';
+import 'package:classroom_mini/app/data/models/response/group_response.dart';
+import 'package:classroom_mini/app/data/models/response/semester_response.dart';
 import 'package:get/get.dart';
-import '../../../data/models/semester_model.dart';
-import '../../../data/models/course_model.dart';
-import '../../../data/models/group_model.dart';
 import '../../../data/repositories/semester_repository.dart';
 import '../../../data/repositories/course_repository.dart';
 import '../../../data/repositories/group_repository.dart';

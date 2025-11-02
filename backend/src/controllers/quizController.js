@@ -1,17 +1,22 @@
 const { supabase } = require('../services/supabaseClient');
+const { validate } = require('../utils/validators');
 const { 
-  validateQuizCreation, 
-  validateQuizUpdate,
-  validateQuestionCreation,
-  validateQuestionUpdate,
-  validateQuizSubmission,
-  validateGradeQuizSubmission,
+  createQuizSchema, 
+  updateQuizSchema,
+  createQuestionSchema,
+  updateQuestionSchema,
+  createQuizSubmissionSchema,
+  gradeQuizSubmissionSchema
+} = require('../schemas/quizSchema');
+const {
   calculateQuizSubmissionStatus,
   formatQuizResponse,
   formatQuestionResponse,
   formatQuizSubmissionResponse
 } = require('../models/quiz');
 const { AppError, catchAsync } = require('../middleware/errorHandler');
+const { buildResponse } = require('../utils/response');
+require('../types/quiz.type');
 
 class QuizController {
   /**
@@ -37,21 +42,7 @@ class QuizController {
     const instructorId = req.user.id;
 
     // Validate input
-    const validation = validateQuizCreation({
-      title,
-      description,
-      courseId,
-      startDate,
-      dueDate,
-      lateDueDate,
-      allowLateSubmission,
-      maxAttempts,
-      timeLimit,
-      shuffleQuestions,
-      shuffleOptions,
-      showCorrectAnswers,
-      groupIds
-    });
+    const validation = validate(createQuizSchema, req.body);
 
     if (!validation.isValid) {
       return res.status(400).json({
@@ -232,13 +223,34 @@ class QuizController {
       .eq('id', newQuiz.id)
       .single();
 
-    res.status(201).json({
-      success: true,
-      message: 'Quiz created successfully',
-      data: {
-        quiz: quizWithGroups
-      }
-    });
+    // Format quiz response with proper field names
+    const formattedQuiz = {
+      ...formatQuizResponse(quizWithGroups),
+      quizGroups: (quizWithGroups.quiz_groups || []).map(qg => ({
+        id: qg.id,
+        quizId: qg.quiz_id,
+        groupId: qg.group_id,
+        groups: qg.groups
+      })),
+      questions: (quizWithGroups.quiz_questions || []).map(q => ({
+        id: q.id,
+        quizId: q.quiz_id,
+        questionText: q.question_text,
+        questionType: q.question_type,
+        points: q.points,
+        orderIndex: q.order_index,
+        isRequired: q.is_required,
+        createdAt: q.created_at,
+        updatedAt: q.updated_at,
+        quiz_question_options: q.quiz_question_options || []
+      })),
+      course: quizWithGroups.courses,
+      instructor: quizWithGroups.users || null
+    };
+
+    res.status(201).json(
+      buildResponse(true, 'Quiz created successfully', { quiz: formattedQuiz })
+    );
   });
 
   /**
@@ -352,9 +364,8 @@ class QuizController {
       return { ...rest, question_count: questionCount };
     });
 
-    res.json({
-      success: true,
-      data: {
+    res.json(
+      buildResponse(true, undefined, {
         quizzes: quizzesWithCounts,
         pagination: {
           page: parseInt(page),
@@ -362,8 +373,8 @@ class QuizController {
           total: count || 0,
           pages: Math.ceil((count || 0) / parseInt(limit))
         }
-      }
-    });
+      })
+    );
   });
 
   /**
@@ -429,12 +440,27 @@ class QuizController {
       throw new AppError('Quiz not found', 404, 'QUIZ_NOT_FOUND');
     }
 
-    res.json({
-      success: true,
-      data: {
-        quiz
-      }
-    });
+    // Format quiz response with proper field names
+    const formattedQuiz = {
+      ...formatQuizResponse(quiz),
+      quizGroups: quiz.quiz_groups || [],
+      questions: (quiz.quiz_questions || []).map(q => ({
+        id: q.id,
+        quizId: q.quiz_id,
+        questionText: q.question_text,
+        questionType: q.question_type,
+        points: q.points,
+        orderIndex: q.order_index,
+        isRequired: q.is_required,
+        createdAt: q.created_at,
+        updatedAt: q.updated_at,
+        quiz_question_options: q.quiz_question_options || []
+      })),
+      course: quiz.courses,
+      instructor: quiz.users
+    };
+
+    res.json(buildResponse(true, undefined, { quiz: formattedQuiz }));
   });
 
   /**
@@ -446,7 +472,7 @@ class QuizController {
     const updateData = req.body;
 
     // Validate input
-    const validation = validateQuizUpdate(updateData);
+    const validation = validate(updateQuizSchema, updateData);
     if (!validation.isValid) {
       return res.status(400).json({
         success: false,
@@ -467,13 +493,26 @@ class QuizController {
       throw new AppError('Quiz not found or access denied', 404, 'QUIZ_NOT_FOUND');
     }
 
-    // Update quiz
+    // Update quiz core fields (map camelCase -> snake_case, exclude questions)
+    const updatePayload = {};
+    if (Object.prototype.hasOwnProperty.call(updateData, 'title')) updatePayload.title = updateData.title;
+    if (Object.prototype.hasOwnProperty.call(updateData, 'description')) updatePayload.description = updateData.description;
+    if (Object.prototype.hasOwnProperty.call(updateData, 'startDate')) updatePayload.start_date = updateData.startDate;
+    if (Object.prototype.hasOwnProperty.call(updateData, 'dueDate')) updatePayload.due_date = updateData.dueDate;
+    if (Object.prototype.hasOwnProperty.call(updateData, 'lateDueDate')) updatePayload.late_due_date = updateData.lateDueDate;
+    if (Object.prototype.hasOwnProperty.call(updateData, 'allowLateSubmission')) updatePayload.allow_late_submission = updateData.allowLateSubmission;
+    if (Object.prototype.hasOwnProperty.call(updateData, 'maxAttempts')) updatePayload.max_attempts = updateData.maxAttempts;
+    if (Object.prototype.hasOwnProperty.call(updateData, 'timeLimit')) updatePayload.time_limit = updateData.timeLimit;
+    if (Object.prototype.hasOwnProperty.call(updateData, 'shuffleQuestions')) updatePayload.shuffle_questions = updateData.shuffleQuestions;
+    if (Object.prototype.hasOwnProperty.call(updateData, 'shuffleOptions')) updatePayload.shuffle_options = updateData.shuffleOptions;
+    if (Object.prototype.hasOwnProperty.call(updateData, 'showCorrectAnswers')) updatePayload.show_correct_answers = updateData.showCorrectAnswers;
+    if (Object.prototype.hasOwnProperty.call(updateData, 'isActive')) updatePayload.is_active = updateData.isActive;
+
+    updatePayload.updated_at = new Date().toISOString();
+
     const { data: updatedQuiz, error } = await supabase
       .from('quizzes')
-      .update({
-        ...updateData,
-        updated_at: new Date().toISOString()
-      })
+      .update(updatePayload)
       .eq('id', quizId)
       .select(`
         id, title, description, course_id, instructor_id,
@@ -489,13 +528,114 @@ class QuizController {
       throw new AppError('Failed to update quiz', 500, 'UPDATE_QUIZ_FAILED');
     }
 
-    res.json({
-      success: true,
-      message: 'Quiz updated successfully',
-      data: {
-        quiz: updatedQuiz
+    // If questions array is provided, perform sync (create/update/delete)
+    const { questions } = updateData || {};
+    if (Array.isArray(questions)) {
+      try {
+        // 1) Load existing question ids
+        const { data: existingQs, error: loadQsErr } = await supabase
+          .from('quiz_questions')
+          .select('id')
+          .eq('quiz_id', quizId);
+        if (loadQsErr) throw loadQsErr;
+
+        const existingIds = new Set((existingQs || []).map(q => q.id));
+        const incomingIds = new Set(
+          questions
+            .map(q => q.id)
+            .filter(Boolean)
+        );
+
+        // 2) Delete questions not present anymore
+        const idsToDelete = [...existingIds].filter(id => !incomingIds.has(id));
+        if (idsToDelete.length > 0) {
+          const { error: delErr } = await supabase
+            .from('quiz_questions')
+            .delete()
+            .in('id', idsToDelete);
+          if (delErr) throw delErr;
+        }
+
+        // 3) Upsert incoming questions
+        let autoOrder = 1;
+        for (const q of questions) {
+          const incomingType = (q.question_type || q.questionType || '').toLowerCase();
+          const normalizedType = incomingType === 'text' ? 'essay' : incomingType;
+          const orderIndex = Number.isInteger(q.order_index)
+            ? q.order_index
+            : (Number.isInteger(q.orderIndex) ? q.orderIndex : autoOrder);
+
+          let targetQuestionId = q.id;
+          if (targetQuestionId && existingIds.has(targetQuestionId)) {
+            // Update
+            const { error: upErr } = await supabase
+              .from('quiz_questions')
+              .update({
+                question_text: q.question_text ?? q.questionText,
+                question_type: normalizedType,
+                points: q.points ?? 1,
+                order_index: orderIndex > 0 ? orderIndex : autoOrder,
+                is_required: q.is_required ?? q.isRequired ?? true,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', targetQuestionId);
+            if (upErr) throw upErr;
+          } else {
+            // Create
+            const { data: createdQ, error: crtErr } = await supabase
+              .from('quiz_questions')
+              .insert({
+                quiz_id: quizId,
+                question_text: q.question_text ?? q.questionText,
+                question_type: normalizedType,
+                points: q.points ?? 1,
+                order_index: orderIndex > 0 ? orderIndex : autoOrder,
+                is_required: q.is_required ?? q.isRequired ?? true
+              })
+              .select('id')
+              .single();
+            if (crtErr) throw crtErr;
+            targetQuestionId = createdQ.id;
+          }
+
+          autoOrder = Math.max(autoOrder + 1, (orderIndex || autoOrder) + 1);
+
+          // Options handling for MC/TF
+          const rawOptions = q.options;
+          if ((normalizedType === 'multiple_choice' || normalizedType === 'true_false')) {
+            // Clear old options then insert new if provided
+            const { error: delOptErr } = await supabase
+              .from('quiz_question_options')
+              .delete()
+              .eq('question_id', targetQuestionId);
+            if (delOptErr) throw delOptErr;
+
+            if (Array.isArray(rawOptions) && rawOptions.length > 0) {
+              let optOrder = 1;
+              const optionRows = rawOptions.map(opt => ({
+                question_id: targetQuestionId,
+                option_text: opt.option_text ?? opt.optionText,
+                is_correct: opt.is_correct ?? opt.isCorrect ?? false,
+                order_index: Number.isInteger(opt.order_index)
+                  ? opt.order_index
+                  : (Number.isInteger(opt.orderIndex) ? opt.orderIndex : optOrder++)
+              }));
+              const { error: insOptErr } = await supabase
+                .from('quiz_question_options')
+                .insert(optionRows);
+              if (insOptErr) throw insOptErr;
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Update quiz questions error:', e);
+        throw new AppError('Failed to update quiz questions', 500, 'UPDATE_QUIZ_QUESTIONS_FAILED');
       }
-    });
+    }
+
+    res.json(
+      buildResponse(true, 'Quiz updated successfully', { quiz: updatedQuiz })
+    );
   });
 
   /**
@@ -543,10 +683,7 @@ class QuizController {
       throw new AppError('Failed to delete quiz', 500, 'DELETE_QUIZ_FAILED');
     }
 
-    res.json({
-      success: true,
-      message: 'Quiz deleted successfully'
-    });
+    res.json(buildResponse(true, 'Quiz deleted successfully'));
   });
 
   /**
@@ -558,7 +695,7 @@ class QuizController {
     const questionData = req.body;
 
     // Validate input
-    const validation = validateQuestionCreation(questionData);
+    const validation = validate(createQuestionSchema, questionData);
     if (!validation.isValid) {
       return res.status(400).json({
         success: false,
@@ -635,13 +772,9 @@ class QuizController {
       .eq('id', newQuestion.id)
       .single();
 
-    res.status(201).json({
-      success: true,
-      message: 'Question added successfully',
-      data: {
-        question: questionWithOptions
-      }
-    });
+    res.status(201).json(
+      buildResponse(true, 'Question added successfully', { question: questionWithOptions })
+    );
   });
 
   /**
@@ -653,7 +786,7 @@ class QuizController {
     const updateData = req.body;
 
     // Validate input
-    const validation = validateQuestionUpdate(updateData);
+    const validation = validate(updateQuestionSchema, updateData);
     if (!validation.isValid) {
       return res.status(400).json({
         success: false,
@@ -734,13 +867,9 @@ class QuizController {
       .eq('id', questionId)
       .single();
 
-    res.json({
-      success: true,
-      message: 'Question updated successfully',
-      data: {
-        question: questionWithOptions
-      }
-    });
+    res.json(
+      buildResponse(true, 'Question updated successfully', { question: questionWithOptions })
+    );
   });
 
   /**
@@ -777,10 +906,7 @@ class QuizController {
       throw new AppError('Failed to delete question', 500, 'DELETE_QUESTION_FAILED');
     }
 
-    res.json({
-      success: true,
-      message: 'Question deleted successfully'
-    });
+    res.json(buildResponse(true, 'Question deleted successfully'));
   });
 
   /**
@@ -792,7 +918,7 @@ class QuizController {
     const { answers } = req.body;
 
     // Validate input
-    const validation = validateQuizSubmission({ quizId, answers });
+    const validation = validate(createQuizSubmissionSchema, { quizId, answers });
     if (!validation.isValid) {
       return res.status(400).json({
         success: false,
@@ -895,16 +1021,14 @@ class QuizController {
       throw new AppError('Failed to save answers', 500, 'ANSWERS_SAVE_FAILED');
     }
 
-    res.status(201).json({
-      success: true,
-      message: 'Quiz submitted successfully',
-      data: {
+    res.status(201).json(
+      buildResponse(true, 'Quiz submitted successfully', {
         submissionId: newSubmission.id,
         attemptNumber: currentAttempt,
         isLate,
         status: submissionStatus
-      }
-    });
+      })
+    );
   });
 
   /**
@@ -1042,9 +1166,8 @@ class QuizController {
     const total = filteredData.length;
     const paginatedData = filteredData.slice(offset, offset + parseInt(limit));
 
-    res.json({
-      success: true,
-      data: {
+    res.json(
+      buildResponse(true, undefined, {
         submissions: paginatedData,
         pagination: {
           page: parseInt(page),
@@ -1052,8 +1175,8 @@ class QuizController {
           total,
           pages: Math.ceil(total / parseInt(limit))
         }
-      }
-    });
+      })
+    );
   });
 
   /**
@@ -1065,7 +1188,7 @@ class QuizController {
     const instructorId = req.user.id;
 
     // Validate grade
-    const validation = validateGradeQuizSubmission({ grade, feedback });
+    const validation = validate(gradeQuizSubmissionSchema, { grade, feedback });
     if (!validation.isValid) {
       return res.status(400).json({
         success: false,
@@ -1112,13 +1235,9 @@ class QuizController {
       throw new AppError('Failed to grade submission', 500, 'GRADE_SUBMISSION_FAILED');
     }
 
-    res.json({
-      success: true,
-      message: 'Submission graded successfully',
-      data: {
-        submission: updatedSubmission
-      }
-    });
+    res.json(
+      buildResponse(true, 'Submission graded successfully', { submission: updatedSubmission })
+    );
   });
 }
 

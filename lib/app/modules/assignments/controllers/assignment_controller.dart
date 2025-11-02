@@ -1,11 +1,12 @@
-import 'package:get/get.dart';
+import 'package:classroom_mini/app/data/models/response/course_response.dart';
+import 'package:classroom_mini/app/data/models/response/group_response.dart';
+import 'package:get/get.dart' hide MultipartFile;
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/services/gemini_service.dart'; // Import GeminiService
-import '../../../data/models/assignment_model.dart';
-import '../../../data/models/submission_model.dart';
-import '../../../data/models/assignment_request_models.dart';
-import '../../../data/models/assignment_response_models.dart';
+import 'package:classroom_mini/app/data/models/response/assignment_response.dart';
+import 'package:classroom_mini/app/data/models/response/submission_response.dart';
+import 'package:classroom_mini/app/data/models/request/assignment_request.dart';
 import '../models/assignment_form_state.dart';
 import '../../../core/utils/semester_helper.dart';
 
@@ -88,8 +89,32 @@ class AssignmentController extends GetxController {
       _isGeneratingDescription.value; // Getter for new loading state
   bool get isGroupsLoading => _isGroupsLoading.value;
 
+  // Tracking statistics getters
+  int get totalStudents => _submissions.length;
+  int get submittedCount => _submissions
+      .where((s) => s.status != SubmissionStatus.notSubmitted)
+      .length;
+  int get notSubmittedCount => _submissions
+      .where((s) => s.status == SubmissionStatus.notSubmitted)
+      .length;
+  int get lateCount =>
+      _submissions.where((s) => s.status == SubmissionStatus.late).length;
+  int get gradedCount =>
+      _submissions.where((s) => s.status == SubmissionStatus.graded).length;
+  double get submissionRate =>
+      totalStudents > 0 ? (submittedCount / totalStudents) * 100 : 0.0;
+  double get averageGrade {
+    final gradedSubmissions =
+        _submissions.where((s) => s.averageGrade != null).toList();
+    if (gradedSubmissions.isEmpty) return 0.0;
+    return gradedSubmissions
+            .map((s) => s.averageGrade!)
+            .reduce((a, b) => a + b) /
+        gradedSubmissions.length;
+  }
+
   // Form setters
-  void initFormState({List<CourseInfo>? courses, List<GroupInfo>? groups}) {
+  void initFormState({List<Course>? courses, List<Group>? groups}) {
     _formState.value = AssignmentFormState(courses: courses, groups: groups);
   }
 
@@ -105,7 +130,15 @@ class AssignmentController extends GetxController {
     try {
       final resp = await _apiService.getCourses(page: page, limit: limit);
       final courses = resp.data.courses
-          .map((c) => CourseInfo(id: c.id, code: c.code, name: c.name))
+          .map((c) => Course(
+              id: c.id,
+              code: c.code,
+              name: c.name,
+              sessionCount: c.sessionCount,
+              semesterId: c.semesterId,
+              isActive: c.isActive,
+              createdAt: c.createdAt,
+              updatedAt: c.updatedAt))
           .toList();
       updateForm((s) {
         s.courses = courses;
@@ -126,7 +159,13 @@ class AssignmentController extends GetxController {
       final resp = await _apiService.getGroups(
           courseId: courseId, page: page, limit: limit);
       final groups = resp.data.groups
-          .map((g) => GroupInfo(id: g.id, name: g.name))
+          .map((g) => Group(
+              id: g.id,
+              name: g.name,
+              courseId: g.courseId,
+              isActive: g.isActive,
+              createdAt: g.createdAt,
+              updatedAt: g.updatedAt))
           .toList();
       updateForm((s) {
         s.groups = groups;
@@ -199,12 +238,12 @@ class AssignmentController extends GetxController {
       );
 
       if (refresh) {
-        _assignments.assignAll(response.data);
+        _assignments.assignAll(response.data.assignments);
       } else {
-        _assignments.addAll(response.data);
+        _assignments.addAll(response.data.assignments);
       }
 
-      _hasMore.value = _currentPage.value < response.pagination.pages;
+      _hasMore.value = _currentPage.value < response.data.pagination.pages;
       _currentPage.value++;
     } catch (e) {
       _error.value = e.toString();
@@ -243,7 +282,7 @@ class AssignmentController extends GetxController {
   Future<Assignment?> getAssignmentById(String assignmentId) async {
     try {
       final response = await _apiService.getAssignmentById(assignmentId);
-      return response.data;
+      return response.data.assignment;
     } catch (e) {
       _error.value = e.toString();
       Get.snackbar('Lỗi', 'Không thể tải chi tiết bài tập: $e');
@@ -252,15 +291,13 @@ class AssignmentController extends GetxController {
   }
 
   /// Create new assignment
-  Future<bool> createAssignment(AssignmentCreateRequest request) async {
+  Future<String?> createAssignment(AssignmentCreateRequest request) async {
     _isLoading.value = true;
     _error.value = '';
-    bool dialogShown = false;
 
     try {
       // Freeze UI with loading dialog
       if (!(Get.isDialogOpen ?? false)) {
-        dialogShown = true;
         Get.dialog(
           const Center(child: CircularProgressIndicator()),
           barrierDismissible: false,
@@ -272,7 +309,7 @@ class AssignmentController extends GetxController {
         final ok = await SemesterHelper.autoSelectLatestSemester();
         if (!ok) {
           _error.value = 'Vui lòng chọn học kì trước khi tạo bài tập';
-          return false;
+          return null;
         }
       }
       semesterId = SemesterHelper.getCurrentSemesterId();
@@ -306,6 +343,13 @@ class AssignmentController extends GetxController {
           .toSet()
           .toList();
 
+      // Debug: Log attachment IDs before creating request
+      print('=== CONTROLLER DEBUG ===');
+      print('Original request.attachmentIds: ${request.attachmentIds}');
+      print('attachmentIds is null: ${request.attachmentIds == null}');
+      print('attachmentIds length: ${request.attachmentIds?.length ?? 0}');
+      print('=== END CONTROLLER DEBUG ===');
+
       final sanitized = AssignmentCreateRequest(
         title: request.title.trim(),
         description: request.description?.trim().isEmpty == true
@@ -323,20 +367,22 @@ class AssignmentController extends GetxController {
         groupIds: (request.groupIds == null)
             ? <String>[]
             : request.groupIds!.where((e) => e.trim().isNotEmpty).toList(),
+        // Include attachment IDs if any are provided
+        attachmentIds: request.attachmentIds,
       );
 
       final response = await _apiService.createAssignment(sanitized);
-      _assignments.insert(0, response.data);
+      _assignments.insert(0, response.data.assignment);
       Get.snackbar('Thành công', 'Tạo bài tập thành công');
       // Close only the loading dialog here; navigation handled by UI caller
       if (Get.isDialogOpen == true) {
         Get.back();
       }
-      return true;
+      return response.data.assignment.id; // Return the created assignment ID
     } catch (e) {
       _error.value = e.toString();
       Get.snackbar('Lỗi', 'Không thể tạo bài tập: $e');
-      return false;
+      return null;
     } finally {
       _isLoading.value = false;
       // Ensure dialog closed in any case (controller only closes dialog)
@@ -352,7 +398,7 @@ class AssignmentController extends GetxController {
       final response = await _apiService.updateAssignment(request.id, request);
       final index = _assignments.indexWhere((a) => a.id == request.id);
       if (index != -1) {
-        _assignments[index] = response.data;
+        _assignments[index] = response.data.assignment;
       }
       Get.snackbar('Thành công', 'Cập nhật bài tập thành công');
       return true;
@@ -408,7 +454,7 @@ class AssignmentController extends GetxController {
         sortOrder: sortOrder,
       );
 
-      _submissions.assignAll(response.data);
+      _submissions.assignAll(response.data.submissions);
     } catch (e) {
       _error.value = e.toString();
       Get.snackbar('Lỗi', 'Không thể tải danh sách nộp bài: $e');
@@ -443,6 +489,52 @@ class AssignmentController extends GetxController {
     } catch (e) {
       _error.value = e.toString();
       Get.snackbar('Lỗi', 'Không thể xuất dữ liệu: $e');
+      return null;
+    }
+  }
+
+  /// Export assignment tracking data to CSV (includes all students)
+  Future<List<int>?> exportAssignmentTracking(
+    String assignmentId, {
+    String search = '',
+    String status = 'all',
+    String groupId = '',
+    String sortBy = 'fullName',
+    String sortOrder = 'asc',
+  }) async {
+    try {
+      return await _apiService.exportAssignmentTracking(
+        assignmentId,
+        search: search,
+        status: status,
+        groupId: groupId,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
+      );
+    } catch (e) {
+      _error.value = e.toString();
+      Get.snackbar('Lỗi', 'Không thể xuất dữ liệu theo dõi: $e');
+      return null;
+    }
+  }
+
+  /// Export all assignments to CSV
+  Future<List<int>?> exportAllAssignments({
+    String courseId = '',
+    String semesterId = '',
+    bool includeSubmissions = true,
+    bool includeGrades = true,
+  }) async {
+    try {
+      return await _apiService.exportAllAssignments(
+        courseId: courseId,
+        semesterId: semesterId,
+        includeSubmissions: includeSubmissions,
+        includeGrades: includeGrades,
+      );
+    } catch (e) {
+      _error.value = e.toString();
+      Get.snackbar('Lỗi', 'Không thể xuất tất cả bài tập: $e');
       return null;
     }
   }
@@ -520,12 +612,12 @@ class StudentAssignmentController extends GetxController {
       );
 
       if (refresh) {
-        _assignments.assignAll(response.data);
+        _assignments.assignAll(response.data.assignments);
       } else {
-        _assignments.addAll(response.data);
+        _assignments.addAll(response.data.assignments);
       }
 
-      _hasMore.value = _currentPage.value < response.pagination.pages;
+      _hasMore.value = _currentPage.value < response.data.pagination.pages;
       _currentPage.value++;
     } catch (e) {
       _error.value = e.toString();
@@ -621,24 +713,10 @@ class StudentAssignmentController extends GetxController {
     }
   }
 
-  /// Upload attachment
-  Future<SubmissionAttachment?> uploadAttachment(
-      String submissionId, FileUploadRequest request) async {
-    try {
-      final response =
-          await _apiService.uploadAttachment(submissionId, request);
-      return response.data;
-    } catch (e) {
-      _error.value = e.toString();
-      Get.snackbar('Lỗi', 'Không thể tải file: $e');
-      return null;
-    }
-  }
-
   /// Delete attachment
   Future<bool> deleteAttachment(String attachmentId) async {
     try {
-      await _apiService.deleteAttachment(attachmentId);
+      await _apiService.deleteAssignmentAttachment(attachmentId);
       Get.snackbar('Thành công', 'Xóa file thành công');
       return true;
     } catch (e) {

@@ -1,7 +1,7 @@
+import 'package:classroom_mini/app/data/models/response/user_response.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/profile_controller.dart';
-import '../../../data/models/user_model.dart';
 
 class EditProfileView extends GetView<ProfileController> {
   final UserModel user;

@@ -1,5 +1,6 @@
+import 'package:classroom_mini/app/data/models/request/course_request.dart';
+import 'package:classroom_mini/app/data/models/response/course_response.dart';
 import 'package:dio/dio.dart';
-import '../models/course_model.dart';
 import '../services/api_service.dart';
 import '../exceptions/api_exceptions.dart';
 
@@ -58,7 +59,10 @@ class CourseRepository {
   Future<Course> getCourseById(String courseId) async {
     try {
       final response = await _apiService.getCourseById(courseId);
-      return response.course;
+      if (response.data?.course == null) {
+        throw Exception('Course data is null in response');
+      }
+      return response.data!.course;
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -68,7 +72,10 @@ class CourseRepository {
   Future<Course> createCourse(CourseCreateRequest request) async {
     try {
       final response = await _apiService.createCourse(request);
-      return response.course;
+      if (response.data?.course == null) {
+        throw Exception('Course data is null in response');
+      }
+      return response.data!.course;
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -79,7 +86,10 @@ class CourseRepository {
       String courseId, CourseUpdateRequest request) async {
     try {
       final response = await _apiService.updateCourse(courseId, request);
-      return response.course;
+      if (response.data?.course == null) {
+        throw Exception('Course data is null in response');
+      }
+      return response.data!.course;
     } on DioException catch (e) {
       throw _handleError(e);
     }

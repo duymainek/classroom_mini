@@ -1,5 +1,6 @@
+import 'package:classroom_mini/app/data/models/request/semester_request.dart';
+import 'package:classroom_mini/app/data/models/response/semester_response.dart';
 import 'package:dio/dio.dart';
-import '../models/semester_model.dart';
 import '../services/api_service.dart' show ApiService;
 import '../exceptions/api_exceptions.dart';
 // removed unused DioClient import

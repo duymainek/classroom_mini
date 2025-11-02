@@ -1,6 +1,9 @@
 const { supabase } = require('../services/supabaseClient');
-const { validateGroupCreation, validateGroupUpdate } = require('../models/group');
+const { validate } = require('../utils/validators');
+const { createGroupSchema, updateGroupSchema } = require('../schemas/groupSchema');
 const { AppError, catchAsync } = require('../middleware/errorHandler');
+const { buildResponse } = require('../utils/response');
+require('../types/group.type');
 
 class GroupController {
   /**
@@ -10,7 +13,7 @@ class GroupController {
     const { name, courseId } = req.body;
 
     // Validate input
-    const validation = validateGroupCreation({ name, courseId });
+    const validation = validate(createGroupSchema, req.body);
     if (!validation.isValid) {
       return res.status(400).json({
         success: false,
@@ -59,13 +62,27 @@ class GroupController {
       throw new AppError('Failed to create group', 500, 'GROUP_CREATION_FAILED');
     }
 
-    res.status(201).json({
-      success: true,
-      message: 'Group created successfully',
-      data: {
-        group: newGroup
-      }
-    });
+    // Transform group: rename courses to course, and semesters to semester
+    const transformedGroup = {
+      id: newGroup.id,
+      name: newGroup.name,
+      courseId: newGroup.course_id,
+      isActive: newGroup.is_active,
+      createdAt: newGroup.created_at,
+      updatedAt: newGroup.updated_at,
+      course: newGroup.courses ? {
+        code: newGroup.courses.code,
+        name: newGroup.courses.name,
+        semester: newGroup.courses.semesters ? {
+          code: newGroup.courses.semesters.code,
+          name: newGroup.courses.semesters.name
+        } : null
+      } : null
+    };
+
+    res.status(201).json(
+      buildResponse(true, 'Group created successfully', { group: transformedGroup })
+    );
   });
 
   /**
@@ -130,18 +147,35 @@ class GroupController {
       throw new AppError('Failed to fetch groups', 500, 'GET_GROUPS_FAILED');
     }
 
-    res.json({
-      success: true,
-      data: {
-        groups: groups || [],
+    // Transform groups: rename courses to course, and semesters to semester
+    const transformedGroups = (groups || []).map(group => ({
+      id: group.id,
+      name: group.name,
+      courseId: group.course_id,
+      isActive: group.is_active,
+      createdAt: group.created_at,
+      updatedAt: group.updated_at,
+      course: group.courses ? {
+        code: group.courses.code,
+        name: group.courses.name,
+        semester: group.courses.semesters ? {
+          code: group.courses.semesters.code,
+          name: group.courses.semesters.name
+        } : null
+      } : null
+    }));
+
+    res.json(
+      buildResponse(true, undefined, {
+        groups: transformedGroups,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
           total: count || 0,
           pages: Math.ceil((count || 0) / parseInt(limit))
         }
-      }
-    });
+      })
+    );
   });
 
   /**
@@ -165,12 +199,25 @@ class GroupController {
       throw new AppError('Group not found', 404, 'GROUP_NOT_FOUND');
     }
 
-    res.json({
-      success: true,
-      data: {
-        group
-      }
-    });
+    // Transform group: rename courses to course, and semesters to semester
+    const transformedGroup = {
+      id: group.id,
+      name: group.name,
+      courseId: group.course_id,
+      isActive: group.is_active,
+      createdAt: group.created_at,
+      updatedAt: group.updated_at,
+      course: group.courses ? {
+        code: group.courses.code,
+        name: group.courses.name,
+        semester: group.courses.semesters ? {
+          code: group.courses.semesters.code,
+          name: group.courses.semesters.name
+        } : null
+      } : null
+    };
+
+    res.json(buildResponse(true, undefined, { group: transformedGroup }));
   });
 
   /**
@@ -181,7 +228,7 @@ class GroupController {
     const { name, courseId, isActive } = req.body;
 
     // Validate input
-    const validation = validateGroupUpdate(req.body);
+    const validation = validate(updateGroupSchema, req.body);
     if (!validation.isValid) {
       return res.status(400).json({
         success: false,
@@ -245,13 +292,27 @@ class GroupController {
       throw new AppError('Failed to update group', 500, 'UPDATE_GROUP_FAILED');
     }
 
-    res.json({
-      success: true,
-      message: 'Group updated successfully',
-      data: {
-        group: updatedGroup
-      }
-    });
+    // Transform group: rename courses to course, and semesters to semester
+    const transformedGroup = {
+      id: updatedGroup.id,
+      name: updatedGroup.name,
+      courseId: updatedGroup.course_id,
+      isActive: updatedGroup.is_active,
+      createdAt: updatedGroup.created_at,
+      updatedAt: updatedGroup.updated_at,
+      course: updatedGroup.courses ? {
+        code: updatedGroup.courses.code,
+        name: updatedGroup.courses.name,
+        semester: updatedGroup.courses.semesters ? {
+          code: updatedGroup.courses.semesters.code,
+          name: updatedGroup.courses.semesters.name
+        } : null
+      } : null
+    };
+
+    res.json(
+      buildResponse(true, 'Group updated successfully', { group: transformedGroup })
+    );
   });
 
   /**
@@ -282,10 +343,7 @@ class GroupController {
       throw new AppError('Failed to delete group', 500, 'DELETE_GROUP_FAILED');
     }
 
-    res.json({
-      success: true,
-      message: 'Group deleted successfully'
-    });
+    res.json(buildResponse(true, 'Group deleted successfully'));
   });
 
   /**
@@ -333,9 +391,8 @@ class GroupController {
       throw new AppError('Failed to fetch groups', 500, 'GET_GROUPS_FAILED');
     }
 
-    res.json({
-      success: true,
-      data: {
+    res.json(
+      buildResponse(true, undefined, {
         groups: groups || [],
         pagination: {
           page: parseInt(page),
@@ -343,8 +400,8 @@ class GroupController {
           total: count || 0,
           pages: Math.ceil((count || 0) / parseInt(limit))
         }
-      }
-    });
+      })
+    );
   });
 
   /**
@@ -377,10 +434,7 @@ class GroupController {
         inactive_groups: inactiveCount || 0
       };
 
-      res.json({
-        success: true,
-        data: statistics
-      });
+      res.json(buildResponse(true, undefined, statistics));
     } catch (error) {
       console.error('Get group statistics error:', error);
       throw new AppError('Failed to get statistics', 500, 'GET_STATISTICS_FAILED');

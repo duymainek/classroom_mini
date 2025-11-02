@@ -1,6 +1,8 @@
 const { supabase } = require('../services/supabaseClient');
 const { validateSemesterCreation, validateSemesterUpdate } = require('../models/semester');
 const { AppError, catchAsync } = require('../middleware/errorHandler');
+const { buildResponse } = require('../utils/response');
+require('../types/semester.type');
 
 class SemesterController {
   /**
@@ -50,13 +52,9 @@ class SemesterController {
       throw new AppError('Failed to create semester', 500, 'SEMESTER_CREATION_FAILED');
     }
 
-    res.status(201).json({
-      success: true,
-      message: 'Semester created successfully',
-      data: {
-        semester: newSemester
-      }
-    });
+    res.status(201).json(
+      buildResponse(true, 'Semester created successfully', { semester: newSemester })
+    );
   });
 
   /**
@@ -107,9 +105,8 @@ class SemesterController {
       throw new AppError('Failed to fetch semesters', 500, 'GET_SEMESTERS_FAILED');
     }
 
-    res.json({
-      success: true,
-      data: {
+    res.json(
+      buildResponse(true, undefined, {
         semesters: semesters || [],
         pagination: {
           page: parseInt(page),
@@ -117,8 +114,8 @@ class SemesterController {
           total: count || 0,
           pages: Math.ceil((count || 0) / parseInt(limit))
         }
-      }
-    });
+      })
+    );
   });
 
   /**
@@ -137,12 +134,7 @@ class SemesterController {
       throw new AppError('Semester not found', 404, 'SEMESTER_NOT_FOUND');
     }
 
-    res.json({
-      success: true,
-      data: {
-        semester
-      }
-    });
+    res.json(buildResponse(true, undefined, { semester }));
   });
 
   /**
@@ -209,13 +201,9 @@ class SemesterController {
       throw new AppError('Failed to update semester', 500, 'UPDATE_SEMESTER_FAILED');
     }
 
-    res.json({
-      success: true,
-      message: 'Semester updated successfully',
-      data: {
-        semester: updatedSemester
-      }
-    });
+    res.json(
+      buildResponse(true, 'Semester updated successfully', { semester: updatedSemester })
+    );
   });
 
   /**
@@ -261,10 +249,7 @@ class SemesterController {
       throw new AppError('Failed to delete semester', 500, 'DELETE_SEMESTER_FAILED');
     }
 
-    res.json({
-      success: true,
-      message: 'Semester deleted successfully'
-    });
+    res.json(buildResponse(true, 'Semester deleted successfully'));
   });
 
   /**
@@ -297,10 +282,7 @@ class SemesterController {
         inactive_semesters: inactiveCount || 0
       };
 
-      res.json({
-        success: true,
-        data: statistics
-      });
+      res.json(buildResponse(true, undefined, statistics));
     } catch (error) {
       console.error('Get semester statistics error:', error);
       throw new AppError('Failed to get statistics', 500, 'GET_STATISTICS_FAILED');

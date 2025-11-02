@@ -201,13 +201,8 @@ const bulkOperationSchema = Joi.object({
   data: Joi.object().optional()
 });
 
-/**
- * Validate login request
- * @param {Object} data - Request data to validate
- * @returns {{isValid: boolean, errors?: string[], data?: Object}}
- */
-function validateLogin(data) {
-  const { error, value } = loginSchema.validate(data, { 
+function validate(schema, data) {
+  const { error, value } = schema.validate(data, { 
     abortEarly: false,
     stripUnknown: true
   });
@@ -215,7 +210,10 @@ function validateLogin(data) {
   if (error) {
     return {
       isValid: false,
-      errors: error.details.map(detail => detail.message)
+      errors: error.details.map(detail => ({
+        field: detail.path.join('.'),
+        message: detail.message
+      }))
     };
   }
 
@@ -223,6 +221,15 @@ function validateLogin(data) {
     isValid: true,
     data: value
   };
+}
+
+/**
+ * Validate login request
+ * @param {Object} data - Request data to validate
+ * @returns {{isValid: boolean, errors?: string[], data?: Object}}
+ */
+function validateLogin(data) {
+  return validate(loginSchema, data);
 }
 
 /**
@@ -231,22 +238,7 @@ function validateLogin(data) {
  * @returns {{isValid: boolean, errors?: string[], data?: Object}}
  */
 function validateUserCreation(data) {
-  const { error, value } = createUserSchema.validate(data, { 
-    abortEarly: false,
-    stripUnknown: true
-  });
-
-  if (error) {
-    return {
-      isValid: false,
-      errors: error.details.map(detail => detail.message)
-    };
-  }
-
-  return {
-    isValid: true,
-    data: value
-  };
+  return validate(createUserSchema, data);
 }
 
 /**
@@ -255,22 +247,7 @@ function validateUserCreation(data) {
  * @returns {{isValid: boolean, errors?: string[], data?: Object}}
  */
 function validateRefreshToken(data) {
-  const { error, value } = refreshTokenSchema.validate(data, { 
-    abortEarly: false,
-    stripUnknown: true
-  });
-
-  if (error) {
-    return {
-      isValid: false,
-      errors: error.details.map(detail => detail.message)
-    };
-  }
-
-  return {
-    isValid: true,
-    data: value
-  };
+  return validate(refreshTokenSchema, data);
 }
 
 /**
@@ -279,22 +256,7 @@ function validateRefreshToken(data) {
  * @returns {{isValid: boolean, errors?: string[], data?: Object}}
  */
 function validateProfileUpdate(data) {
-  const { error, value } = updateProfileSchema.validate(data, { 
-    abortEarly: false,
-    stripUnknown: true
-  });
-
-  if (error) {
-    return {
-      isValid: false,
-      errors: error.details.map(detail => detail.message)
-    };
-  }
-
-  return {
-    isValid: true,
-    data: value
-  };
+  return validate(updateProfileSchema, data);
 }
 
 /**
@@ -343,25 +305,7 @@ function isValidEmail(email) {
  * @returns {{isValid: boolean, errors?: string[], data?: Object}}
  */
 function validateStudentCreation(data) {
-  const { error, value } = createStudentSchema.validate(data, { 
-    abortEarly: false,
-    stripUnknown: true
-  });
-
-  if (error) {
-    return {
-      isValid: false,
-      errors: error.details.map(detail => ({
-        field: detail.path[0],
-        message: detail.message
-      }))
-    };
-  }
-
-  return {
-    isValid: true,
-    data: value
-  };
+  return validate(createStudentSchema, data);
 }
 
 /**
@@ -370,25 +314,7 @@ function validateStudentCreation(data) {
  * @returns {{isValid: boolean, errors?: string[], data?: Object}}
  */
 function validateStudentUpdate(data) {
-  const { error, value } = updateStudentSchema.validate(data, { 
-    abortEarly: false,
-    stripUnknown: true
-  });
-
-  if (error) {
-    return {
-      isValid: false,
-      errors: error.details.map(detail => ({
-        field: detail.path[0],
-        message: detail.message
-      }))
-    };
-  }
-
-  return {
-    isValid: true,
-    data: value
-  };
+  return validate(updateStudentSchema, data);
 }
 
 /**
@@ -397,25 +323,7 @@ function validateStudentUpdate(data) {
  * @returns {{isValid: boolean, errors?: string[], data?: Object}}
  */
 function validateBulkOperation(data) {
-  const { error, value } = bulkOperationSchema.validate(data, { 
-    abortEarly: false,
-    stripUnknown: true
-  });
-
-  if (error) {
-    return {
-      isValid: false,
-      errors: error.details.map(detail => ({
-        field: detail.path.join('.'),
-        message: detail.message
-      }))
-    };
-  }
-
-  return {
-    isValid: true,
-    data: value
-  };
+  return validate(bulkOperationSchema, data);
 }
 
 /**
@@ -454,6 +362,7 @@ function isValidVietnameseName(name) {
 }
 
 module.exports = {
+  validate,
   validateLogin,
   validateUserCreation,
   validateRefreshToken,
