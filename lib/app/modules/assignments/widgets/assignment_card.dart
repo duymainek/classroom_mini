@@ -208,6 +208,7 @@ class AssignmentCard extends StatelessWidget {
               // Actions
               if (showActions) ...[
                 const SizedBox(height: 16),
+                _buildActions(context),
               ],
             ],
           ),

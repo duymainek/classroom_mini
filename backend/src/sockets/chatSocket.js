@@ -11,6 +11,14 @@ function initializeChatSocket(io) {
 
   chatNamespace.on('connection', async (socket) => {
     const userId = socket.userId;
+    
+    if (!userId) {
+      console.warn('Socket connection without userId, disconnecting');
+      socket.emit('error', { message: 'User ID is required for chat connection' });
+      socket.disconnect(true);
+      return;
+    }
+    
     console.log(`User ${userId} connected to chat namespace`);
 
     socket.join(`user:${userId}`);

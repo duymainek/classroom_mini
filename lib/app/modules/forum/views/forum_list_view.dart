@@ -354,10 +354,18 @@ class _ForumListViewState extends State<ForumListView>
 
   Widget _buildTopicsList(BuildContext context, bool isTablet) {
     return RefreshIndicator(
-      onRefresh: () => controller.loadTopics(refresh: true),
+      onRefresh: () async {
+        HapticFeedback.lightImpact();
+        await controller.loadTopics(refresh: true);
+      },
       color: ForumDesignSystem.primary,
+      backgroundColor: ForumDesignSystem.getSurfaceColor(context),
+      strokeWidth: 2.5,
+      displacement: 40.0,
+      triggerMode: RefreshIndicatorTriggerMode.onEdge,
       child: ListView.builder(
         controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: ForumDesignSystem.getResponsivePadding(context),
         itemCount: controller.topics.length,
         itemBuilder: (context, index) {

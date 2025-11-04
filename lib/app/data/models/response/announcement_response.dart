@@ -42,8 +42,48 @@ class AnnouncementData {
     this.fileTracking,
   });
 
-  factory AnnouncementData.fromJson(Map<String, dynamic> json) =>
-      _$AnnouncementDataFromJson(json);
+  factory AnnouncementData.fromJson(Map<String, dynamic> json) {
+    // Nếu json có các field của Announcement (id, title, content, scopeType)
+    // nhưng không có field 'announcement', thì tự động wrap vào 'announcement'
+    // Điều này xử lý trường hợp backend trả về announcement object trực tiếp trong data
+    if (json.containsKey('id') &&
+        json.containsKey('title') &&
+        json.containsKey('content') &&
+        json.containsKey('scopeType') &&
+        !json.containsKey('announcement')) {
+      // Đây là một announcement object trực tiếp, wrap nó vào 'announcement'
+      final announcementJson = Map<String, dynamic>.from(json);
+      final wrappedJson = <String, dynamic>{};
+
+      // Wrap toàn bộ json vào 'announcement' field
+      wrappedJson['announcement'] = announcementJson;
+
+      // Giữ lại các field khác nếu có (như files, tracking ở root level)
+      // Chỉ giữ lại nếu không phải là field của Announcement
+      final announcementFields = {
+        'id',
+        'title',
+        'content',
+        'scopeType',
+        'publishedAt',
+        'updatedAt',
+        'course',
+        'instructor',
+        'groups',
+        'commentCount',
+        'viewCount'
+      };
+
+      json.forEach((key, value) {
+        if (!announcementFields.contains(key)) {
+          wrappedJson[key] = value;
+        }
+      });
+
+      return _$AnnouncementDataFromJson(wrappedJson);
+    }
+    return _$AnnouncementDataFromJson(json);
+  }
 
   Map<String, dynamic> toJson() => _$AnnouncementDataToJson(this);
 }

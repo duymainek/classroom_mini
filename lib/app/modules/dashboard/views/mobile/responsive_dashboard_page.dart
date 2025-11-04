@@ -2,7 +2,8 @@ import 'package:classroom_mini/app/data/models/response/assignment_response.dart
 import 'package:classroom_mini/app/data/models/response/dashboard_response.dart';
 
 import '../shared/charts/student_progress_chart.dart';
-import '../shared/charts/instructor_summary_chart.dart';
+import '../shared/charts/instructor_kpi_chart.dart';
+import '../shared/charts/content_distribution_chart.dart';
 import 'package:classroom_mini/app/modules/dashboard/controllers/dashboard_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -33,10 +34,12 @@ class ResponsiveDashboardPage extends StatelessWidget {
         print('   - isLoading: ${controller.isLoading.value}');
         print('   - isRefreshing: ${controller.isRefreshing.value}');
         print('   - isInstructor: ${controller.isInstructorRx.value}');
-        print('   - instructorDashboardData: ${controller.instructorDashboardData.value != null}');
-        print('   - studentDashboardData: ${controller.studentDashboardData.value != null}');
+        print(
+            '   - instructorDashboardData: ${controller.instructorDashboardData.value != null}');
+        print(
+            '   - studentDashboardData: ${controller.studentDashboardData.value != null}');
         print('   - errorMessage: "${controller.errorMessage.value}"');
-        
+
         if (controller.instructorDashboardData.value != null) {
           final data = controller.instructorDashboardData.value!;
           print('   📊 Instructor Data:');
@@ -44,12 +47,13 @@ class ResponsiveDashboardPage extends StatelessWidget {
           print('      - stats.students: ${data.statistics.totalStudents}');
           print('      - recentActivity: ${data.recentActivity.length}');
         }
-        
+
         if (controller.studentDashboardData.value != null) {
           final data = controller.studentDashboardData.value!;
           print('   📊 Student Data:');
           print('      - enrolledCourses: ${data.enrolledCourses.length}');
-          print('      - upcomingAssignments: ${data.upcomingAssignments.length}');
+          print(
+              '      - upcomingAssignments: ${data.upcomingAssignments.length}');
         }
 
         if (controller.isLoading.value &&
@@ -60,10 +64,11 @@ class ResponsiveDashboardPage extends StatelessWidget {
         }
 
         if (controller.errorMessage.value.isNotEmpty) {
-          print('❌ [DashboardView] Showing ERROR state: ${controller.errorMessage.value}');
+          print(
+              '❌ [DashboardView] Showing ERROR state: ${controller.errorMessage.value}');
           return _buildErrorState(context, controller);
         }
-        
+
         print('✅ [DashboardView] Showing CONTENT state');
 
         return RefreshIndicator(
@@ -238,7 +243,9 @@ class ResponsiveDashboardPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
-                    controller.isInstructorRx.value ? Icons.school : Icons.person,
+                    controller.isInstructorRx.value
+                        ? Icons.school
+                        : Icons.person,
                     color: Colors.white,
                     size: 24,
                   ),
@@ -302,7 +309,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
                 Expanded(
                   child: _buildQuickActionCard(
                     context,
-                    'Tạo khóa học',
+                    'Tạo mới: Khóa/ Nhóm/ Kỳ',
                     Icons.add_circle_outline,
                     Colors.blue,
                     () {
@@ -444,16 +451,6 @@ class ResponsiveDashboardPage extends StatelessWidget {
                         Get.toNamed(Routes.ASSIGNMENTS_LIST);
                       },
                     ),
-                    _buildFeatureCard(
-                      context,
-                      'Forum',
-                      Icons.forum_outlined,
-                      Colors.indigo,
-                      () {
-                        Navigator.of(context).pop();
-                        Get.toNamed(Routes.FORUM_LIST);
-                      },
-                    ),
                   ],
                 ),
               ),
@@ -555,9 +552,10 @@ class ResponsiveDashboardPage extends StatelessWidget {
     final data = controller.instructorDashboardData.value;
     print('🎨 [DashboardView] _buildInstructorDashboard called');
     print('   - data: ${data != null}');
-    
+
     if (data == null) {
-      print('   ⚠️ [DashboardView] Instructor data is NULL - showing empty state');
+      print(
+          '   ⚠️ [DashboardView] Instructor data is NULL - showing empty state');
       return _buildEmptyState(
         context,
         'Không có dữ liệu',
@@ -565,26 +563,34 @@ class ResponsiveDashboardPage extends StatelessWidget {
         Icons.dashboard_outlined,
       );
     }
-    
+
     print('   ✅ [DashboardView] Instructor data exists - showing content');
-    print('      - Stats: courses=${data.statistics.totalCourses}, students=${data.statistics.totalStudents}');
+    print(
+        '      - Stats: courses=${data.statistics.totalCourses}, students=${data.statistics.totalStudents}');
     print('      - Recent activity: ${data.recentActivity.length} items');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Statistics with improved mobile layout
-        _buildSectionHeader(
-            context, 'Thống kê tổng quan', Icons.analytics_outlined),
+        // Overview combined section: stats + chart
+        _buildSectionHeader(context, 'Tổng quan', Icons.analytics_outlined),
         const SizedBox(height: 16),
-        _buildMobileStatsGrid(context, controller),
-        const SizedBox(height: 24),
-
-        // Chart Section
-        _buildSectionHeader(
-            context, 'Biểu đồ tổng quan', Icons.bar_chart_outlined),
-        const SizedBox(height: 16),
-        InstructorSummaryChart(stats: data.statistics),
+        Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                InstructorKPIChart(stats: data.statistics),
+                const SizedBox(height: 16),
+                ContentDistributionChart(stats: data.statistics),
+              ],
+            ),
+          ),
+        ),
         const SizedBox(height: 24),
 
         // Recent activity with better mobile design
@@ -715,12 +721,12 @@ class ResponsiveDashboardPage extends StatelessWidget {
               Expanded(
                 child: _buildMobileStatCard(
                   context,
-                  'Forum',
-                  '0', // TODO: Add forum stats to dashboard data
-                  Icons.forum_outlined,
-                  Colors.indigo,
+                  'Tài liệu',
+                  '0',
+                  Icons.folder_outlined,
+                  Colors.teal,
                   () {
-                    Get.toNamed(Routes.FORUM_LIST);
+                    Get.toNamed(Routes.MATERIALS_LIST);
                   },
                 ),
               ),
@@ -809,7 +815,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
     final data = controller.studentDashboardData.value;
     print('🎨 [DashboardView] _buildStudentDashboard called');
     print('   - data: ${data != null}');
-    
+
     if (data == null) {
       print('   ⚠️ [DashboardView] Student data is NULL - showing empty state');
       return _buildEmptyState(
@@ -819,7 +825,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
         Icons.dashboard_outlined,
       );
     }
-    
+
     print('   ✅ [DashboardView] Student data exists - showing content');
     print('      - Enrolled courses: ${data.enrolledCourses.length}');
     print('      - Upcoming assignments: ${data.upcomingAssignments.length}');
@@ -1078,11 +1084,11 @@ class ResponsiveDashboardPage extends StatelessWidget {
         Expanded(
           child: _buildQuickActionCard(
             context,
-            'Forum',
-            Icons.forum_outlined,
-            Colors.indigo,
+            'Thông báo',
+            Icons.announcement_outlined,
+            Colors.purple,
             () {
-              Get.toNamed(Routes.FORUM_LIST);
+              Get.toNamed(Routes.ANNOUNCEMENTS_LIST);
             },
           ),
         ),

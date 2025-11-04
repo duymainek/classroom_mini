@@ -44,6 +44,7 @@ class _QuizFormState extends State<QuizForm> {
   final _descriptionController = TextEditingController();
   late final QuizController controller;
   late final MetadataService _metadataService;
+  late final ConnectivityService _connectivityService;
 
   String? _selectedCourseId;
   DateTime? _startDate;
@@ -69,6 +70,7 @@ class _QuizFormState extends State<QuizForm> {
     super.initState();
     controller = Get.find<QuizController>();
     _metadataService = Get.find<MetadataService>();
+    _connectivityService = Get.find<ConnectivityService>();
     _initializeForm();
     _loadMetaData();
   }
@@ -730,8 +732,7 @@ class _QuizFormState extends State<QuizForm> {
                 // Action Buttons trong Header - chỉ hiển thị khi có thể edit
                 if (_isEditable)
                   Obx(() {
-                    final connectivityService = Get.find<ConnectivityService>();
-                    if (!connectivityService.isOnline.value) {
+                    if (!_connectivityService.isOnline.value) {
                       return const SizedBox.shrink();
                     }
                     return Row(
@@ -1295,8 +1296,8 @@ class _QuizFormState extends State<QuizForm> {
     final colorScheme = theme.colorScheme;
 
     return Obx(() {
-      final connectivityService = Get.find<ConnectivityService>();
-      final canEdit = _isEditable && connectivityService.isOnline.value;
+      final isOnline = _connectivityService.isOnline.value;
+      final canEdit = _isEditable && isOnline;
 
       return Dismissible(
         key: Key('question_${question.questionText}_$index'),

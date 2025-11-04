@@ -109,17 +109,61 @@ class MobileAssignmentListView extends StatelessWidget {
                         }
 
                         final assignment = controller.assignments[index];
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          child: AssignmentCard(
-                            assignment: assignment,
-                            onTap: () =>
-                                _navigateToAssignmentDetail(assignment),
-                            showActions: true,
-                            onTrack: () =>
-                                _navigateToAssignmentTracking(assignment),
+                        return Obx(() {
+                          final connectivityService = Get.find<ConnectivityService>();
+                          final canDelete = connectivityService.isOnline.value;
+                          
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            child: Dismissible(
+                              key: Key('assignment_${assignment.id}'),
+                              direction: canDelete ? DismissDirection.endToStart : DismissDirection.none,
+                            background: Container(
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: 20),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.errorContainer.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.delete_outline,
+                                    color: Theme.of(context).colorScheme.error,
+                                    size: 24,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Swipe to delete',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.error,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            confirmDismiss: (direction) async {
+                              final confirmed = await controller.showDeleteConfirmation(assignment);
+                              return confirmed;
+                            },
+                            onDismissed: (direction) {
+                              // Card will be removed from list automatically after dismiss
+                            },
+                            child: AssignmentCard(
+                              assignment: assignment,
+                              onTap: () =>
+                                  _navigateToAssignmentDetail(assignment),
+                              showActions: canDelete,
+                              onTrack: () =>
+                                  _navigateToAssignmentTracking(assignment),
+                              onDelete: () => controller.showDeleteConfirmation(assignment),
+                            ),
                           ),
                         );
+                        });
                       },
                       childCount: controller.assignments.length +
                           (controller.hasMore ? 1 : 0),

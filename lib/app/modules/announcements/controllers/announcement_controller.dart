@@ -6,6 +6,7 @@ import 'package:classroom_mini/app/data/models/request/announcement_request.dart
 import 'package:classroom_mini/app/data/models/response/announcement_response.dart';
 import 'package:classroom_mini/app/data/models/response/course_response.dart';
 import 'package:classroom_mini/app/data/models/response/group_response.dart';
+import 'package:classroom_mini/app/routes/app_routes.dart';
 
 /**
  * Announcement Controller
@@ -188,6 +189,8 @@ class AnnouncementController extends GetxController {
       if (response.success && response.data?.announcement != null) {
         _announcements.insert(0, response.data!.announcement!);
         Get.snackbar('Thành công', 'Tạo thông báo thành công');
+        _isFormLoading.value = false;
+        Get.offNamed(Routes.ANNOUNCEMENTS_LIST);
         return response.data!.announcement!.id;
       } else {
         _error.value = response.message;
@@ -203,9 +206,6 @@ class AnnouncementController extends GetxController {
       return null;
     } finally {
       _isFormLoading.value = false;
-      if (Get.isDialogOpen == true) {
-        Get.back();
-      }
     }
   }
 

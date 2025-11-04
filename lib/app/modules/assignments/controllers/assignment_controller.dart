@@ -9,6 +9,7 @@ import 'package:classroom_mini/app/data/models/response/submission_response.dart
 import 'package:classroom_mini/app/data/models/request/assignment_request.dart';
 import '../models/assignment_form_state.dart';
 import '../../../core/utils/semester_helper.dart';
+import '../../../routes/app_routes.dart';
 
 class AssignmentController extends GetxController {
   final ApiService _apiService = ApiService(DioClient.dio);
@@ -374,10 +375,16 @@ class AssignmentController extends GetxController {
       final response = await _apiService.createAssignment(sanitized);
       _assignments.insert(0, response.data.assignment);
       Get.snackbar('Thành công', 'Tạo bài tập thành công');
-      // Close only the loading dialog here; navigation handled by UI caller
+      _isLoading.value = false;
+
+      // Close loading dialog first
       if (Get.isDialogOpen == true) {
         Get.back();
       }
+
+      // Wait a bit for dialog to close, then navigate
+      await Future.delayed(const Duration(milliseconds: 100));
+      Get.offAllNamed(Routes.ASSIGNMENTS_LIST);
       return response.data.assignment.id; // Return the created assignment ID
     } catch (e) {
       _error.value = e.toString();
@@ -428,6 +435,209 @@ class AssignmentController extends GetxController {
     } finally {
       _isLoading.value = false;
     }
+  }
+
+  /// Show delete confirmation dialog
+  Future<bool> showDeleteConfirmation(Assignment assignment) async {
+    final result = await Get.dialog<bool>(
+      AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Theme.of(Get.context!)
+                    .colorScheme
+                    .errorContainer
+                    .withOpacity(0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.warning_outlined,
+                color: Theme.of(Get.context!).colorScheme.error,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text('Xác nhận xóa'),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Bạn có chắc chắn muốn xóa bài tập này không?',
+              style: Theme.of(Get.context!).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(Get.context!)
+                    .colorScheme
+                    .surfaceVariant
+                    .withOpacity(0.3),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(Get.context!)
+                      .colorScheme
+                      .outline
+                      .withOpacity(0.2),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.assignment,
+                        size: 20,
+                        color: Theme.of(Get.context!).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          assignment.title,
+                          style: Theme.of(Get.context!)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (assignment.description != null &&
+                      assignment.description!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      assignment.description!,
+                      style:
+                          Theme.of(Get.context!).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(Get.context!)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  if (assignment.course != null) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.school,
+                          size: 16,
+                          color: Theme.of(Get.context!)
+                              .colorScheme
+                              .onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            '${assignment.course!.code} - ${assignment.course!.name}',
+                            style: Theme.of(Get.context!)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(Get.context!)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(Get.context!)
+                    .colorScheme
+                    .errorContainer
+                    .withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color:
+                      Theme.of(Get.context!).colorScheme.error.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 18,
+                    color: Theme.of(Get.context!).colorScheme.error,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Hành động này không thể hoàn tác.',
+                      style:
+                          Theme.of(Get.context!).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(Get.context!).colorScheme.error,
+                                fontWeight: FontWeight.w500,
+                              ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            child: const Text('Hủy'),
+          ),
+          FilledButton(
+            onPressed: () => Get.back(result: true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(Get.context!).colorScheme.error,
+              foregroundColor: Theme.of(Get.context!).colorScheme.onError,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.delete, size: 18),
+                SizedBox(width: 8),
+                Text('Xóa'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      final success = await deleteAssignment(assignment.id);
+      return success;
+    }
+    return false;
   }
 
   /// Load assignment submissions

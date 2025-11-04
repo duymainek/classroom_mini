@@ -42,6 +42,8 @@ class MobileAnnouncementDetailView extends StatelessWidget {
                   delegate: SliverChildListDelegate([
                     _buildHeader(context),
                     const SizedBox(height: 16),
+                    _buildAssignedGroups(context),
+                    const SizedBox(height: 16),
                     _buildContent(context),
                     const SizedBox(height: 16),
                     _buildAttachments(context),
@@ -157,15 +159,6 @@ class MobileAnnouncementDetailView extends StatelessWidget {
           label: 'Khóa học',
           value: '${announcement.course.code} - ${announcement.course.name}',
         ),
-        if (announcement.groups.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _buildInfoRow(
-            context,
-            icon: Icons.group,
-            label: 'Nhóm',
-            value: announcement.groups.map((g) => g.name).join(', '),
-          ),
-        ],
       ],
     );
   }
@@ -211,6 +204,125 @@ class MobileAnnouncementDetailView extends StatelessWidget {
           fontWeight: FontWeight.w600,
         ),
       ),
+    );
+  }
+
+  Widget _buildAssignedGroups(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    if (announcement.scopeType == 'all_groups') {
+      return _buildModernSection(
+        context,
+        title: 'Nhóm được gán',
+        icon: Icons.group,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: colorScheme.primary.withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.all_inclusive,
+                  color: colorScheme.primary,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Tất cả các nhóm trong khóa học',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (announcement.groups.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return _buildModernSection(
+      context,
+      title: 'Nhóm được gán',
+      icon: Icons.group,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: announcement.groups.map((group) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: colorScheme.secondaryContainer.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: colorScheme.secondary.withOpacity(0.3),
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.group,
+                    size: 18,
+                    color: colorScheme.secondary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    group.name,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSecondaryContainer,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+        if (announcement.groups.length > 1) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 18,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Thông báo này được gán cho ${announcement.groups.length} nhóm',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 

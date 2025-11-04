@@ -108,48 +108,8 @@ class AssignmentCreatePage extends StatelessWidget {
                       );
 
                       // Create assignment with attachment IDs
-                      final assignmentId =
-                          await controller.createAssignment(req);
-                      if (assignmentId != null) {
-                        Navigator.pop(context, true);
-
-                        // Show success message
-                        final attachmentCount = attachmentIds.length;
-                        final successMessage = attachmentCount > 0
-                            ? 'Đã tạo bài tập "${form.title}" với $attachmentCount tệp đính kèm'
-                            : 'Đã tạo bài tập "${form.title}" thành công';
-
-                        // Show success snackbar with option to go to tracking
-                        Get.snackbar(
-                          'Thành công',
-                          successMessage,
-                          snackPosition: SnackPosition.TOP,
-                          backgroundColor: colorScheme.primary,
-                          colorText: colorScheme.onPrimary,
-                          duration: const Duration(seconds: 5),
-                          icon: Icon(Icons.check_circle,
-                              color: colorScheme.onPrimary),
-                          mainButton: TextButton(
-                            onPressed: () {
-                              Get.closeCurrentSnackbar();
-                              // Find the created assignment and navigate to tracking
-                              final createdAssignment =
-                                  controller.assignments.first;
-                              Get.toNamed(
-                                Routes.ASSIGNMENTS_TRACKING,
-                                arguments: {
-                                  'assignmentId': createdAssignment.id,
-                                  'assignmentTitle': createdAssignment.title,
-                                },
-                              );
-                            },
-                            child: Text(
-                              'Theo dõi',
-                              style: TextStyle(color: colorScheme.onPrimary),
-                            ),
-                          ),
-                        );
-                      }
+                      // Navigation is handled in controller via Get.offAllNamed
+                      await controller.createAssignment(req);
                     },
                   ),
                 ),

@@ -16,6 +16,7 @@ class ForumController extends GetxController {
   // State
   final topics = <ForumTopic>[].obs;
   final isLoading = false.obs;
+  final isRefreshing = false.obs;
   final isLoadingMore = false.obs;
   final hasMore = true.obs;
   
@@ -62,9 +63,10 @@ class ForumController extends GetxController {
     if (refresh) {
       _offset = 0;
       hasMore.value = true;
+      isRefreshing.value = true;
+    } else {
+      isLoading.value = true;
     }
-
-    isLoading.value = true;
 
     try {
       print('🔍 [ForumController] Calling _forumService.getTopics...');
@@ -97,6 +99,7 @@ class ForumController extends GetxController {
 
         hasMore.value = response.data!.length >= _limit;
         _offset += response.data!.length;
+        
         print(
             '🔍 [ForumController] Topics loaded successfully. Total: ${topics.length}');
       } else {
@@ -107,7 +110,11 @@ class ForumController extends GetxController {
       print('❌ [ForumController] Stack trace: $stackTrace');
       Get.snackbar('Error', 'Failed to load topics: $e');
     } finally {
-      isLoading.value = false;
+      if (refresh) {
+        isRefreshing.value = false;
+      } else {
+        isLoading.value = false;
+      }
     }
   }
 
