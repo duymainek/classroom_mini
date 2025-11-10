@@ -9,6 +9,7 @@ class ResponsiveLoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return const mobile.ResponsiveLoginPage();
     // Use ResponsiveBreakpoints to determine which view to show
     if (ResponsiveBreakpoints.of(context).smallerThan(TABLET)) {
       return const mobile.ResponsiveLoginPage();

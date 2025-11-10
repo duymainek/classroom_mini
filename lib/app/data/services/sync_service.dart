@@ -47,7 +47,7 @@ class SyncService extends GetxService {
   void _startListening() {
     ever(_connectivityService.isOnline, (bool isOnline) {
       if (isOnline) {
-        print('📡 Network online - triggering sync');
+        debugPrint('📡 Network online - triggering sync');
         Future.delayed(const Duration(milliseconds: 500), () {
           syncQueue();
         });
@@ -57,25 +57,25 @@ class SyncService extends GetxService {
 
   Future<void> syncQueue() async {
     if (_isSyncing) {
-      print('⏸️ Sync already in progress, skipping');
+      debugPrint('⏸️ Sync already in progress, skipping');
       return;
     }
 
     if (!_connectivityService.isOnline.value) {
-      print('📴 Offline - cannot sync');
+      debugPrint('📴 Offline - cannot sync');
       return;
     }
 
     final pending = SyncQueueManager.getPending();
     if (pending.isEmpty) {
-      print('✅ No pending operations to sync');
+      debugPrint('✅ No pending operations to sync');
       _updateCounts();
       return;
     }
 
     _isSyncing = true;
     syncStatus.value = 'syncing';
-    print('🔄 Starting sync: ${pending.length} operations');
+    debugPrint('🔄 Starting sync: ${pending.length} operations');
 
     int successCount = 0;
     int failCount = 0;
@@ -83,7 +83,7 @@ class SyncService extends GetxService {
     for (final operation in pending) {
       try {
         if (!_connectivityService.isOnline.value) {
-          print('📴 Lost connection during sync');
+          debugPrint('📴 Lost connection during sync');
           break;
         }
 
@@ -99,7 +99,7 @@ class SyncService extends GetxService {
     syncStatus.value = 'idle';
     _updateCounts();
 
-    print('✅ Sync completed: $successCount succeeded, $failCount failed');
+    debugPrint('✅ Sync completed: $successCount succeeded, $failCount failed');
     
     if (successCount > 0) {
       Get.snackbar(
@@ -123,7 +123,7 @@ class SyncService extends GetxService {
 
   Future<void> _syncOperation(SyncOperation operation) async {
     try {
-      print('🔄 Syncing: ${operation.method} ${operation.path} (ID: ${operation.id})');
+      debugPrint('🔄 Syncing: ${operation.method} ${operation.path} (ID: ${operation.id})');
 
       dio_pkg.Response response;
 
@@ -159,7 +159,7 @@ class SyncService extends GetxService {
       if (response.statusCode! >= 200 && response.statusCode! < 300) {
         await SyncQueueManager.markCompleted(operation.id);
         completedQueueIds.add(operation.id);
-        print('✅ Synced successfully: ${operation.id}');
+        debugPrint('✅ Synced successfully: ${operation.id}');
         
         Future.delayed(const Duration(seconds: 2), () {
           completedQueueIds.remove(operation.id);
@@ -170,7 +170,7 @@ class SyncService extends GetxService {
     } catch (e) {
       if (e is DioException) {
         if (e.response?.statusCode == 409) {
-          print('⚠️ Conflict (409) - Server wins: ${operation.id}');
+          debugPrint('⚠️ Conflict (409) - Server wins: ${operation.id}');
           await SyncQueueManager.markCompleted(operation.id);
           completedQueueIds.add(operation.id);
           Future.delayed(const Duration(seconds: 2), () {
@@ -185,10 +185,10 @@ class SyncService extends GetxService {
 
       if (operation.retryCount < 2) {
         final delay = _getRetryDelay(operation.retryCount);
-        print('⏳ Retrying in ${delay.inSeconds}s: ${operation.id}');
+        debugPrint('⏳ Retrying in ${delay.inSeconds}s: ${operation.id}');
         Future.delayed(delay, () => _syncOperation(operation));
       } else {
-        print('❌ Max retries reached: ${operation.id}');
+        debugPrint('❌ Max retries reached: ${operation.id}');
       }
     }
   }

@@ -36,9 +36,9 @@ class _AttachmentChip extends StatelessWidget {
           vertical: ForumDesignSystem.spacingXS,
         ),
         decoration: BoxDecoration(
-          color: ForumDesignSystem.primary.withOpacity(0.1),
+          color: ForumDesignSystem.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(ForumDesignSystem.radiusPill),
-          border: Border.all(color: ForumDesignSystem.primary.withOpacity(0.3)),
+          border: Border.all(color: ForumDesignSystem.primary.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -64,7 +64,7 @@ class _AttachmentChip extends StatelessWidget {
             Text(
               attachment.fileSizeFormatted,
               style: ForumDesignSystem.captionStyle.copyWith(
-                color: ForumDesignSystem.primary.withOpacity(0.7),
+                color: ForumDesignSystem.primary.withValues(alpha: 0.7),
                 fontSize: 10,
               ),
             ),

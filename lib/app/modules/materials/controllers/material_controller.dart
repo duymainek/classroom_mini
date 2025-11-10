@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:classroom_mini/app/data/models/request/material_request.dart';
 import 'package:classroom_mini/app/data/models/response/material_response.dart'
@@ -6,10 +7,8 @@ import 'package:classroom_mini/app/data/services/api_service.dart';
 import 'package:classroom_mini/app/data/models/response/course_response.dart';
 import 'package:classroom_mini/app/data/models/response/group_response.dart';
 
-/**
- * Material Controller
- * Handles all material-related operations
- */
+/// Material Controller
+/// Handles all material-related operations
 class MaterialController extends GetxController {
   final ApiService _apiService = ApiService(DioClient.dio);
 
@@ -49,9 +48,7 @@ class MaterialController extends GetxController {
     loadCourses();
   }
 
-  /**
-   * Initialize form state
-   */
+  /// Initialize form state
   void initFormState() {
     title.value = '';
     description.value = '';
@@ -59,9 +56,7 @@ class MaterialController extends GetxController {
     attachmentIds.clear();
   }
 
-  /**
-   * Update form state
-   */
+  /// Update form state
   void updateForm(Function(MaterialFormState) updater) {
     final state = MaterialFormState(
       title: title.value,
@@ -76,9 +71,7 @@ class MaterialController extends GetxController {
     attachmentIds.assignAll(state.attachmentIds);
   }
 
-  /**
-   * Load materials with pagination and filters
-   */
+  /// Load materials with pagination and filters
   Future<void> loadMaterials({
     int page = 1,
     bool refresh = false,
@@ -125,50 +118,38 @@ class MaterialController extends GetxController {
     }
   }
 
-  /**
-   * Load more materials (pagination)
-   */
+  /// Load more materials (pagination)
   Future<void> loadMoreMaterials() async {
     if (hasMorePages.value && !isLoading.value) {
       await loadMaterials(page: currentPage.value + 1);
     }
   }
 
-  /**
-   * Refresh materials
-   */
+  /// Refresh materials
   Future<void> refreshMaterials() async {
     await loadMaterials(refresh: true);
   }
 
-  /**
-   * Search materials
-   */
+  /// Search materials
   Future<void> searchMaterials(String query) async {
     searchQuery.value = query;
     await loadMaterials(refresh: true);
   }
 
-  /**
-   * Filter by course
-   */
+  /// Filter by course
   Future<void> filterByCourse(String? courseId) async {
     selectedCourseId.value = courseId ?? '';
     await loadMaterials(refresh: true);
   }
 
-  /**
-   * Sort materials
-   */
+  /// Sort materials
   Future<void> sortMaterials(String field, String order) async {
     sortBy.value = field;
     sortOrder.value = order;
     await loadMaterials(refresh: true);
   }
 
-  /**
-   * Load courses for dropdown
-   */
+  /// Load courses for dropdown
   Future<void> loadCourses() async {
     try {
       isLoadingCourses.value = true;
@@ -178,15 +159,13 @@ class MaterialController extends GetxController {
         courses.assignAll(response.data.courses);
       }
     } catch (e) {
-      print('Error loading courses: $e');
+      debugPrint('Error loading courses: $e');
     } finally {
       isLoadingCourses.value = false;
     }
   }
 
-  /**
-   * Load groups by course
-   */
+  /// Load groups by course
   Future<void> loadGroupsByCourse(String courseId) async {
     try {
       isLoadingGroups.value = true;
@@ -196,15 +175,13 @@ class MaterialController extends GetxController {
         groups.assignAll(response.data.groups);
       }
     } catch (e) {
-      print('Error loading groups: $e');
+      debugPrint('Error loading groups: $e');
     } finally {
       isLoadingGroups.value = false;
     }
   }
 
-  /**
-   * Create new material
-   */
+  /// Create new material
   Future<String?> createMaterial(CreateMaterialRequest request) async {
     try {
       // Không cần thiết lập isFormLoading nếu dialog được quản lý trong form
@@ -231,9 +208,7 @@ class MaterialController extends GetxController {
     }
   }
 
-  /**
-   * Update material
-   */
+  /// Update material
   Future<bool> updateMaterial(
       String materialId, UpdateMaterialRequest request) async {
     try {
@@ -263,9 +238,7 @@ class MaterialController extends GetxController {
     }
   }
 
-  /**
-   * Delete material
-   */
+  /// Delete material
   Future<bool> deleteMaterial(String materialId) async {
     try {
       isLoading.value = true;
@@ -291,9 +264,7 @@ class MaterialController extends GetxController {
     }
   }
 
-  /**
-   * Get material by ID
-   */
+  /// Get material by ID
   Future<material_resp.Material?> getMaterialById(String materialId) async {
     try {
       final response = await _apiService.getMaterialById(materialId);
@@ -303,14 +274,12 @@ class MaterialController extends GetxController {
       }
       return null;
     } catch (e) {
-      print('Error getting material: $e');
+      debugPrint('Error getting material: $e');
       return null;
     }
   }
 
-  /**
-   * Finalize attachments for material
-   */
+  /// Finalize attachments for material
   Future<void> finalizeAttachments(
       String materialId, List<String> attachmentIds) async {
     try {
@@ -318,20 +287,16 @@ class MaterialController extends GetxController {
         'attachmentIds': attachmentIds,
       });
     } catch (e) {
-      print('Error finalizing attachments: $e');
+      debugPrint('Error finalizing attachments: $e');
     }
   }
 
-  /**
-   * Clear error message
-   */
+  /// Clear error message
   void clearError() {
     errorMessage.value = '';
   }
 
-  /**
-   * Get material by ID from current list
-   */
+  /// Get material by ID from current list
   material_resp.Material? getMaterialFromList(String materialId) {
     try {
       return materials.firstWhere((m) => m.id == materialId);
@@ -341,9 +306,7 @@ class MaterialController extends GetxController {
   }
 }
 
-/**
- * Form state class for material form
- */
+/// Form state class for material form
 class MaterialFormState {
   String title;
   String description;

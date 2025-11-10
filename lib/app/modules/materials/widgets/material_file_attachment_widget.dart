@@ -49,11 +49,11 @@ class MaterialFileAttachmentWidget extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -102,7 +102,7 @@ class MaterialFileAttachmentWidget extends StatelessWidget {
                               ),
                               decoration: BoxDecoration(
                                 color: colorScheme.primaryContainer
-                                    .withOpacity(0.3),
+                                    .withValues(alpha: 0.3),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(

@@ -12,10 +12,12 @@ const {
   calculateQuizSubmissionStatus,
   formatQuizResponse,
   formatQuestionResponse,
-  formatQuizSubmissionResponse
+  formatQuizSubmissionResponse,
+  formatQuizGroups
 } = require('../models/quiz');
 const { AppError, catchAsync } = require('../middleware/errorHandler');
 const { buildResponse } = require('../utils/response');
+const notificationController = require('./notificationController');
 require('../types/quiz.type');
 
 class QuizController {
@@ -226,12 +228,7 @@ class QuizController {
     // Format quiz response with proper field names
     const formattedQuiz = {
       ...formatQuizResponse(quizWithGroups),
-      quizGroups: (quizWithGroups.quiz_groups || []).map(qg => ({
-        id: qg.id,
-        quizId: qg.quiz_id,
-        groupId: qg.group_id,
-        groups: qg.groups
-      })),
+      quizGroups: formatQuizGroups(quizWithGroups.quiz_groups || []),
       questions: (quizWithGroups.quiz_questions || []).map(q => ({
         id: q.id,
         quizId: q.quiz_id,
@@ -265,13 +262,17 @@ class QuizController {
       semesterId = '',
       status = 'all', // all, active, inactive, upcoming, past
       sortBy = 'created_at',
-      sortOrder = 'desc'
+      sortOrder = 'desc',
+      includeQuestions = 'false' // Optional: include full questions data
     } = req.query;
 
     const offset = (parseInt(page) - 1) * parseInt(limit);
     const userId = req.user.id;
     const userRole = req.user.role;
 
+    // Determine if we should include full questions data
+    const shouldIncludeQuestions = includeQuestions === 'true' || includeQuestions === true;
+    
     // Build query based on user role
     let query = supabase
       .from('quizzes')
@@ -285,7 +286,12 @@ class QuizController {
         quiz_groups(
           groups!inner(id, name)
         ),
-        quiz_questions(id)
+        ${shouldIncludeQuestions 
+          ? `quiz_questions(
+            id, quiz_id, question_text, question_type, points, order_index, is_required,
+            quiz_question_options(id, question_id, option_text, is_correct, order_index)
+          )`
+          : 'quiz_questions(id)'}
       `, { count: 'exact' });
 
     // Apply role-based filtering
@@ -300,11 +306,18 @@ class QuizController {
           courses!inner(code, name),
           users!quizzes_instructor_id_fkey(full_name),
           quiz_groups!inner(
+            id, quiz_id, group_id,
             groups!inner(
+              id, name,
               student_enrollments!inner(student_id)
             )
           ),
-          quiz_questions(id)
+          ${shouldIncludeQuestions 
+            ? `quiz_questions(
+              id, quiz_id, question_text, question_type, points, order_index, is_required,
+              quiz_question_options(id, question_id, option_text, is_correct, order_index)
+            )`
+            : 'quiz_questions(id)'}
         `)
         .eq('quiz_groups.groups.student_enrollments.student_id', userId);
     } else {
@@ -357,11 +370,34 @@ class QuizController {
       throw new AppError('Failed to fetch quizzes', 500, 'GET_QUIZZES_FAILED');
     }
 
-    // Attach question_count and remove quiz_questions to keep payload lean
+    // Format quizzes: attach question_count and optionally include questions
     const quizzesWithCounts = (quizzes || []).map(q => {
       const questionCount = Array.isArray(q.quiz_questions) ? q.quiz_questions.length : 0;
-      const { quiz_questions, ...rest } = q;
-      return { ...rest, question_count: questionCount };
+      const { quiz_questions, quiz_groups, ...rest } = q;
+      
+      const formattedQuiz = { 
+        ...rest, 
+        question_count: questionCount,
+        quizGroups: formatQuizGroups(quiz_groups || [])
+      };
+      
+      // Include full questions if requested
+      if (shouldIncludeQuestions && quiz_questions && quiz_questions.length > 0) {
+        formattedQuiz.questions = quiz_questions.map(q => ({
+          id: q.id,
+          quizId: q.quiz_id,
+          questionText: q.question_text,
+          questionType: q.question_type,
+          points: q.points,
+          orderIndex: q.order_index,
+          isRequired: q.is_required,
+          createdAt: q.created_at,
+          updatedAt: q.updated_at,
+          quiz_question_options: q.quiz_question_options || []
+        }));
+      }
+      
+      return formattedQuiz;
     });
 
     res.json(
@@ -418,7 +454,9 @@ class QuizController {
           courses!inner(code, name),
           users!quizzes_instructor_id_fkey(full_name),
           quiz_groups!inner(
+            id, quiz_id, group_id,
             groups!inner(
+              id, name,
               student_enrollments!inner(student_id)
             )
           ),
@@ -443,7 +481,7 @@ class QuizController {
     // Format quiz response with proper field names
     const formattedQuiz = {
       ...formatQuizResponse(quiz),
-      quizGroups: quiz.quiz_groups || [],
+      quizGroups: formatQuizGroups(quiz.quiz_groups || []),
       questions: (quiz.quiz_questions || []).map(q => ({
         id: q.id,
         quizId: q.quiz_id,
@@ -454,7 +492,13 @@ class QuizController {
         isRequired: q.is_required,
         createdAt: q.created_at,
         updatedAt: q.updated_at,
-        quiz_question_options: q.quiz_question_options || []
+        options: (q.quiz_question_options || []).map(opt => ({
+          id: opt.id,
+          questionId: opt.question_id,
+          optionText: opt.option_text,
+          isCorrect: opt.is_correct,
+          orderIndex: opt.order_index
+        }))
       })),
       course: quiz.courses,
       instructor: quiz.users
@@ -917,21 +961,11 @@ class QuizController {
     const studentId = req.user.id;
     const { answers } = req.body;
 
-    // Validate input
-    const validation = validate(createQuizSubmissionSchema, { quizId, answers });
-    if (!validation.isValid) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: validation.errors
-      });
-    }
-
     // Check if quiz exists and is accessible to student
     const { data: quiz } = await supabase
       .from('quizzes')
       .select(`
-        id, due_date, late_due_date, allow_late_submission, max_attempts,
+        id, title, instructor_id, due_date, late_due_date, allow_late_submission, max_attempts,
         quiz_groups!inner(
           groups!inner(
             student_enrollments!inner(student_id)
@@ -1017,8 +1051,139 @@ class QuizController {
         .from('quiz_submissions')
         .delete()
         .eq('id', newSubmission.id);
-      
+
       throw new AppError('Failed to save answers', 500, 'ANSWERS_SAVE_FAILED');
+    }
+
+    // Auto-grade answers
+    // Get all questions with their correct answers
+    const { data: questions } = await supabase
+      .from('quiz_questions')
+      .select(`
+        id,
+        question_type,
+        points,
+        quiz_question_options (
+          id,
+          is_correct
+        )
+      `)
+      .eq('quiz_id', quizId);
+
+    let totalScore = 0;
+    let maxScore = 0;
+    let hasEssayQuestion = false;
+
+    // Get all answer records for this submission to map question_id to answer_id
+    const { data: savedAnswerRecords } = await supabase
+      .from('quiz_answers')
+      .select('id, question_id')
+      .eq('submission_id', newSubmission.id);
+
+    // Create a map of question_id to answer_id
+    const questionToAnswerMap = {};
+    if (savedAnswerRecords) {
+      savedAnswerRecords.forEach(record => {
+        questionToAnswerMap[record.question_id] = record.id;
+      });
+    }
+
+    // Calculate scores and update answers with is_correct and points_earned
+    const answerUpdates = [];
+    for (const question of questions) {
+      maxScore += question.points;
+      const studentAnswer = answers.find(a => a.questionId === question.id);
+
+      if (!studentAnswer) continue;
+
+      if (question.question_type === 'multiple_choice' || question.question_type === 'true_false') {
+        // Auto-grade multiple choice and true/false
+        const correctOption = question.quiz_question_options?.find(opt => opt.is_correct);
+        const isCorrect = correctOption && studentAnswer.selectedOptionId === correctOption.id;
+        const pointsEarned = isCorrect ? question.points : 0;
+        
+        if (isCorrect) {
+          totalScore += question.points;
+        }
+
+        // Get answer record ID from map
+        const answerId = questionToAnswerMap[question.id];
+        if (answerId) {
+          answerUpdates.push({
+            id: answerId,
+            is_correct: isCorrect,
+            points_earned: pointsEarned
+          });
+        }
+      } else if (question.question_type === 'essay') {
+        // Essay questions need manual grading
+        hasEssayQuestion = true;
+      }
+    }
+
+    // Update answers with is_correct and points_earned
+    if (answerUpdates.length > 0) {
+      for (const update of answerUpdates) {
+        await supabase
+          .from('quiz_answers')
+          .update({
+            is_correct: update.is_correct,
+            points_earned: update.points_earned
+          })
+          .eq('id', update.id);
+      }
+    }
+
+    // Update submission with scores
+    await supabase
+      .from('quiz_submissions')
+      .update({
+        total_score: totalScore,
+        max_score: maxScore,
+        is_graded: !hasEssayQuestion // Only fully graded if no essay questions
+      })
+      .eq('id', newSubmission.id);
+
+    // Get student info for notification
+    const { data: studentInfo, error: studentInfoError } = await supabase
+      .from('users')
+      .select('full_name')
+      .eq('id', studentId)
+      .single();
+
+    // Create notification for instructor
+    if (quiz.instructor_id && studentInfo) {
+      try {
+        console.log('[Quiz Submission] Creating notification for instructor:', quiz.instructor_id);
+        const result = await notificationController.createNotification(quiz.instructor_id, {
+          type: 'quiz_submission',
+          title: 'New Quiz Submission',
+          body: `${studentInfo.full_name} has submitted "${quiz.title}" (Attempt #${currentAttempt})`,
+          data: {
+            quizId: quizId,
+            quizTitle: quiz.title,
+            submissionId: newSubmission.id,
+            studentId: studentId,
+            studentName: studentInfo.full_name,
+            attemptNumber: currentAttempt,
+            isLate: isLate,
+            hasEssayQuestion: hasEssayQuestion,
+            needsGrading: hasEssayQuestion,
+            action_url: `/student/quizzes/${quizId}/submissions/${newSubmission.id}`
+          }
+        });
+        console.log('[Quiz Submission] Notification creation result:', result);
+      } catch (notificationError) {
+        console.error('[Quiz Submission] Error creating notification:', notificationError);
+        console.error('[Quiz Submission] Error stack:', notificationError.stack);
+      }
+    } else {
+      if (!quiz.instructor_id) {
+        console.error('[Quiz Submission] Quiz has no instructor_id:', quiz);
+      }
+      if (!studentInfo) {
+        console.error('[Quiz Submission] Student info not found:', studentInfoError);
+      }
     }
 
     res.status(201).json(
@@ -1026,9 +1191,167 @@ class QuizController {
         submissionId: newSubmission.id,
         attemptNumber: currentAttempt,
         isLate,
-        status: submissionStatus
+        status: submissionStatus,
+        totalScore,
+        maxScore
       })
     );
+  });
+
+  /**
+   * Get quiz submission by ID with full details
+   * Accessible by: Instructor (owns the quiz) or Student (owns the submission)
+   */
+  getQuizSubmissionById = catchAsync(async (req, res) => {
+    const { submissionId } = req.params;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    // Get submission with all related data
+    const { data: submission, error } = await supabase
+      .from('quiz_submissions')
+      .select(`
+        id,
+        quiz_id,
+        student_id,
+        attempt_number,
+        submitted_at,
+        is_late,
+        total_score,
+        max_score,
+        is_graded,
+        grade,
+        feedback,
+        quizzes!inner (
+          id,
+          title,
+          instructor_id
+        ),
+        users!quiz_submissions_student_id_fkey (
+          id,
+          full_name,
+          email
+        )
+      `)
+      .eq('id', submissionId)
+      .single();
+
+    if (error || !submission) {
+      throw new AppError('Submission not found', 404, 'SUBMISSION_NOT_FOUND');
+    }
+
+    // Verify access: Instructor must own the quiz, Student must own the submission
+    if (userRole === 'instructor') {
+      if (submission.quizzes.instructor_id !== userId) {
+        throw new AppError('Access denied', 403, 'ACCESS_DENIED');
+      }
+    } else if (userRole === 'student') {
+      if (submission.student_id !== userId) {
+        throw new AppError('Access denied', 403, 'ACCESS_DENIED');
+      }
+    } else {
+      throw new AppError('Access denied', 403, 'ACCESS_DENIED');
+    }
+
+    // Get all answers with question details
+    const { data: answers } = await supabase
+      .from('quiz_answers')
+      .select(`
+        id,
+        question_id,
+        answer_text,
+        selected_option_id,
+        review_status,
+        manual_score,
+        points_earned,
+        is_correct,
+        quiz_questions!inner (
+          id,
+          question_text,
+          question_type,
+          points,
+          quiz_question_options (
+            id,
+            option_text,
+            is_correct
+          )
+        )
+      `)
+      .eq('submission_id', submissionId);
+
+    // Calculate correctness and scores for each answer
+    const answersWithDetails = answers.map(answer => {
+      const question = answer.quiz_questions;
+      let isCorrect = answer.is_correct;
+      let score = answer.points_earned;
+
+      // For auto-graded questions, always recalculate to ensure accuracy
+      if (question.question_type === 'multiple_choice' || question.question_type === 'true_false') {
+        const correctOption = question.quiz_question_options?.find(opt => opt.is_correct);
+        if (correctOption && answer.selected_option_id === correctOption.id) {
+          isCorrect = true;
+          score = question.points;
+        } else {
+          isCorrect = false;
+          score = 0;
+        }
+      } else if (question.question_type === 'essay') {
+        // Essay questions - use manual_score if reviewed
+        if (answer.review_status === 'approved' || answer.review_status === 'rejected') {
+          score = answer.manual_score;
+          isCorrect = answer.is_correct ?? false;
+        } else {
+          // Pending review
+          score = null;
+          isCorrect = false;
+        }
+      }
+
+      return {
+        id: answer.id,
+        questionId: answer.question_id,
+        answerText: answer.answer_text,
+        selectedOptionId: answer.selected_option_id,
+        reviewStatus: answer.review_status,
+        manualScore: answer.manual_score,
+        question: {
+          id: question.id,
+          questionText: question.question_text,
+          questionType: question.question_type,
+          points: question.points,
+          options: question.quiz_question_options || []
+        },
+        isCorrect,
+        score
+      };
+    });
+
+    // Format response
+    const responseData = {
+      id: submission.id,
+      quizId: submission.quiz_id,
+      studentId: submission.student_id,
+      attemptNumber: submission.attempt_number,
+      submittedAt: submission.submitted_at,
+      isLate: submission.is_late,
+      totalScore: submission.total_score,
+      maxScore: submission.max_score,
+      isGraded: submission.is_graded,
+      grade: submission.grade,
+      feedback: submission.feedback,
+      quiz: {
+        id: submission.quizzes.id,
+        title: submission.quizzes.title
+      },
+      student: {
+        id: submission.users.id,
+        fullName: submission.users.full_name,
+        email: submission.users.email
+      },
+      answers: answersWithDetails
+    };
+
+    res.json(buildResponse(true, 'Submission retrieved successfully', responseData));
   });
 
   /**
@@ -1040,9 +1363,11 @@ class QuizController {
       page = 1,
       limit = 20,
       search = '',
-      status = 'all', // all, submitted, not_submitted, late
+      status = 'all', // all, submitted, not_submitted, late, graded
       sortBy = 'submitted_at',
-      sortOrder = 'desc'
+      sortOrder = 'desc',
+      groupId = '', // Filter by specific group
+      attemptFilter = 'all' // all, first_attempt, multiple_attempts
     } = req.query;
 
     const offset = (parseInt(page) - 1) * parseInt(limit);
@@ -1060,17 +1385,30 @@ class QuizController {
       throw new AppError('Quiz not found or access denied', 404, 'QUIZ_NOT_FOUND');
     }
 
-    // Get all students in quiz groups
-    const { data: students } = await supabase
+    // Get all students in quiz groups with group information
+    let studentsQuery = supabase
       .from('quiz_groups')
       .select(`
         groups!inner(
+          id, name,
           student_enrollments!inner(
             users!inner(id, username, full_name, email)
           )
         )
       `)
       .eq('quiz_id', quizId);
+
+    // Apply group filter if specified
+    if (groupId) {
+      studentsQuery = studentsQuery.eq('group_id', groupId);
+    }
+
+    const { data: students, error: studentsError } = await studentsQuery;
+
+    if (studentsError) {
+      console.error('Error fetching students:', studentsError);
+      throw new AppError('Failed to fetch students', 500, 'FETCH_STUDENTS_ERROR');
+    }
 
     if (!students || students.length === 0) {
       return res.json({
@@ -1087,27 +1425,75 @@ class QuizController {
       });
     }
 
-    // Flatten students data
-    const allStudents = students.flatMap(qg => 
-      qg.groups.student_enrollments.map(se => se.users)
+    // Flatten students data with group information
+    const allStudents = students.flatMap(qg => {
+      if (!qg.groups || !qg.groups.student_enrollments) {
+        return [];
+      }
+      return qg.groups.student_enrollments.map(se => ({
+        ...se.users,
+        groupId: qg.groups.id,
+        groupName: qg.groups.name
+      }));
+    });
+
+    // Remove duplicates based on student id
+    const uniqueStudents = Array.from(
+      new Map(allStudents.map(s => [s.id, s])).values()
     );
 
-    // Get submissions for these students
-    const { data: submissions } = await supabase
+    // Get student IDs for query
+    const studentIds = uniqueStudents.map(s => s.id);
+    
+    if (studentIds.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          submissions: [],
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total: 0,
+            pages: 0
+          }
+        }
+      });
+    }
+
+    // Get submissions for these students with answers
+    const { data: submissions, error: submissionsError } = await supabase
       .from('quiz_submissions')
       .select(`
-        id, student_id, attempt_number, submitted_at, is_late, 
-        total_score, max_score, is_graded, grade, feedback, graded_at,
-        users!inner(id, username, full_name, email)
+        id, quiz_id, student_id, attempt_number, submitted_at, is_late, 
+        total_score, max_score, is_graded, grade, feedback, graded_at, graded_by,
+        created_at, updated_at,
+        student:users!quiz_submissions_student_id_fkey(id, username, full_name, email),
+        quiz_answers(
+          id, question_id, answer_text, selected_option_id, created_at
+        )
       `)
       .eq('quiz_id', quizId)
-      .in('student_id', allStudents.map(s => s.id));
+      .in('student_id', studentIds);
 
-    // Create tracking data
-    const trackingData = allStudents.map(student => {
+    if (submissionsError) {
+      console.error('Error fetching submissions:', submissionsError);
+      throw new AppError('Failed to fetch submissions', 500, 'FETCH_SUBMISSIONS_ERROR');
+    }
+
+    // Create enhanced tracking data
+    const trackingData = uniqueStudents.map(student => {
       const studentSubmissions = submissions?.filter(sub => sub.student_id === student.id) || [];
       const latestSubmission = studentSubmissions.length > 0 
-        ? studentSubmissions.toSorted((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))[0]
+        ? [...studentSubmissions].sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))[0]
+        : null;
+
+      // Calculate submission statistics
+      const gradedSubmissions = studentSubmissions.filter(sub => sub.is_graded);
+      const lateSubmissions = studentSubmissions.filter(sub => sub.is_late);
+      const averageGrade = gradedSubmissions.length > 0 && gradedSubmissions.some(sub => sub.grade !== null)
+        ? gradedSubmissions
+            .filter(sub => sub.grade !== null)
+            .reduce((sum, sub) => sum + parseFloat(sub.grade), 0) / gradedSubmissions.filter(sub => sub.grade !== null).length
         : null;
 
       return {
@@ -1115,9 +1501,16 @@ class QuizController {
         username: student.username,
         fullName: student.full_name,
         email: student.email,
+        groupId: student.groupId,
+        groupName: student.groupName,
         totalSubmissions: studentSubmissions.length,
+        gradedSubmissions: gradedSubmissions.length,
+        lateSubmissions: lateSubmissions.length,
+        averageGrade: averageGrade,
         latestSubmission: latestSubmission ? {
           id: latestSubmission.id,
+          quizId: latestSubmission.quiz_id,
+          studentId: latestSubmission.student_id,
           attemptNumber: latestSubmission.attempt_number,
           submittedAt: latestSubmission.submitted_at,
           isLate: latestSubmission.is_late,
@@ -1126,12 +1519,31 @@ class QuizController {
           isGraded: latestSubmission.is_graded,
           grade: latestSubmission.grade,
           feedback: latestSubmission.feedback,
-          gradedAt: latestSubmission.graded_at
+          gradedAt: latestSubmission.graded_at,
+          gradedBy: latestSubmission.graded_by,
+          createdAt: latestSubmission.created_at,
+          updatedAt: latestSubmission.updated_at,
+          answers: (latestSubmission.quiz_answers || []).map(ans => ({
+            id: ans.id,
+            questionId: ans.question_id,
+            answerText: ans.answer_text,
+            selectedOptionId: ans.selected_option_id,
+            createdAt: ans.created_at
+          })),
+          student: latestSubmission.student ? {
+            id: latestSubmission.student.id,
+            username: latestSubmission.student.username,
+            fullName: latestSubmission.student.full_name,
+            email: latestSubmission.student.email
+          } : null
         } : null,
         status: (() => {
           if (!latestSubmission) return 'not_submitted';
-          return latestSubmission.is_late ? 'late' : 'submitted';
-        })()
+          if (latestSubmission.is_graded) return 'graded';
+          if (latestSubmission.is_late) return 'late';
+          return 'submitted';
+        })(),
+        hasMultipleAttempts: studentSubmissions.length > 1
       };
     });
 
@@ -1148,6 +1560,13 @@ class QuizController {
 
     if (status !== 'all') {
       filteredData = filteredData.filter(item => item.status === status);
+    }
+
+    // Apply attempt filter
+    if (attemptFilter === 'first_attempt') {
+      filteredData = filteredData.filter(item => item.totalSubmissions === 1);
+    } else if (attemptFilter === 'multiple_attempts') {
+      filteredData = filteredData.filter(item => item.hasMultipleAttempts);
     }
 
     // Apply sorting
@@ -1237,6 +1656,274 @@ class QuizController {
 
     res.json(
       buildResponse(true, 'Submission graded successfully', { submission: updatedSubmission })
+    );
+  });
+
+  /**
+   * Review essay answer
+   */
+  reviewEssayAnswer = catchAsync(async (req, res) => {
+    const { submissionId, answerId } = req.params;
+    const { action, manualScore } = req.body;
+    const instructorId = req.user.id;
+
+    // Validate action
+    if (!['approve', 'reject'].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid action. Must be "approve" or "reject"',
+        code: 'INVALID_ACTION'
+      });
+    }
+
+    // Verify instructor has access to the submission
+    const { data: submission } = await supabase
+      .from('quiz_submissions')
+      .select(`
+        id, quiz_id,
+        quizzes!inner(instructor_id)
+      `)
+      .eq('id', submissionId)
+      .eq('quizzes.instructor_id', instructorId)
+      .single();
+
+    if (!submission) {
+      throw new AppError('Submission not found or access denied', 404, 'SUBMISSION_NOT_FOUND');
+    }
+
+    // Get the answer and verify it belongs to the submission and is an essay question
+    const { data: answer } = await supabase
+      .from('quiz_answers')
+      .select(`
+        id, submission_id, question_id,
+        quiz_questions!inner(id, question_type, points)
+      `)
+      .eq('id', answerId)
+      .eq('submission_id', submissionId)
+      .single();
+
+    if (!answer) {
+      throw new AppError('Answer not found', 404, 'ANSWER_NOT_FOUND');
+    }
+
+    if (answer.quiz_questions.question_type !== 'essay') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only essay questions can be manually reviewed',
+        code: 'INVALID_QUESTION_TYPE'
+      });
+    }
+
+    // Calculate the score based on action
+    const questionPoints = answer.quiz_questions.points;
+    const scoreToSet = manualScore !== undefined && manualScore !== null
+      ? parseFloat(manualScore)
+      : (action === 'approve' ? questionPoints : 0);
+
+    // Update the answer with review status and manual score
+    const { data: updatedAnswer, error: updateError } = await supabase
+      .from('quiz_answers')
+      .update({
+        review_status: action === 'approve' ? 'approved' : 'rejected',
+        manual_score: scoreToSet,
+        points_earned: scoreToSet,
+        is_correct: action === 'approve',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', answerId)
+      .select('id, review_status, manual_score, points_earned, is_correct')
+      .single();
+
+    if (updateError) {
+      console.error('Review answer error:', updateError);
+      throw new AppError('Failed to review answer', 500, 'REVIEW_ANSWER_FAILED');
+    }
+
+    // Recalculate total score for the submission
+    const { data: allAnswers } = await supabase
+      .from('quiz_answers')
+      .select(`
+        points_earned,
+        quiz_questions!inner(question_type)
+      `)
+      .eq('submission_id', submissionId);
+
+    const totalScore = allAnswers.reduce((sum, ans) => {
+      return sum + (parseFloat(ans.points_earned) || 0);
+    }, 0);
+
+    // Update submission total score
+    await supabase
+      .from('quiz_submissions')
+      .update({
+        total_score: totalScore,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', submissionId);
+
+    res.json(
+      buildResponse(true, 'Answer reviewed successfully', {
+        answer: updatedAnswer,
+        totalScore
+      })
+    );
+  });
+
+  /**
+   * Complete grading for a submission
+   */
+  completeGrading = catchAsync(async (req, res) => {
+    const { submissionId } = req.params;
+    const instructorId = req.user.id;
+
+    // Verify instructor has access to the submission
+    const { data: submission } = await supabase
+      .from('quiz_submissions')
+      .select(`
+        id, quiz_id, is_graded,
+        quizzes!inner(instructor_id)
+      `)
+      .eq('id', submissionId)
+      .eq('quizzes.instructor_id', instructorId)
+      .single();
+
+    if (!submission) {
+      throw new AppError('Submission not found or access denied', 404, 'SUBMISSION_NOT_FOUND');
+    }
+
+    // Check if all essay answers have been reviewed
+    // First get all answers with their questions
+    const { data: allAnswers } = await supabase
+      .from('quiz_answers')
+      .select(`
+        id,
+        review_status,
+        quiz_questions!inner(
+          id,
+          question_type
+        )
+      `)
+      .eq('submission_id', submissionId);
+
+    // Filter for pending essay answers in JavaScript
+    const pendingAnswers = allAnswers?.filter(answer => 
+      answer.quiz_questions?.question_type === 'essay' && 
+      answer.review_status === 'pending'
+    ) || [];
+
+    if (pendingAnswers && pendingAnswers.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot complete grading. ${pendingAnswers.length} essay answer(s) still pending review`,
+        code: 'PENDING_REVIEWS',
+        pendingCount: pendingAnswers.length
+      });
+    }
+
+    // Recalculate total score from all answers (including reviewed essay answers)
+    const { data: allAnswersForScore } = await supabase
+      .from('quiz_answers')
+      .select(`
+        points_earned,
+        manual_score,
+        quiz_questions!inner(
+          points,
+          question_type
+        )
+      `)
+      .eq('submission_id', submissionId);
+
+    let recalculatedTotalScore = 0;
+    let maxScore = 0;
+    if (allAnswersForScore) {
+      allAnswersForScore.forEach(answer => {
+        const question = answer.quiz_questions;
+        maxScore += question.points;
+        
+        if (question.question_type === 'essay') {
+          // Use manual_score for essay questions
+          recalculatedTotalScore += answer.manual_score || 0;
+        } else {
+          // Use points_earned for auto-graded questions
+          recalculatedTotalScore += answer.points_earned || 0;
+        }
+      });
+    }
+
+    // Mark submission as graded and update total score
+    const { data: updatedSubmission, error: updateError } = await supabase
+      .from('quiz_submissions')
+      .update({
+        is_graded: true,
+        total_score: recalculatedTotalScore,
+        max_score: maxScore,
+        graded_at: new Date().toISOString(),
+        graded_by: instructorId,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', submissionId)
+      .select('id, is_graded, graded_at, graded_by, total_score, max_score')
+      .single();
+
+    if (updateError) {
+      console.error('Complete grading error:', updateError);
+      throw new AppError('Failed to complete grading', 500, 'COMPLETE_GRADING_FAILED');
+    }
+
+    res.json(
+      buildResponse(true, 'Grading completed successfully', { submission: updatedSubmission })
+    );
+  });
+
+  /**
+   * Get student's submissions for a quiz
+   */
+  getStudentQuizSubmissions = catchAsync(async (req, res) => {
+    const { quizId } = req.params;
+    const studentId = req.user.id;
+
+    // Verify quiz exists and student has access
+    const { data: quiz } = await supabase
+      .from('quizzes')
+      .select(`
+        id, title, max_attempts,
+        quiz_groups!inner(
+          groups!inner(
+            student_enrollments!inner(student_id)
+          )
+        )
+      `)
+      .eq('id', quizId)
+      .eq('quiz_groups.groups.student_enrollments.student_id', studentId)
+      .single();
+
+    if (!quiz) {
+      throw new AppError('Quiz not found or access denied', 404, 'QUIZ_NOT_FOUND');
+    }
+
+    // Get student's submissions for this quiz
+    const { data: submissions, error } = await supabase
+      .from('quiz_submissions')
+      .select(`
+        id, quiz_id, student_id, attempt_number, submitted_at, is_late,
+        total_score, max_score, is_graded, grade, feedback, graded_at,
+        created_at, updated_at
+      `)
+      .eq('quiz_id', quizId)
+      .eq('student_id', studentId)
+      .order('attempt_number', { ascending: false });
+
+    if (error) {
+      console.error('Get student quiz submissions error:', error);
+      throw new AppError('Failed to fetch submissions', 500, 'FETCH_SUBMISSIONS_ERROR');
+    }
+
+    res.json(
+      buildResponse(true, undefined, {
+        submissions: submissions || [],
+        maxAttempts: quiz.max_attempts,
+        currentAttempts: submissions?.length || 0
+      })
     );
   });
 }

@@ -133,7 +133,7 @@ class SharedFileAttachmentController extends GetxController {
         onAttachmentUploaded?.call(submissionAttachment);
       } else {
         // Upload thất bại
-        final errorMsg = 'Không thể tải file lên server';
+        const errorMsg = 'Không thể tải file lên server';
         _updateAttachment(attachment.copyWith(
           status: AttachmentUploadStatus.failed,
           errorMessage: errorMsg,

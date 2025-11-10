@@ -37,7 +37,7 @@ class ResponsiveLoginPage extends StatelessWidget {
                 // Login Card
                 Card(
                   elevation: 4,
-                  shadowColor: Colors.black.withOpacity(0.1),
+                  shadowColor: Colors.black.withValues(alpha: 0.1),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -72,12 +72,23 @@ class ResponsiveLoginPage extends StatelessWidget {
                                   ? 20
                                   : 16),
 
-                          // Quick Login Button (for testing)
+                          // Quick Login Buttons (for testing)
                           if (Get.find<LoginController>()
                               .usernameController
                               .text
                               .isEmpty)
-                            _buildQuickLoginButton(context, controller),
+                            Column(
+                              children: [
+                                _buildQuickLoginButton(context, controller),
+                                SizedBox(
+                                    height: ResponsiveBreakpoints.of(context)
+                                            .largerThan(TABLET)
+                                        ? 12
+                                        : 10),
+                                _buildQuickStudentLoginButton(
+                                    context, controller),
+                              ],
+                            ),
                         ],
                       ),
                     ),
@@ -108,7 +119,7 @@ class ResponsiveLoginPage extends StatelessWidget {
           height:
               ResponsiveBreakpoints.of(context).largerThan(TABLET) ? 80 : 64,
           decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Icon(
@@ -162,6 +173,30 @@ class ResponsiveLoginPage extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           foregroundColor: Colors.orange.shade600,
           side: BorderSide(color: Colors.orange.shade300),
+          padding: EdgeInsets.symmetric(
+            vertical:
+                ResponsiveBreakpoints.of(context).largerThan(TABLET) ? 12 : 10,
+            horizontal: 16,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickStudentLoginButton(
+      BuildContext context, LoginController controller) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: controller.quickStudentLogin,
+        icon: const Icon(Icons.person),
+        label: const Text('Đăng nhập nhanh (sv010/sv010)'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.blue.shade600,
+          side: BorderSide(color: Colors.blue.shade300),
           padding: EdgeInsets.symmetric(
             vertical:
                 ResponsiveBreakpoints.of(context).largerThan(TABLET) ? 12 : 10,

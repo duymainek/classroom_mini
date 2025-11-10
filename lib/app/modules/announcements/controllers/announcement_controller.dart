@@ -8,10 +8,8 @@ import 'package:classroom_mini/app/data/models/response/course_response.dart';
 import 'package:classroom_mini/app/data/models/response/group_response.dart';
 import 'package:classroom_mini/app/routes/app_routes.dart';
 
-/**
- * Announcement Controller
- * Manages announcement operations using GetX state management
- */
+/// Announcement Controller
+/// Manages announcement operations using GetX state management
 class AnnouncementController extends GetxController {
   final AnnouncementApiService _apiService =
       AnnouncementApiService(DioClient.dio);
@@ -74,11 +72,6 @@ class AnnouncementController extends GetxController {
     loadCourses();
   }
 
-  @override
-  void onClose() {
-    super.onClose();
-  }
-
   /// Load announcements with current filters
   Future<void> loadAnnouncements({bool refresh = false}) async {
     if (_isLoading.value) return;
@@ -114,11 +107,11 @@ class AnnouncementController extends GetxController {
 
         if (response.data!.pagination != null) {
           _hasMore.value =
-              _currentPage.value < response.data!.pagination!.pages;
+              _currentPage.value < (response.data!.pagination!.pages ?? 0);
           _currentPage.value++;
         }
       } else {
-        _error.value = response.message;
+        _error.value = response.message ?? 'Không thể tải danh sách thông báo';
         Get.snackbar(
             'Lỗi', 'Không thể tải danh sách thông báo: ${response.message}');
       }
@@ -176,15 +169,15 @@ class AnnouncementController extends GetxController {
     _error.value = '';
 
     try {
-      print('=== CREATING ANNOUNCEMENT ===');
-      print('Request: ${request.toJson()}');
+      debugPrint('=== CREATING ANNOUNCEMENT ===');
+      debugPrint('Request: ${request.toJson()}');
 
       final response = await _apiService.createAnnouncement(request);
 
-      print('Response received:');
-      print('Success: ${response.success}');
-      print('Message: ${response.message}');
-      print('Data: ${response.data?.toJson()}');
+      debugPrint('Response received:');
+      debugPrint('Success: ${response.success}');
+      debugPrint('Message: ${response.message}');
+      debugPrint('Data: ${response.data?.toJson()}');
 
       if (response.success && response.data?.announcement != null) {
         _announcements.insert(0, response.data!.announcement!);
@@ -193,14 +186,15 @@ class AnnouncementController extends GetxController {
         Get.offNamed(Routes.ANNOUNCEMENTS_LIST);
         return response.data!.announcement!.id;
       } else {
-        _error.value = response.message;
-        Get.snackbar('Lỗi', 'Không thể tạo thông báo: ${response.message}');
+        _error.value = response.message ?? 'Không thể tạo thông báo';
+        Get.snackbar('Lỗi',
+            'Không thể tạo thông báo: ${response.message ?? 'Không thể tạo thông báo'}');
         return null;
       }
     } catch (e) {
-      print('=== CREATE ANNOUNCEMENT ERROR ===');
-      print('Error: $e');
-      print('Stack trace: ${StackTrace.current}');
+      debugPrint('=== CREATE ANNOUNCEMENT ERROR ===');
+      debugPrint('Error: $e');
+      debugPrint('Stack trace: ${StackTrace.current}');
       _error.value = e.toString();
       Get.snackbar('Lỗi', 'Không thể tạo thông báo: $e');
       return null;
@@ -226,9 +220,9 @@ class AnnouncementController extends GetxController {
         Get.snackbar('Thành công', 'Cập nhật thông báo thành công');
         return true;
       } else {
-        _error.value = response.message;
-        Get.snackbar(
-            'Lỗi', 'Không thể cập nhật thông báo: ${response.message}');
+        _error.value = response.message ?? 'Không thể cập nhật thông báo';
+        Get.snackbar('Lỗi',
+            'Không thể cập nhật thông báo: ${response.message ?? 'Không thể cập nhật thông báo'}');
         return false;
       }
     } catch (e) {
@@ -253,8 +247,9 @@ class AnnouncementController extends GetxController {
         Get.snackbar('Thành công', 'Xóa thông báo thành công');
         return true;
       } else {
-        _error.value = response.message;
-        Get.snackbar('Lỗi', 'Không thể xóa thông báo: ${response.message}');
+        _error.value = response.message ?? 'Không thể xóa thông báo';
+        Get.snackbar('Lỗi',
+            'Không thể xóa thông báo: ${response.message ?? 'Không thể xóa thông báo'}');
         return false;
       }
     } catch (e) {
@@ -282,8 +277,8 @@ class AnnouncementController extends GetxController {
               decoration: BoxDecoration(
                 color: Theme.of(Get.context!)
                     .colorScheme
-                    .surfaceVariant
-                    .withOpacity(0.3),
+                    .surfaceContainerHighest
+                    .withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
@@ -358,8 +353,9 @@ class AnnouncementController extends GetxController {
           _comments.addAll(response.data!.comments!);
         }
       } else {
-        _error.value = response.message;
-        Get.snackbar('Lỗi', 'Không thể tải bình luận: ${response.message}');
+        _error.value = response.message ?? 'Không thể tải bình luận';
+        Get.snackbar('Lỗi',
+            'Không thể tải bình luận: ${response.message ?? 'Không thể tải bình luận'}');
       }
     } catch (e) {
       _error.value = e.toString();
@@ -382,7 +378,8 @@ class AnnouncementController extends GetxController {
         Get.snackbar('Thành công', 'Thêm bình luận thành công');
         return true;
       } else {
-        Get.snackbar('Lỗi', 'Không thể thêm bình luận: ${response.message}');
+        Get.snackbar('Lỗi',
+            'Không thể thêm bình luận: ${response.message ?? 'Không thể thêm bình luận'}');
         return false;
       }
     } catch (e) {
@@ -397,7 +394,7 @@ class AnnouncementController extends GetxController {
       await _apiService.trackView(announcementId);
     } catch (e) {
       // Silent fail for tracking
-      print('Failed to track view: $e');
+      debugPrint('Failed to track view: $e');
     }
   }
 
@@ -407,7 +404,7 @@ class AnnouncementController extends GetxController {
       await _apiService.trackDownload(fileId);
     } catch (e) {
       // Silent fail for tracking
-      print('Failed to track download: $e');
+      debugPrint('Failed to track download: $e');
     }
   }
 
@@ -427,9 +424,9 @@ class AnnouncementController extends GetxController {
       if (response.success && response.data?.tracking != null) {
         _trackingData.assignAll(response.data!.tracking!.tracking);
       } else {
-        _error.value = response.message;
-        Get.snackbar(
-            'Lỗi', 'Không thể tải dữ liệu theo dõi: ${response.message}');
+        _error.value = response.message ?? 'Không thể tải dữ liệu theo dõi';
+        Get.snackbar('Lỗi',
+            'Không thể tải dữ liệu theo dõi: ${response.message ?? 'Không thể tải dữ liệu theo dõi'}');
       }
     } catch (e) {
       _error.value = e.toString();
@@ -454,7 +451,7 @@ class AnnouncementController extends GetxController {
       if (response.success && response.data?.fileTracking != null) {
         _fileTrackingData.assignAll(response.data!.fileTracking!);
       } else {
-        _error.value = response.message;
+        _error.value = response.message ?? 'Không thể tải dữ liệu tải xuống';
         Get.snackbar(
             'Lỗi', 'Không thể tải dữ liệu tải xuống: ${response.message}');
       }
@@ -566,39 +563,37 @@ class AnnouncementController extends GetxController {
   Future<bool> finalizeAttachments(
       String announcementId, List<String> attachmentIds) async {
     try {
-      print('=== FINALIZING ATTACHMENTS ===');
-      print('Announcement ID: $announcementId');
-      print('Attachment IDs: $attachmentIds');
+      debugPrint('=== FINALIZING ATTACHMENTS ===');
+      debugPrint('Announcement ID: $announcementId');
+      debugPrint('Attachment IDs: $attachmentIds');
 
       final response = await _mainApiService.finalizeAnnouncementAttachments(
         announcementId,
         {'attachmentIds': attachmentIds},
       );
 
-      print('Finalize response: ${response.toJson()}');
+      debugPrint('Finalize response: ${response.toJson()}');
 
       if (response.success) {
-        print('Attachments finalized successfully');
+        debugPrint('Attachments finalized successfully');
         return true;
       } else {
-        print('Failed to finalize attachments: ${response.message}');
+        debugPrint('Failed to finalize attachments: ${response.message}');
         Get.snackbar(
             'Lỗi', 'Không thể finalize attachments: ${response.message}');
         return false;
       }
     } catch (e) {
-      print('=== FINALIZE ATTACHMENTS ERROR ===');
-      print('Error: $e');
+      debugPrint('=== FINALIZE ATTACHMENTS ERROR ===');
+      debugPrint('Error: $e');
       Get.snackbar('Lỗi', 'Không thể finalize attachments: $e');
       return false;
     }
   }
 }
 
-/**
- * Announcement Form State
- * Manages form data for creating/editing announcements
- */
+/// Announcement Form State
+/// Manages form data for creating/editing announcements
 class AnnouncementFormState {
   String? title;
   String? content;

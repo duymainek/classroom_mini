@@ -48,8 +48,8 @@ class _StudentImportPageState extends State<StudentImportPage> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        colorScheme.primaryContainer.withOpacity(0.3),
-                        colorScheme.secondaryContainer.withOpacity(0.1),
+                        colorScheme.primaryContainer.withValues(alpha: 0.3),
+                        colorScheme.secondaryContainer.withValues(alpha: 0.1),
                       ],
                     ),
                   ),
@@ -155,10 +155,10 @@ class _StudentImportPageState extends State<StudentImportPage> {
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color:
-                                  colorScheme.surfaceVariant.withOpacity(0.3),
+                                  colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: colorScheme.outline.withOpacity(0.2),
+                                color: colorScheme.outline.withValues(alpha: 0.2),
                               ),
                             ),
                             child: Column(
@@ -317,12 +317,12 @@ class _StudentImportPageState extends State<StudentImportPage> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -333,7 +333,7 @@ class _StudentImportPageState extends State<StudentImportPage> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.3),
+              color: colorScheme.primaryContainer.withValues(alpha: 0.3),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
@@ -344,7 +344,7 @@ class _StudentImportPageState extends State<StudentImportPage> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: colorScheme.primary.withOpacity(0.1),
+                    color: colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: colorScheme.primary, size: 20),
@@ -385,10 +385,10 @@ class _StudentImportPageState extends State<StudentImportPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: SwitchListTile(
@@ -407,7 +407,7 @@ class _StudentImportPageState extends State<StudentImportPage> {
         value: value,
         onChanged: onChanged,
         secondary: Icon(icon, color: colorScheme.primary),
-        activeColor: colorScheme.primary,
+        activeThumbColor: colorScheme.primary,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
     );
@@ -427,17 +427,17 @@ class _StudentImportPageState extends State<StudentImportPage> {
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: colorScheme.primary.withOpacity(0.1),
+            color: colorScheme.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: colorScheme.primary, size: 20),
@@ -458,7 +458,7 @@ class _StudentImportPageState extends State<StudentImportPage> {
             : Text(
                 'Chọn $title',
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                 ),
               ),
         trailing: const Icon(Icons.arrow_drop_down),
@@ -550,10 +550,10 @@ class _StudentImportPageState extends State<StudentImportPage> {
           final errors = result?['errors'] as List<dynamic>? ?? [];
 
           return DataRow(
-            color: MaterialStateProperty.resolveWith<Color?>(
+            color: WidgetStateProperty.resolveWith<Color?>(
               (states) => isError
-                  ? Colors.red.withOpacity(0.1)
-                  : Colors.green.withOpacity(0.1),
+                  ? Colors.red.withValues(alpha: 0.1)
+                  : Colors.green.withValues(alpha: 0.1),
             ),
             cells: [
               DataCell(Text('${i + 1}')),
@@ -691,8 +691,8 @@ class _StudentImportPageState extends State<StudentImportPage> {
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: isError
-                              ? Colors.red.withOpacity(0.1)
-                              : Colors.green.withOpacity(0.1),
+                              ? Colors.red.withValues(alpha: 0.1)
+                              : Colors.green.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -723,9 +723,9 @@ class _StudentImportPageState extends State<StudentImportPage> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
+                        color: Colors.red.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.red.withOpacity(0.3)),
+                        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -769,10 +769,10 @@ class _StudentImportPageState extends State<StudentImportPage> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color:
-                            theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: theme.colorScheme.outline.withOpacity(0.2),
+                          color: theme.colorScheme.outline.withValues(alpha: 0.2),
                         ),
                       ),
                       child: Column(
@@ -848,8 +848,8 @@ class _StudentImportPageState extends State<StudentImportPage> {
     return Chip(
       avatar: Icon(icon, color: color, size: 16),
       label: Text('$label: $count'),
-      backgroundColor: color.withOpacity(0.1),
-      side: BorderSide(color: color.withOpacity(0.3)),
+      backgroundColor: color.withValues(alpha: 0.1),
+      side: BorderSide(color: color.withValues(alpha: 0.3)),
     );
   }
 
@@ -866,10 +866,10 @@ class _StudentImportPageState extends State<StudentImportPage> {
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: ListTile(
@@ -890,7 +890,7 @@ class _StudentImportPageState extends State<StudentImportPage> {
             : Text(
                 'Chọn $title',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                 ),
               ),
         trailing: const Icon(Icons.arrow_drop_down, size: 16),

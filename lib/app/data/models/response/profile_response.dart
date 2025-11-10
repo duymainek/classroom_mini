@@ -12,6 +12,7 @@ class ProfileResponse {
 
   factory ProfileResponse.fromJson(Map<String, dynamic> json) =>
       _$ProfileResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$ProfileResponseToJson(this);
 }
 
@@ -26,6 +27,7 @@ class AvatarUploadResponse {
 
   factory AvatarUploadResponse.fromJson(Map<String, dynamic> json) =>
       _$AvatarUploadResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$AvatarUploadResponseToJson(this);
 }
 
@@ -37,5 +39,6 @@ class AvatarData {
 
   factory AvatarData.fromJson(Map<String, dynamic> json) =>
       _$AvatarDataFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$AvatarDataToJson(this);
 }

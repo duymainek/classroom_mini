@@ -13,6 +13,7 @@ import 'package:classroom_mini/app/data/models/request/material_request.dart';
 import 'package:classroom_mini/app/data/models/response/material_response.dart';
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:retrofit/retrofit.dart';
 import '../../core/constants/api_endpoints.dart';
@@ -355,18 +356,18 @@ abstract class ApiService {
     @Path('attachmentId') String attachmentId,
   );
 
-  // Assignment Submission endpoints
-  @POST('/submissions/assignments/{assignmentId}')
+  // Student Assignment Submission endpoints
+  @POST('/student/assignments/{assignmentId}/submit')
   Future<SubmissionResponse> submitAssignment(
     @Path('assignmentId') String assignmentId,
     @Body() SubmitAssignmentRequest request,
   );
 
-  @GET('/submissions/assignments/{assignmentId}')
+  @GET('/student/assignments/{assignmentId}/submissions')
   Future<StudentSubmissionResponse> getStudentSubmissions(
       @Path('assignmentId') String assignmentId);
 
-  @GET('/submissions')
+  @GET('/student/submissions')
   Future<SubmissionListResponse> getStudentAllSubmissions({
     @Query('page') int page = 1,
     @Query('limit') int limit = 20,
@@ -376,19 +377,27 @@ abstract class ApiService {
     @Query('sortOrder') String sortOrder = 'desc',
   });
 
-  @PUT('/submissions/{submissionId}')
+  @PUT('/student/submissions/{submissionId}')
   Future<SubmissionResponse> updateSubmission(
     @Path('submissionId') String submissionId,
     @Body() UpdateSubmissionRequest request,
   );
 
-  @DELETE('/submissions/{submissionId}')
+  @DELETE('/student/submissions/{submissionId}')
   Future<auth_response.SimpleResponse> deleteSubmission(
       @Path('submissionId') String submissionId);
 
-  @DELETE('/submissions/attachments/{attachmentId}')
-  Future<auth_response.SimpleResponse> deleteAttachment(
-      @Path('attachmentId') String attachmentId);
+  @POST('/student/submissions/upload')
+  @MultiPart()
+  Future<attachment_resp.TempAttachmentResponse> uploadSubmissionTempFile(
+    @Part(name: "file") File file,
+  );
+
+  @POST('/student/submissions/{submissionId}/finalize')
+  Future<auth_response.SimpleResponse> finalizeSubmissionAttachments(
+    @Path('submissionId') String submissionId,
+    @Body() Map<String, dynamic> tempAttachmentIds,
+  );
 
   @POST('/attachments/temp')
   @MultiPart()
@@ -489,6 +498,7 @@ abstract class ApiService {
   Future<auth_response.SimpleResponse> deleteMaterialAttachment(
     @Path('attachmentId') String attachmentId,
   );
+
 }
 
 class DioClient {
@@ -501,7 +511,7 @@ class DioClient {
       await CacheManager.init();
       await SyncQueueManager.init();
       _cacheInitialized = true;
-      print('✅ Cache and sync queue initialized');
+      debugPrint('✅ Cache and sync queue initialized');
     }
   }
 

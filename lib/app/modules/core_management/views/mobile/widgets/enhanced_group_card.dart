@@ -77,7 +77,7 @@ class _EnhancedGroupCardState extends State<EnhancedGroupCard>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
@@ -124,7 +124,7 @@ class _EnhancedGroupCardState extends State<EnhancedGroupCard>
                                 color: (widget.group.isActive
                                         ? Colors.orange
                                         : Colors.grey)
-                                    .withOpacity(0.3),
+                                    .withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),

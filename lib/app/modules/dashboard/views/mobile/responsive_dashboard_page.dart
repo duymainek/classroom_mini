@@ -30,46 +30,47 @@ class ResponsiveDashboardPage extends StatelessWidget {
         ],
       ),
       body: Obx(() {
-        print('🖥️ [DashboardView] Rebuilding UI');
-        print('   - isLoading: ${controller.isLoading.value}');
-        print('   - isRefreshing: ${controller.isRefreshing.value}');
-        print('   - isInstructor: ${controller.isInstructorRx.value}');
-        print(
+        debugPrint('🖥️ [DashboardView] Rebuilding UI');
+        debugPrint('   - isLoading: ${controller.isLoading.value}');
+        debugPrint('   - isRefreshing: ${controller.isRefreshing.value}');
+        debugPrint('   - isInstructor: ${controller.isInstructorRx.value}');
+        debugPrint(
             '   - instructorDashboardData: ${controller.instructorDashboardData.value != null}');
-        print(
+        debugPrint(
             '   - studentDashboardData: ${controller.studentDashboardData.value != null}');
-        print('   - errorMessage: "${controller.errorMessage.value}"');
+        debugPrint('   - errorMessage: "${controller.errorMessage.value}"');
 
         if (controller.instructorDashboardData.value != null) {
           final data = controller.instructorDashboardData.value!;
-          print('   📊 Instructor Data:');
-          print('      - stats.courses: ${data.statistics.totalCourses}');
-          print('      - stats.students: ${data.statistics.totalStudents}');
-          print('      - recentActivity: ${data.recentActivity.length}');
+          debugPrint('   📊 Instructor Data:');
+          debugPrint('      - stats.courses: ${data.statistics.totalCourses}');
+          debugPrint(
+              '      - stats.students: ${data.statistics.totalStudents}');
+          debugPrint('      - recentActivity: ${data.recentActivity.length}');
         }
 
         if (controller.studentDashboardData.value != null) {
           final data = controller.studentDashboardData.value!;
-          print('   📊 Student Data:');
-          print('      - enrolledCourses: ${data.enrolledCourses.length}');
-          print(
+          debugPrint('   📊 Student Data:');
+          debugPrint('      - enrolledCourses: ${data.enrolledCourses.length}');
+          debugPrint(
               '      - upcomingAssignments: ${data.upcomingAssignments.length}');
         }
 
         if (controller.isLoading.value &&
             controller.instructorDashboardData.value == null &&
             controller.studentDashboardData.value == null) {
-          print('🔄 [DashboardView] Showing LOADING state');
+          debugPrint('🔄 [DashboardView] Showing LOADING state');
           return _buildLoadingState(context);
         }
 
         if (controller.errorMessage.value.isNotEmpty) {
-          print(
+          debugPrint(
               '❌ [DashboardView] Showing ERROR state: ${controller.errorMessage.value}');
           return _buildErrorState(context, controller);
         }
 
-        print('✅ [DashboardView] Showing CONTENT state');
+        debugPrint('✅ [DashboardView] Showing CONTENT state');
 
         return RefreshIndicator(
           onRefresh: controller.refreshDashboard,
@@ -217,7 +218,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
           gradient: LinearGradient(
             colors: [
               Theme.of(context).primaryColor,
-              Theme.of(context).primaryColor.withOpacity(0.8),
+              Theme.of(context).primaryColor.withValues(alpha: 0.8),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -225,7 +226,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).primaryColor.withOpacity(0.3),
+              color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -239,7 +240,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -372,7 +373,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
                 color: Theme.of(context)
                     .colorScheme
                     .onSurfaceVariant
-                    .withOpacity(0.4),
+                    .withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -473,10 +474,10 @@ class ResponsiveDashboardPage extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -516,10 +517,10 @@ class ResponsiveDashboardPage extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -550,11 +551,11 @@ class ResponsiveDashboardPage extends StatelessWidget {
   Widget _buildInstructorDashboard(
       BuildContext context, DashboardController controller) {
     final data = controller.instructorDashboardData.value;
-    print('🎨 [DashboardView] _buildInstructorDashboard called');
-    print('   - data: ${data != null}');
+    debugPrint('🎨 [DashboardView] _buildInstructorDashboard called');
+    debugPrint('   - data: ${data != null}');
 
     if (data == null) {
-      print(
+      debugPrint(
           '   ⚠️ [DashboardView] Instructor data is NULL - showing empty state');
       return _buildEmptyState(
         context,
@@ -564,10 +565,10 @@ class ResponsiveDashboardPage extends StatelessWidget {
       );
     }
 
-    print('   ✅ [DashboardView] Instructor data exists - showing content');
-    print(
+    debugPrint('   ✅ [DashboardView] Instructor data exists - showing content');
+    debugPrint(
         '      - Stats: courses=${data.statistics.totalCourses}, students=${data.statistics.totalStudents}');
-    print('      - Recent activity: ${data.recentActivity.length} items');
+    debugPrint('      - Recent activity: ${data.recentActivity.length} items');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -611,7 +612,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -751,12 +752,12 @@ class ResponsiveDashboardPage extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: color.withOpacity(0.2),
+          color: color.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -767,7 +768,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -813,11 +814,12 @@ class ResponsiveDashboardPage extends StatelessWidget {
   Widget _buildStudentDashboard(
       BuildContext context, DashboardController controller) {
     final data = controller.studentDashboardData.value;
-    print('🎨 [DashboardView] _buildStudentDashboard called');
-    print('   - data: ${data != null}');
+    debugPrint('🎨 [DashboardView] _buildStudentDashboard called');
+    debugPrint('   - data: ${data != null}');
 
     if (data == null) {
-      print('   ⚠️ [DashboardView] Student data is NULL - showing empty state');
+      debugPrint(
+          '   ⚠️ [DashboardView] Student data is NULL - showing empty state');
       return _buildEmptyState(
         context,
         'Không có dữ liệu',
@@ -826,9 +828,10 @@ class ResponsiveDashboardPage extends StatelessWidget {
       );
     }
 
-    print('   ✅ [DashboardView] Student data exists - showing content');
-    print('      - Enrolled courses: ${data.enrolledCourses.length}');
-    print('      - Upcoming assignments: ${data.upcomingAssignments.length}');
+    debugPrint('   ✅ [DashboardView] Student data exists - showing content');
+    debugPrint('      - Enrolled courses: ${data.enrolledCourses.length}');
+    debugPrint(
+        '      - Upcoming assignments: ${data.upcomingAssignments.length}');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -913,7 +916,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
                       gradient: LinearGradient(
                         colors: [
                           Theme.of(context).primaryColor,
-                          Theme.of(context).primaryColor.withOpacity(0.8),
+                          Theme.of(context).primaryColor.withValues(alpha: 0.8),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(12),
@@ -998,7 +1001,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -1024,15 +1027,36 @@ class ResponsiveDashboardPage extends StatelessWidget {
   }
 
   Widget _buildStudyProgress(BuildContext context, StudentDashboardData data) {
-    // TODO: Replace with actual data
-    const int completedAssignments = 3;
-    const int pendingAssignments = 2;
+    final studyProgress = data.studyProgress;
+
+    // Use default values if studyProgress is null (e.g., from cache)
+    final totalAssignments = studyProgress?.assignments.total ?? 0;
+    final completedAssignments = studyProgress?.assignments.completed ?? 0;
+
+    final totalQuizzes = studyProgress?.quizzes.total ?? 0;
+    final completedQuizzes = studyProgress?.quizzes.completed ?? 0;
+
+    final totalTasks = totalAssignments + totalQuizzes;
+    final completedTasks = completedAssignments + completedQuizzes;
+    final completionPercentage =
+        totalTasks > 0 ? (completedTasks / totalTasks * 100).round() : 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader(
             context, 'Tiến độ học tập', Icons.trending_up_outlined),
+        if (studyProgress == null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              'Đang tải dữ liệu tiến độ...',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.grey.shade600,
+                    fontStyle: FontStyle.italic,
+                  ),
+            ),
+          ),
         const SizedBox(height: 16),
         Card(
           elevation: 2,
@@ -1041,35 +1065,67 @@ class ResponsiveDashboardPage extends StatelessWidget {
           ),
           child: Padding(
             padding: const EdgeInsets.all(20),
-            child: Row(
+            child: Column(
               children: [
-                const Expanded(
-                  child: StudentProgressChart(
-                    completed: completedAssignments,
-                    pending: pendingAssignments,
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
                   children: [
-                    _buildProgressItem(
-                      context,
-                      'Khóa học',
-                      data.enrolledCourses.length.toString(),
-                      Icons.school,
-                      Colors.blue,
+                    Expanded(
+                      child: StudentProgressChart(
+                        completed: completedTasks,
+                        pending: totalTasks - completedTasks,
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    _buildProgressItem(
-                      context,
-                      'Bài tập',
-                      data.upcomingAssignments.length.toString(),
-                      Icons.assignment,
-                      Colors.orange,
+                    const SizedBox(width: 20),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildProgressItem(
+                          context,
+                          'Hoàn thành',
+                          '$completionPercentage%',
+                          Icons.check_circle,
+                          Colors.green,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildProgressItem(
+                          context,
+                          'Tổng số',
+                          totalTasks.toString(),
+                          Icons.assignment,
+                          Colors.blue,
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+                const SizedBox(height: 24),
+                const Divider(),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildProgressDetailCard(
+                        context,
+                        'Bài tập',
+                        completedAssignments,
+                        totalAssignments,
+                        Icons.assignment_outlined,
+                        Colors.orange,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildProgressDetailCard(
+                        context,
+                        'Quiz',
+                        completedQuizzes,
+                        totalQuizzes,
+                        Icons.quiz_outlined,
+                        Colors.purple,
+                      ),
                     ),
                   ],
-                )
+                ),
               ],
             ),
           ),
@@ -1078,43 +1134,125 @@ class ResponsiveDashboardPage extends StatelessWidget {
     );
   }
 
+  Widget _buildProgressDetailCard(
+    BuildContext context,
+    String title,
+    int completed,
+    int total,
+    IconData icon,
+    Color color,
+  ) {
+    final percentage = total > 0 ? (completed / total * 100).round() : 0;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade700,
+                      ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '$completed / $total',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '$percentage% hoàn thành',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.grey.shade600,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildStudentQuickAccess(BuildContext context) {
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: _buildQuickActionCard(
-            context,
-            'Thông báo',
-            Icons.announcement_outlined,
-            Colors.purple,
-            () {
-              Get.toNamed(Routes.ANNOUNCEMENTS_LIST);
-            },
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                'Thông báo',
+                Icons.announcement_outlined,
+                Colors.purple,
+                () {
+                  Get.toNamed(Routes.ANNOUNCEMENTS_LIST);
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                'Bài tập',
+                Icons.assignment_outlined,
+                Colors.orange,
+                () {
+                  Get.toNamed(Routes.ASSIGNMENTS_LIST);
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                'Quiz',
+                Icons.quiz_outlined,
+                Colors.red,
+                () {
+                  Get.toNamed(Routes.QUIZZES_LIST);
+                },
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildQuickActionCard(
-            context,
-            'Bài tập',
-            Icons.assignment_outlined,
-            Colors.orange,
-            () {
-              Get.toNamed(Routes.ASSIGNMENTS_LIST);
-            },
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildQuickActionCard(
-            context,
-            'Tài liệu',
-            Icons.folder_outlined,
-            Colors.teal,
-            () {
-              Get.toNamed(Routes.MATERIALS_LIST);
-            },
-          ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                'Tài liệu',
+                Icons.folder_outlined,
+                Colors.teal,
+                () {
+                  Get.toNamed(Routes.MATERIALS_LIST);
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(child: SizedBox()),
+            const SizedBox(width: 12),
+            const Expanded(child: SizedBox()),
+          ],
         ),
       ],
     );
@@ -1132,7 +1270,7 @@ class ResponsiveDashboardPage extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
@@ -1247,7 +1385,8 @@ class ResponsiveDashboardPage extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    color:
+                        Theme.of(context).primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -1324,8 +1463,8 @@ class ResponsiveDashboardPage extends StatelessWidget {
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: isUrgent
-                          ? Colors.red.withOpacity(0.1)
-                          : Colors.orange.withOpacity(0.1),
+                          ? Colors.red.withValues(alpha: 0.1)
+                          : Colors.orange.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(

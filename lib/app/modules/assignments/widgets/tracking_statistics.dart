@@ -2,17 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/assignment_controller.dart';
 
-/**
- * Statistics widget for assignment tracking
- * Following Material 3 Design Guide patterns
- */
+/// Statistics widget for assignment tracking
+/// Following Material 3 Design Guide patterns
 class TrackingStatistics extends StatelessWidget {
   final AssignmentController controller;
 
   const TrackingStatistics({
-    Key? key,
+    super.key,
     required this.controller,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -83,16 +81,6 @@ class TrackingStatistics extends StatelessWidget {
             Expanded(
               child: _buildStatCard(
                 context,
-                'Đã chấm',
-                controller.gradedCount.toString(),
-                Icons.grade,
-                Colors.purple,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                context,
                 'Tỷ lệ nộp',
                 '${controller.submissionRate.toStringAsFixed(1)}%',
                 Icons.trending_up,
@@ -123,10 +111,10 @@ class TrackingStatistics extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -153,7 +141,7 @@ class TrackingStatistics extends StatelessWidget {
           Text(
             title,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: color.withOpacity(0.8),
+              color: color.withValues(alpha: 0.8),
               fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.center,
@@ -176,10 +164,10 @@ class TrackingStatistics extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -215,7 +203,7 @@ class TrackingStatistics extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
               value: submissionProgress,
-              backgroundColor: colorScheme.outline.withOpacity(0.2),
+              backgroundColor: colorScheme.outline.withValues(alpha: 0.2),
               valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
               minHeight: 8,
             ),

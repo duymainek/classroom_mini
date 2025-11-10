@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:classroom_mini/app/data/services/forum_service.dart';
 import 'package:classroom_mini/app/data/models/response/forum_response.dart';
@@ -7,10 +8,8 @@ import 'package:classroom_mini/app/data/local/sync_queue_manager.dart';
 import 'package:classroom_mini/app/data/network/interceptors/offline_interceptor.dart';
 import 'package:classroom_mini/app/core/services/auth_service.dart';
 
-/**
- * Forum Detail Controller
- * Manages forum topic detail and replies
- */
+/// Forum Detail Controller
+/// Manages forum topic detail and replies
 class ForumDetailController extends GetxController {
   final ForumService _forumService = Get.find<ForumService>();
   final SyncService _syncService = Get.find<SyncService>();
@@ -21,7 +20,7 @@ class ForumDetailController extends GetxController {
   final replies = <ForumReply>[].obs;
   final isLoading = false.obs;
   final isPostingReply = false.obs;
-  
+
   // Track pending operations: queueId -> replyId mapping
   final pendingReplyQueueIds = <String, String>{}.obs;
 
@@ -40,16 +39,15 @@ class ForumDetailController extends GetxController {
     }
     _setupSyncListener();
   }
-  
+
   void _setupSyncListener() {
     ever(_syncService.completedQueueIds, (Set<String> completed) async {
       final completedQueueIds = completed.toSet();
-      
+
       // Check if any completed queueIds are for replies in current topic
-      final shouldReload = pendingReplyQueueIds.keys.any((queueId) => 
-        completedQueueIds.contains(queueId)
-      );
-      
+      final shouldReload = pendingReplyQueueIds.keys
+          .any((queueId) => completedQueueIds.contains(queueId));
+
       // Remove completed queueIds from tracking
       pendingReplyQueueIds.removeWhere((queueId, replyId) {
         if (completedQueueIds.contains(queueId)) {
@@ -60,31 +58,31 @@ class ForumDetailController extends GetxController {
         }
         return false;
       });
-      
+
       // Reload topic detail to get real replies after sync
       // This will automatically replace optimistic replies with real ones
       if (shouldReload && topicId != null) {
-        print('🔄 Reloading topic detail after successful sync');
+        debugPrint('🔄 Reloading topic detail after successful sync');
         Future.delayed(const Duration(milliseconds: 500), () {
           loadTopicDetail();
         });
       }
     });
   }
-  
+
   bool isReplyPending(String replyId) {
     return pendingReplyQueueIds.values.contains(replyId);
   }
-  
+
   void _trackViewAsync(String topicId) {
     _forumService.trackTopicView(topicId).then((success) {
       if (success) {
-        print('✅ View tracked successfully');
+        debugPrint('✅ View tracked successfully');
       } else {
-        print('⚠️ View tracking returned false');
+        debugPrint('⚠️ View tracking returned false');
       }
     }, onError: (error, stackTrace) {
-      print('⚠️ Failed to track view: $error');
+      debugPrint('⚠️ Failed to track view: $error');
     });
   }
 
@@ -217,13 +215,16 @@ class ForumDetailController extends GetxController {
 
       String? queueId;
       try {
-        queueId = PendingOperationTracker.getLatestQueueIdForPath('/forum/topics/$topicId/replies');
+        queueId = PendingOperationTracker.getLatestQueueIdForPath(
+            '/forum/topics/$topicId/replies');
         if (queueId == null) {
           final pending = SyncQueueManager.getPending();
-          final latestPending = pending.where((op) =>
-              op.method == 'POST' &&
-              op.path.contains('/forum/topics/$topicId/replies') &&
-              op.data?['content'] == replyText).toList()
+          final latestPending = pending
+              .where((op) =>
+                  op.method == 'POST' &&
+                  op.path.contains('/forum/topics/$topicId/replies') &&
+                  op.data?['content'] == replyText)
+              .toList()
             ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
           if (latestPending.isNotEmpty) {
@@ -232,9 +233,9 @@ class ForumDetailController extends GetxController {
                 '/forum/topics/$topicId/replies', queueId);
           }
         }
-        print('📴 Found pending reply queueId: $queueId');
+        debugPrint('📴 Found pending reply queueId: $queueId');
       } catch (e) {
-        print('⚠️ Error checking pending operations: $e');
+        debugPrint('⚠️ Error checking pending operations: $e');
       }
 
       // If response has data (online success), replace optimistic reply
@@ -276,7 +277,8 @@ class ForumDetailController extends GetxController {
         // Offline case - track optimistic reply with queueId
         if (queueId != null) {
           pendingReplyQueueIds[queueId] = optimisticReplyId;
-          print('📴 Tracking pending optimistic reply: $optimisticReplyId -> $queueId');
+          debugPrint(
+              '📴 Tracking pending optimistic reply: $optimisticReplyId -> $queueId');
           Get.snackbar(
               'Đã lưu', 'Phản hồi đã được lưu và sẽ được đồng bộ khi có mạng');
         }
@@ -285,13 +287,16 @@ class ForumDetailController extends GetxController {
       // Error case - still show optimistic reply but with pending status
       String? queueId;
       try {
-        queueId = PendingOperationTracker.getLatestQueueIdForPath('/forum/topics/$topicId/replies');
+        queueId = PendingOperationTracker.getLatestQueueIdForPath(
+            '/forum/topics/$topicId/replies');
         if (queueId == null) {
           final pending = SyncQueueManager.getPending();
-          final latestPending = pending.where((op) =>
-              op.method == 'POST' &&
-              op.path.contains('/forum/topics/$topicId/replies') &&
-              op.data?['content'] == replyText).toList()
+          final latestPending = pending
+              .where((op) =>
+                  op.method == 'POST' &&
+                  op.path.contains('/forum/topics/$topicId/replies') &&
+                  op.data?['content'] == replyText)
+              .toList()
             ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
           if (latestPending.isNotEmpty) {
@@ -301,7 +306,7 @@ class ForumDetailController extends GetxController {
           }
         }
       } catch (e2) {
-        print('⚠️ Error checking pending operations: $e2');
+        debugPrint('⚠️ Error checking pending operations: $e2');
       }
 
       if (queueId != null) {

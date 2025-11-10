@@ -77,7 +77,7 @@ class _EnhancedSemesterCardState extends State<EnhancedSemesterCard>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
@@ -124,7 +124,7 @@ class _EnhancedSemesterCardState extends State<EnhancedSemesterCard>
                                 color: (widget.semester.isActive
                                         ? Colors.green
                                         : Colors.grey)
-                                    .withOpacity(0.3),
+                                    .withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),

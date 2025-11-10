@@ -566,7 +566,12 @@ class AssignmentController {
       studentsQuery = studentsQuery.eq('group_id', groupId);
     }
 
-    const { data: students } = await studentsQuery;
+    const { data: students, error: studentsError } = await studentsQuery;
+
+    if (studentsError) {
+      console.error('Error fetching students:', studentsError);
+      throw new AppError('Failed to fetch students', 500, 'FETCH_STUDENTS_ERROR');
+    }
 
     if (!students || students.length === 0) {
       return res.json({
@@ -584,27 +589,63 @@ class AssignmentController {
     }
 
     // Flatten students data with group information
-    const allStudents = students.flatMap(ag => 
-      ag.groups.student_enrollments.map(se => ({
+    const allStudents = students.flatMap(ag => {
+      if (!ag.groups || !ag.groups.student_enrollments) {
+        return [];
+      }
+      return ag.groups.student_enrollments.map(se => ({
         ...se.users,
         groupId: ag.groups.id,
         groupName: ag.groups.name
-      }))
+      }));
+    });
+
+    // Remove duplicates based on student id
+    const uniqueStudents = Array.from(
+      new Map(allStudents.map(s => [s.id, s])).values()
     );
 
-    // Get submissions for these students
-    const { data: submissions } = await supabase
+    // Get student IDs for query
+    const studentIds = uniqueStudents.map(s => s.id);
+    
+    if (studentIds.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          submissions: [],
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total: 0,
+            pages: 0
+          }
+        }
+      });
+    }
+
+    // Get submissions for these students with attachments
+    // Note: Must specify foreign key relationship explicitly because there are two FKs to users table
+    const { data: submissions, error: submissionsError } = await supabase
       .from('assignment_submissions')
       .select(`
         id, student_id, attempt_number, submission_text,
-        submitted_at, is_late, grade, feedback, graded_at,
-        users!inner(id, username, full_name, email)
+        submitted_at, is_late, grade, feedback, graded_at, graded_by,
+        created_at, updated_at, assignment_id,
+        student:users!assignment_submissions_student_id_fkey(id, username, full_name, email),
+        submission_attachments(id, file_name, file_url, file_size, file_type, created_at)
       `)
       .eq('assignment_id', assignmentId)
-      .in('student_id', allStudents.map(s => s.id));
+      .in('student_id', studentIds);
+
+    if (submissionsError) {
+      console.error('Error fetching submissions:', submissionsError);
+      console.error('Assignment ID:', assignmentId);
+      console.error('Student IDs:', studentIds);
+      throw new AppError('Failed to fetch submissions', 500, 'FETCH_SUBMISSIONS_ERROR');
+    }
 
     // Create enhanced tracking data
-    const trackingData = allStudents.map(student => {
+    const trackingData = uniqueStudents.map(student => {
       const studentSubmissions = submissions?.filter(sub => sub.student_id === student.id) || [];
       const latestSubmission = studentSubmissions.length > 0 
         ? studentSubmissions.toSorted((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))[0]
@@ -630,12 +671,32 @@ class AssignmentController {
         averageGrade: averageGrade,
         latestSubmission: latestSubmission ? {
           id: latestSubmission.id,
+          assignmentId: latestSubmission.assignment_id,
+          studentId: latestSubmission.student_id,
           attemptNumber: latestSubmission.attempt_number,
+          submissionText: latestSubmission.submission_text,
           submittedAt: latestSubmission.submitted_at,
           isLate: latestSubmission.is_late,
           grade: latestSubmission.grade,
           feedback: latestSubmission.feedback,
-          gradedAt: latestSubmission.graded_at
+          gradedAt: latestSubmission.graded_at,
+          gradedBy: latestSubmission.graded_by,
+          createdAt: latestSubmission.created_at,
+          updatedAt: latestSubmission.updated_at,
+          attachments: (latestSubmission.submission_attachments || []).map(att => ({
+            id: att.id,
+            file_name: att.file_name,
+            file_url: att.file_url,
+            file_size: att.file_size,
+            file_type: att.file_type,
+            created_at: att.created_at
+          })),
+          student: latestSubmission.student ? {
+            id: latestSubmission.student.id,
+            username: latestSubmission.student.username,
+            fullName: latestSubmission.student.full_name,
+            email: latestSubmission.student.email
+          } : null
         } : null,
         status: (() => {
           if (!latestSubmission) return 'not_submitted';
@@ -781,11 +842,12 @@ class AssignmentController {
     }
 
     // Get all submissions with enhanced student and group info
+    // Note: Must specify foreign key relationship explicitly because there are two FKs to users table
     const { data: submissions } = await supabase
       .from('assignment_submissions')
       .select(`
         id, attempt_number, submission_text, submitted_at, is_late, grade, feedback,
-        users!inner(username, full_name, email),
+        student:users!assignment_submissions_student_id_fkey(username, full_name, email),
         assignments!inner(
           assignment_groups!inner(
             groups!inner(id, name)
@@ -804,9 +866,9 @@ class AssignmentController {
 
     // Flatten submissions data for CSV export
     const flattenedSubmissions = submissions.map(sub => ({
-      username: sub.users?.username || '',
-      full_name: sub.users?.full_name || '',
-      email: sub.users?.email || '',
+      username: sub.student?.username || '',
+      full_name: sub.student?.full_name || '',
+      email: sub.student?.email || '',
       group_name: sub.assignments?.assignment_groups?.[0]?.groups?.name || 'N/A',
       attempt_number: sub.attempt_number || '',
       submitted_at: sub.submitted_at || '',

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart' hide Response;
 import '../../local/cache_manager.dart';
 import '../../local/sync_queue_manager.dart';
@@ -54,12 +55,12 @@ class OfflineInterceptor extends Interceptor {
     RegExp(r'^/questions(\?.*)?$'): const Duration(days: 1),
     RegExp(r'^/forum/topics/[^/]+(\?.*)?$'): const Duration(minutes: 10),
     RegExp(r'^/forum/topics(\?.*)?$'): const Duration(minutes: 5),
-    RegExp(r'^/chat/conversations(\?.*)?$'): const Duration(minutes: 2),
   };
 
   static final List<RegExp> _noCachePatterns = [
     RegExp(r'^/forum/.*/replies'),
     RegExp(r'^/chat/unread-count'),
+    RegExp(r'^/chat/conversations'),
     RegExp(r'^/chat/messages'),
     RegExp(r'^/upload'),
     RegExp(r'^/.*/attachments'),
@@ -96,7 +97,7 @@ class OfflineInterceptor extends Interceptor {
     final method = options.method.toUpperCase();
     final path = _normalizePath(options.path);
 
-    print(
+    debugPrint(
         '🔍 [OfflineInterceptor] Request: $method $path (original: ${options.path})');
 
     if (method == 'GET') {
@@ -131,7 +132,7 @@ class OfflineInterceptor extends Interceptor {
     final cachedEntry = CacheManager.get(path, options.queryParameters);
 
     if (cachedEntry != null) {
-      print('📦 Offline - Using cache: $path');
+      debugPrint('📦 Offline - Using cache: $path');
 
       final cachedData = _ensureMapStringDynamic(cachedEntry.responseData);
 
@@ -162,13 +163,13 @@ class OfflineInterceptor extends Interceptor {
     RequestInterceptorHandler handler,
   ) async {
     final isOnline = connectivityService.isOnline.value;
-    print(
+    debugPrint(
         '🔍 [OfflineInterceptor] Handling mutating request: $method $path, isOnline: $isOnline');
 
     if (_shouldNotSync(path)) {
-      print('🚫 Path should not sync: $path');
+      debugPrint('🚫 Path should not sync: $path');
       if (!isOnline) {
-        print('❌ Rejecting: Cannot perform this operation offline for $path');
+        debugPrint('❌ Rejecting: Cannot perform this operation offline for $path');
         return handler.reject(
           DioException(
             requestOptions: options,
@@ -180,10 +181,10 @@ class OfflineInterceptor extends Interceptor {
       return handler.next(options);
     }
 
-    print('✅ Path can be synced: $path');
+    debugPrint('✅ Path can be synced: $path');
 
     if (!isOnline) {
-      print('📴 Offline - Queueing: $method $path');
+      debugPrint('📴 Offline - Queueing: $method $path');
 
       try {
         final id = await SyncQueueManager.add(
@@ -199,7 +200,7 @@ class OfflineInterceptor extends Interceptor {
 
         final cachedEntry = CacheManager.get(path, options.queryParameters);
         if (cachedEntry != null) {
-          print('✅ Optimistic update - returning cached data');
+          debugPrint('✅ Optimistic update - returning cached data');
 
           final cachedData = _ensureMapStringDynamic(cachedEntry.responseData);
 
@@ -222,8 +223,8 @@ class OfflineInterceptor extends Interceptor {
         final optimisticData =
             _createOptimisticResponse(path, method, options.data);
         if (optimisticData != null) {
-          print('✅ Optimistic update - returning optimistic data');
-          print('   Optimistic data: $optimisticData');
+          debugPrint('✅ Optimistic update - returning optimistic data');
+          debugPrint('   Optimistic data: $optimisticData');
 
           // Format response to match API response structure
           final formattedResponse = {
@@ -246,9 +247,9 @@ class OfflineInterceptor extends Interceptor {
           return handler.resolve(response);
         }
 
-        print('⚠️ No optimistic data created for $method $path');
-        print('   Data type: ${options.data.runtimeType}');
-        print('   Data: ${options.data}');
+        debugPrint('⚠️ No optimistic data created for $method $path');
+        debugPrint('   Data type: ${options.data.runtimeType}');
+        debugPrint('   Data: ${options.data}');
 
         return handler.reject(
           DioException(
@@ -258,7 +259,7 @@ class OfflineInterceptor extends Interceptor {
           ),
         );
       } catch (e) {
-        print('❌ Error queueing operation: $e');
+        debugPrint('❌ Error queueing operation: $e');
         return handler.reject(
           DioException(
             requestOptions: options,
@@ -283,7 +284,7 @@ class OfflineInterceptor extends Interceptor {
       final quizId = _extractQuizId(response.requestOptions.path);
       if (quizId != null) {
         await CacheManager.clear('/quizzes/$quizId', null);
-        print('🗑️ Cleared cache for quiz: $quizId');
+        debugPrint('🗑️ Cleared cache for quiz: $quizId');
       }
     }
 
@@ -295,7 +296,7 @@ class OfflineInterceptor extends Interceptor {
       final topicId = _extractTopicId(response.requestOptions.path);
       if (topicId != null) {
         await CacheManager.clear('/forum/topics/$topicId', null);
-        print('🗑️ Cleared cache for topic: $topicId (after view tracking)');
+        debugPrint('🗑️ Cleared cache for topic: $topicId (after view tracking)');
       }
     }
 
@@ -323,7 +324,7 @@ class OfflineInterceptor extends Interceptor {
       );
 
       if (cachedEntry != null) {
-        print('⚠️ Network error, using STALE cache: $path');
+        debugPrint('⚠️ Network error, using STALE cache: $path');
 
         final cachedData = _ensureMapStringDynamic(cachedEntry.responseData);
 
@@ -352,23 +353,23 @@ class OfflineInterceptor extends Interceptor {
   }
 
   bool _shouldNotSync(String path) {
-    print('🔍 [DEBUG] Checking _shouldNotSync for path: $path');
-    print('🔍 [DEBUG] _noSyncPatterns count: ${_noSyncPatterns.length}');
+    debugPrint('🔍 [DEBUG] Checking _shouldNotSync for path: $path');
+    debugPrint('🔍 [DEBUG] _noSyncPatterns count: ${_noSyncPatterns.length}');
     for (var i = 0; i < _noSyncPatterns.length; i++) {
-      print('🔍 [DEBUG] Pattern $i: ${_noSyncPatterns[i].pattern}');
+      debugPrint('🔍 [DEBUG] Pattern $i: ${_noSyncPatterns[i].pattern}');
     }
 
     final shouldNotSync = _noSyncPatterns.any((pattern) {
       final matches = pattern.hasMatch(path);
       if (matches) {
-        print('🚫 Pattern matched (no sync): ${pattern.pattern} -> $path');
+        debugPrint('🚫 Pattern matched (no sync): ${pattern.pattern} -> $path');
       }
       return matches;
     });
     if (shouldNotSync) {
-      print('🚫 Path should not sync: $path');
+      debugPrint('🚫 Path should not sync: $path');
     } else {
-      print('✅ Path CAN sync: $path');
+      debugPrint('✅ Path CAN sync: $path');
     }
     return shouldNotSync;
   }
@@ -408,7 +409,7 @@ class OfflineInterceptor extends Interceptor {
     } else {
       normalized = '/$path';
     }
-    print('🔍 [OfflineInterceptor] Normalized path: $path -> $normalized');
+    debugPrint('🔍 [OfflineInterceptor] Normalized path: $path -> $normalized');
     return normalized;
   }
 

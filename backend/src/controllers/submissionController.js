@@ -1,6 +1,8 @@
 const { supabase } = require('../services/supabaseClient');
 const { validateSubmissionCreation } = require('../models/assignment');
 const { AppError, catchAsync } = require('../middleware/errorHandler');
+const { buildResponse } = require('../utils/response');
+const fileUploadService = require('../services/fileUploadService');
 
 class SubmissionController {
   /**
@@ -8,30 +10,15 @@ class SubmissionController {
    */
   submitAssignment = catchAsync(async (req, res) => {
     const { assignmentId } = req.params;
-    const { submissionText, attachments } = req.body;
+    const { submissionText, tempAttachmentIds } = req.body;
     const studentId = req.user.id;
-
-    // Validate input
-    const validation = validateSubmissionCreation({
-      assignmentId,
-      submissionText,
-      attachments
-    });
-
-    if (!validation.isValid) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: validation.errors
-      });
-    }
 
     // Check if assignment exists and student has access
     const { data: assignment } = await supabase
       .from('assignments')
       .select(`
         id, title, due_date, late_due_date, allow_late_submission,
-        max_attempts, start_date, is_active,
+        max_attempts, start_date, is_active, file_formats, max_file_size,
         assignment_groups!inner(
           groups!inner(
             student_enrollments!inner(student_id)
@@ -100,6 +87,63 @@ class SubmissionController {
 
     const nextAttemptNumber = currentAttempts + 1;
 
+    // Validate temp attachments if provided
+    let tempAttachments = [];
+    if (tempAttachmentIds && tempAttachmentIds.length > 0) {
+      const { data: tempAtts, error: tempError } = await supabase
+        .from('temp_attachments')
+        .select('*')
+        .in('temp_id', tempAttachmentIds)
+        .eq('user_id', studentId)
+        .eq('is_finalized', false)
+        .eq('attachment_type', 'submission');
+
+      if (tempError || !tempAtts || tempAtts.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or missing temporary attachments',
+          code: 'INVALID_TEMP_ATTACHMENTS'
+        });
+      }
+
+      tempAttachments = tempAtts;
+
+      // Validate file formats
+      if (assignment.file_formats && assignment.file_formats.length > 0) {
+        const invalidFiles = tempAttachments.filter(att => {
+          const fileExt = att.file_name.split('.').pop()?.toLowerCase();
+          return !assignment.file_formats.includes(fileExt);
+        });
+        if (invalidFiles.length > 0) {
+          return res.status(400).json({
+            success: false,
+            message: `Invalid file formats. Allowed: ${assignment.file_formats.join(', ')}`,
+            code: 'INVALID_FILE_FORMAT'
+          });
+        }
+      }
+
+      // Validate file sizes
+      const maxSizeBytes = (assignment.max_file_size || 10) * 1024 * 1024;
+      const oversizedFiles = tempAttachments.filter(att => att.file_size > maxSizeBytes);
+      if (oversizedFiles.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Files exceed maximum size of ${assignment.max_file_size || 10}MB`,
+          code: 'FILE_TOO_LARGE'
+        });
+      }
+    }
+
+    // Validate that at least text or files are provided
+    if ((!submissionText || submissionText.trim().length === 0) && tempAttachments.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Either submission text or files must be provided',
+        code: 'EMPTY_SUBMISSION'
+      });
+    }
+
     // Create submission
     const { data: newSubmission, error: submissionError } = await supabase
       .from('assignment_submissions')
@@ -122,48 +166,79 @@ class SubmissionController {
       throw new AppError('Failed to create submission', 500, 'SUBMISSION_CREATION_FAILED');
     }
 
-    // Create submission attachments if provided
-    if (attachments && attachments.length > 0) {
-      const submissionAttachments = attachments.map(attachment => ({
-        submission_id: newSubmission.id,
-        file_name: attachment.fileName,
-        file_url: attachment.fileUrl,
-        file_size: attachment.fileSize,
-        file_type: attachment.fileType
-      }));
+    // Finalize temp attachments if provided
+    const finalAttachments = [];
+    if (tempAttachments.length > 0) {
+      for (const tempAttachment of tempAttachments) {
+        try {
+          const sanitizedName = fileUploadService.sanitizeFilename(tempAttachment.file_name);
+          const permanentPath = `submissions/${newSubmission.id}/${Date.now()}_${sanitizedName}`;
+          const moveResult = await fileUploadService.moveFile(
+            tempAttachment.file_path,
+            permanentPath
+          );
 
-      const { error: attachmentsError } = await supabase
-        .from('submission_attachments')
-        .insert(submissionAttachments);
+          if (!moveResult.success) {
+            console.error(`Failed to move file ${tempAttachment.file_name}:`, moveResult.error);
+            continue;
+          }
 
-      if (attachmentsError) {
-        console.error('Submission attachments creation error:', attachmentsError);
-        // Rollback submission creation
+          const { data: submissionAttachment, error: insertError } = await supabase
+            .from('submission_attachments')
+            .insert({
+              submission_id: newSubmission.id,
+              file_name: tempAttachment.file_name,
+              file_url: moveResult.publicUrl || tempAttachment.file_url,
+              file_size: tempAttachment.file_size,
+              file_type: tempAttachment.file_type
+            })
+            .select('id, file_name, file_url, file_size, file_type, created_at')
+            .single();
+
+          if (insertError) {
+            console.error('Insert submission attachment error:', insertError);
+            continue;
+          }
+
+          await supabase
+            .from('temp_attachments')
+            .update({ is_finalized: true })
+            .eq('id', tempAttachment.id);
+
+          finalAttachments.push(submissionAttachment);
+        } catch (error) {
+          console.error(`Error processing temp attachment ${tempAttachment.temp_id}:`, error);
+        }
+      }
+
+      // Clean up finalized temp attachments
+      const processedTempIds = tempAttachments.map(t => t.id);
+      if (processedTempIds.length > 0) {
         await supabase
-          .from('assignment_submissions')
+          .from('temp_attachments')
           .delete()
-          .eq('id', newSubmission.id);
-        
-        throw new AppError('Failed to save submission attachments', 500, 'ATTACHMENTS_SAVE_FAILED');
+          .in('id', processedTempIds);
       }
     }
 
-    res.status(201).json({
-      success: true,
-      message: 'Assignment submitted successfully',
-      data: {
-        submission: {
-          id: newSubmission.id,
-          assignmentId: newSubmission.assignment_id,
-          studentId: newSubmission.student_id,
-          attemptNumber: newSubmission.attempt_number,
-          submissionText: newSubmission.submission_text,
-          submittedAt: newSubmission.submitted_at,
-          isLate: newSubmission.is_late,
-          createdAt: newSubmission.created_at
-        }
-      }
-    });
+    // Get complete submission with attachments
+    const { data: completeSubmission } = await supabase
+      .from('assignment_submissions')
+      .select(`
+        id, assignment_id, student_id, attempt_number,
+        submission_text, submitted_at, is_late, created_at, updated_at,
+        submission_attachments(id, file_name, file_url, file_size, file_type, created_at)
+      `)
+      .eq('id', newSubmission.id)
+      .single();
+
+    const message = isLate 
+      ? 'Assignment submitted successfully (late submission)' 
+      : 'Assignment submitted successfully';
+
+    res.status(201).json(buildResponse(true, message, {
+      submission: completeSubmission
+    }));
   });
 
   /**

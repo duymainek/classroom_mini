@@ -121,7 +121,7 @@ class _FilePreviewWidgetState extends State<FilePreviewWidget> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -142,7 +142,7 @@ class _FilePreviewWidgetState extends State<FilePreviewWidget> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withOpacity(0.3),
+        color: colorScheme.primaryContainer.withValues(alpha: 0.3),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(16),
           topRight: Radius.circular(16),
@@ -153,7 +153,7 @@ class _FilePreviewWidgetState extends State<FilePreviewWidget> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.1),
+              color: colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -277,7 +277,7 @@ class _FilePreviewWidgetState extends State<FilePreviewWidget> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: ClipRRect(
@@ -312,10 +312,10 @@ class _FilePreviewWidgetState extends State<FilePreviewWidget> {
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: SingleChildScrollView(
@@ -338,10 +338,10 @@ class _FilePreviewWidgetState extends State<FilePreviewWidget> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -351,7 +351,7 @@ class _FilePreviewWidgetState extends State<FilePreviewWidget> {
             _getFileTypeIcon(
                 _getCategoryFromMimeType(widget.attachment.fileType)),
             size: 64,
-            color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
           ),
           const SizedBox(height: 16),
           Text(
@@ -365,7 +365,7 @@ class _FilePreviewWidgetState extends State<FilePreviewWidget> {
           Text(
             _previewContent ?? 'Tệp này cần được tải xuống để xem',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
             ),
             textAlign: TextAlign.center,
           ),

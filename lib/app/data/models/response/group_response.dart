@@ -53,6 +53,7 @@ class Group {
     );
   }
   
+@override
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -112,6 +113,7 @@ class GroupListData {
 
   factory GroupListData.fromJson(Map<String, dynamic> json) =>
       _$GroupListDataFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$GroupListDataToJson(this);
 }
 
@@ -129,6 +131,7 @@ class GroupListResponse extends BaseResponse {
 
   factory GroupListResponse.fromJson(Map<String, dynamic> json) =>
       _$GroupListResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$GroupListResponseToJson(this);
 }
 
@@ -146,6 +149,7 @@ class GroupResponse extends BaseResponse {
 
   factory GroupResponse.fromJson(Map<String, dynamic> json) =>
       _$GroupResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$GroupResponseToJson(this);
 
   Group? get group => data?.group;
@@ -161,6 +165,7 @@ class GroupData {
 
   factory GroupData.fromJson(Map<String, dynamic> json) =>
       _$GroupDataFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$GroupDataToJson(this);
 }
 
@@ -175,6 +180,7 @@ class GroupCourseBrief {
     this.semesterBrief,
   });
 
+@override
   Map<String, dynamic> toJson() {
     return {
       'code': code,

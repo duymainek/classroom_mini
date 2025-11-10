@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/local/sync_queue_manager.dart';
 import '../../../data/local/models/sync_operation.dart';
@@ -27,7 +28,7 @@ class SyncQueueController extends GetxController {
       pendingOperations.value = SyncQueueManager.getPending();
       failedOperations.value = SyncQueueManager.getFailed();
     } catch (e) {
-      print('Error loading sync operations: $e');
+      debugPrint('Error loading sync operations: $e');
     }
   }
 

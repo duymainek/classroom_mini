@@ -104,16 +104,17 @@ SubmitAssignmentRequest _$SubmitAssignmentRequestFromJson(
         Map<String, dynamic> json) =>
     SubmitAssignmentRequest(
       submissionText: json['submissionText'] as String?,
-      attachments: (json['attachments'] as List<dynamic>?)
-          ?.map((e) => SubmissionAttachment.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      tempAttachmentIds: (json['tempAttachmentIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
     );
 
 Map<String, dynamic> _$SubmitAssignmentRequestToJson(
         SubmitAssignmentRequest instance) =>
     <String, dynamic>{
       'submissionText': instance.submissionText,
-      'attachments': instance.attachments,
+      'tempAttachmentIds': instance.tempAttachmentIds,
     };
 
 UpdateSubmissionRequest _$UpdateSubmissionRequestFromJson(

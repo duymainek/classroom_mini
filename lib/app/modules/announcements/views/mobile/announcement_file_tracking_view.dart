@@ -86,11 +86,11 @@ class MobileAnnouncementFileTrackingView extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -103,7 +103,7 @@ class MobileAnnouncementFileTrackingView extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.1),
+                  color: colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -198,10 +198,10 @@ class MobileAnnouncementFileTrackingView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -242,10 +242,10 @@ class MobileAnnouncementFileTrackingView extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -305,11 +305,11 @@ class MobileAnnouncementFileTrackingView extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -324,7 +324,7 @@ class MobileAnnouncementFileTrackingView extends StatelessWidget {
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: _getFileTypeColor(tracking.file.fileName)
-                      .withOpacity(0.1),
+                      .withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -360,8 +360,8 @@ class MobileAnnouncementFileTrackingView extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: tracking.downloads.isNotEmpty
-                      ? colorScheme.secondary.withOpacity(0.1)
-                      : colorScheme.error.withOpacity(0.1),
+                      ? colorScheme.secondary.withValues(alpha: 0.1)
+                      : colorScheme.error.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -421,10 +421,10 @@ class MobileAnnouncementFileTrackingView extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: colorScheme.surfaceVariant.withOpacity(0.3),
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: colorScheme.outline.withOpacity(0.2),
+            color: colorScheme.outline.withValues(alpha: 0.2),
           ),
         ),
         child: Column(
@@ -433,7 +433,7 @@ class MobileAnnouncementFileTrackingView extends StatelessWidget {
             Icon(
               Icons.file_download_outlined,
               size: 64,
-              color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
             ),
             const SizedBox(height: 16),
             Text(
@@ -447,7 +447,7 @@ class MobileAnnouncementFileTrackingView extends StatelessWidget {
             Text(
               'Thông báo này chưa có file đính kèm để theo dõi',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
               ),
               textAlign: TextAlign.center,
             ),

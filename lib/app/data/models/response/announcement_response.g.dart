@@ -10,7 +10,10 @@ AnnouncementResponse _$AnnouncementResponseFromJson(
         Map<String, dynamic> json) =>
     AnnouncementResponse(
       success: json['success'] as bool,
-      message: json['message'] as String,
+      message: json['message'] as String?,
+      code: json['code'] as String?,
+      errors:
+          (json['errors'] as List<dynamic>?)?.map((e) => e as String).toList(),
       data: json['data'] == null
           ? null
           : AnnouncementData.fromJson(json['data'] as Map<String, dynamic>),
@@ -22,6 +25,8 @@ Map<String, dynamic> _$AnnouncementResponseToJson(
     <String, dynamic>{
       'success': instance.success,
       'message': instance.message,
+      'code': instance.code,
+      'errors': instance.errors,
       'data': instance.data,
       'meta': instance.meta,
     };
@@ -78,11 +83,12 @@ Announcement _$AnnouncementFromJson(Map<String, dynamic> json) => Announcement(
       groups: (json['groups'] as List<dynamic>)
           .map((e) => AnnouncementGroup.fromJson(e as Map<String, dynamic>))
           .toList(),
-      files: (json['files'] as List<dynamic>)
-          .map((e) => AnnouncementFile.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      commentCount: (json['commentCount'] as num).toInt(),
-      viewCount: (json['viewCount'] as num).toInt(),
+      files: (json['files'] as List<dynamic>?)
+              ?.map((e) => AnnouncementFile.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      commentCount: (json['commentCount'] as num?)?.toInt() ?? 0,
+      viewCount: (json['viewCount'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$AnnouncementToJson(Announcement instance) =>
@@ -119,8 +125,8 @@ AnnouncementInstructor _$AnnouncementInstructorFromJson(
         Map<String, dynamic> json) =>
     AnnouncementInstructor(
       id: json['id'] as String,
-      fullName: json['fullName'] as String,
-      email: json['email'] as String,
+      fullName: json['fullName'] as String? ?? '',
+      email: json['email'] as String? ?? '',
     );
 
 Map<String, dynamic> _$AnnouncementInstructorToJson(
@@ -134,7 +140,7 @@ Map<String, dynamic> _$AnnouncementInstructorToJson(
 AnnouncementGroup _$AnnouncementGroupFromJson(Map<String, dynamic> json) =>
     AnnouncementGroup(
       id: json['id'] as String,
-      name: json['name'] as String,
+      name: json['name'] as String? ?? '',
     );
 
 Map<String, dynamic> _$AnnouncementGroupToJson(AnnouncementGroup instance) =>
@@ -278,10 +284,10 @@ Map<String, dynamic> _$FileDownloadToJson(FileDownload instance) =>
     };
 
 Pagination _$PaginationFromJson(Map<String, dynamic> json) => Pagination(
-      page: (json['page'] as num).toInt(),
-      limit: (json['limit'] as num).toInt(),
-      total: (json['total'] as num).toInt(),
-      pages: (json['pages'] as num).toInt(),
+      page: (json['page'] as num?)?.toInt(),
+      limit: (json['limit'] as num?)?.toInt(),
+      total: (json['total'] as num?)?.toInt(),
+      pages: (json['pages'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$PaginationToJson(Pagination instance) =>

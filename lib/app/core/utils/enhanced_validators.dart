@@ -14,7 +14,7 @@ class EnhancedValidators {
     if (!vietnameseNameRegex.hasMatch(normalized)) return false;
 
     // Prevent names with only spaces or single characters
-    if (normalized.split(' ').any((part) => part.length < 1)) return false;
+    if (normalized.split(' ').any((part) => part.isEmpty)) return false;
 
     // Prevent common injection patterns
     final dangerousPatterns = [

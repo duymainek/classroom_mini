@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:classroom_mini/app/data/models/response/user_response.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/api_endpoints.dart';
 
@@ -10,7 +11,7 @@ class StorageService {
   static Future<StorageService> getInstance() async {
     _instance ??= StorageService._internal();
     _preferences ??= await SharedPreferences.getInstance();
-    print(
+    debugPrint(
         '[StorageService] SharedPreferences instance initialized. Hash: ${_preferences.hashCode}');
     return _instance!;
   }
@@ -19,22 +20,22 @@ class StorageService {
 
   // Token management
   Future<void> saveTokens(String accessToken, String refreshToken) async {
-    print(
+    debugPrint(
         '[StorageService] Saving tokens with key: ${StorageKeys.accessToken}. Prefs Hash: ${_preferences.hashCode}');
     await _preferences!.setString(StorageKeys.accessToken, accessToken);
     await _preferences!.setString(StorageKeys.refreshToken, refreshToken);
     await _preferences!.setBool(StorageKeys.isLoggedIn, true);
-    print(
+    debugPrint(
         '[StorageService] Tokens saved. AccessToken: ${accessToken.substring(0, 10)}..., RefreshToken: ${refreshToken.substring(0, 10)}...');
     // Save dummy value for persistence test
     await _preferences!.setString('dummy_test_key', 'test_value_persisted');
   }
 
   Future<String?> getAccessToken() async {
-    print(
+    debugPrint(
         '[StorageService] Retrieving AccessToken with key: ${StorageKeys.accessToken}. Prefs Hash: ${_preferences.hashCode}');
     final token = _preferences!.getString(StorageKeys.accessToken);
-    print(
+    debugPrint(
         '[StorageService] Retrieving AccessToken. Found: ${token != null ? "Yes" : "No"}');
     return token;
   }
@@ -44,11 +45,11 @@ class StorageService {
   }
 
   Future<void> clearTokens() async {
-    print('[StorageService] Clearing tokens...');
+    debugPrint('[StorageService] Clearing tokens...');
     await _preferences!.remove(StorageKeys.accessToken);
     await _preferences!.remove(StorageKeys.refreshToken);
     await _preferences!.setBool(StorageKeys.isLoggedIn, false);
-    print('[StorageService] Tokens cleared.');
+    debugPrint('[StorageService] Tokens cleared.');
   }
 
   // User data management
@@ -82,10 +83,10 @@ class StorageService {
 
   // Clear all data (logout)
   Future<void> clearAll() async {
-    print('[StorageService] Clearing all data...');
+    debugPrint('[StorageService] Clearing all data...');
     await clearTokens();
     await clearUserData();
-    print('[StorageService] All data cleared.');
+    debugPrint('[StorageService] All data cleared.');
   }
 
   // Generic storage methods

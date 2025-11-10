@@ -63,6 +63,7 @@ class Assignment {
 
   factory Assignment.fromJson(Map<String, dynamic> json) =>
       _$AssignmentFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$AssignmentToJson(this);
 
   /// Check if assignment is currently open for submission
@@ -138,6 +139,7 @@ class AssignmentAttachment {
 
   factory AssignmentAttachment.fromJson(Map<String, dynamic> json) =>
       _$AssignmentAttachmentFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$AssignmentAttachmentToJson(this);
 }
 
@@ -157,6 +159,7 @@ class CourseInfo {
 
   factory CourseInfo.fromJson(Map<String, dynamic> json) =>
       _$CourseInfoFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$CourseInfoToJson(this);
 }
 
@@ -172,6 +175,7 @@ class InstructorInfo {
 
   factory InstructorInfo.fromJson(Map<String, dynamic> json) =>
       _$InstructorInfoFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$InstructorInfoToJson(this);
 }
 
@@ -187,6 +191,7 @@ class GroupInfo {
 
   factory GroupInfo.fromJson(Map<String, dynamic> json) =>
       _$GroupInfoFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$GroupInfoToJson(this);
 }
 
@@ -242,6 +247,7 @@ class AssignmentListData {
 
   factory AssignmentListData.fromJson(Map<String, dynamic> json) =>
       _$AssignmentListDataFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$AssignmentListDataToJson(this);
 }
 
@@ -257,6 +263,7 @@ class AssignmentListResponse {
 
   factory AssignmentListResponse.fromJson(Map<String, dynamic> json) =>
       _$AssignmentListResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$AssignmentListResponseToJson(this);
 }
 
@@ -270,6 +277,7 @@ class AssignmentData {
 
   factory AssignmentData.fromJson(Map<String, dynamic> json) =>
       _$AssignmentDataFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$AssignmentDataToJson(this);
 }
 
@@ -287,5 +295,6 @@ class AssignmentResponse {
 
   factory AssignmentResponse.fromJson(Map<String, dynamic> json) =>
       _$AssignmentResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$AssignmentResponseToJson(this);
 }

@@ -66,6 +66,7 @@ class AssignmentController extends GetxController {
   final RxBool _isGeneratingDescription =
       false.obs; // Dedicated loading for Gemini
   final RxBool _isGroupsLoading = false.obs; // Loading flag for groups only
+  final RxString _selectedGroupIdForSubmissions = ''.obs;
 
   // Controllers
   final TextEditingController searchController = TextEditingController();
@@ -89,6 +90,12 @@ class AssignmentController extends GetxController {
   bool get isGeneratingDescription =>
       _isGeneratingDescription.value; // Getter for new loading state
   bool get isGroupsLoading => _isGroupsLoading.value;
+  String get selectedGroupIdForSubmissions =>
+      _selectedGroupIdForSubmissions.value;
+
+  void updateSelectedGroupIdForSubmissions(String? groupId) {
+    _selectedGroupIdForSubmissions.value = groupId ?? '';
+  }
 
   // Tracking statistics getters
   int get totalStudents => _submissions.length;
@@ -345,11 +352,11 @@ class AssignmentController extends GetxController {
           .toList();
 
       // Debug: Log attachment IDs before creating request
-      print('=== CONTROLLER DEBUG ===');
-      print('Original request.attachmentIds: ${request.attachmentIds}');
-      print('attachmentIds is null: ${request.attachmentIds == null}');
-      print('attachmentIds length: ${request.attachmentIds?.length ?? 0}');
-      print('=== END CONTROLLER DEBUG ===');
+      debugPrint('=== CONTROLLER DEBUG ===');
+      debugPrint('Original request.attachmentIds: ${request.attachmentIds}');
+      debugPrint('attachmentIds is null: ${request.attachmentIds == null}');
+      debugPrint('attachmentIds length: ${request.attachmentIds?.length ?? 0}');
+      debugPrint('=== END CONTROLLER DEBUG ===');
 
       final sanitized = AssignmentCreateRequest(
         title: request.title.trim(),
@@ -452,7 +459,7 @@ class AssignmentController extends GetxController {
                 color: Theme.of(Get.context!)
                     .colorScheme
                     .errorContainer
-                    .withOpacity(0.3),
+                    .withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -481,14 +488,14 @@ class AssignmentController extends GetxController {
               decoration: BoxDecoration(
                 color: Theme.of(Get.context!)
                     .colorScheme
-                    .surfaceVariant
-                    .withOpacity(0.3),
+                    .surfaceContainerHighest
+                    .withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: Theme.of(Get.context!)
                       .colorScheme
                       .outline
-                      .withOpacity(0.2),
+                      .withValues(alpha: 0.2),
                 ),
               ),
               child: Column(
@@ -572,11 +579,13 @@ class AssignmentController extends GetxController {
                 color: Theme.of(Get.context!)
                     .colorScheme
                     .errorContainer
-                    .withOpacity(0.2),
+                    .withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color:
-                      Theme.of(Get.context!).colorScheme.error.withOpacity(0.3),
+                  color: Theme.of(Get.context!)
+                      .colorScheme
+                      .error
+                      .withValues(alpha: 0.3),
                 ),
               ),
               child: Row(
@@ -649,6 +658,8 @@ class AssignmentController extends GetxController {
     String status = 'all',
     String sortBy = 'submitted_at',
     String sortOrder = 'desc',
+    String groupId = '',
+    String attemptFilter = 'all',
   }) async {
     _isLoading.value = true;
     _error.value = '';
@@ -662,9 +673,38 @@ class AssignmentController extends GetxController {
         status: status,
         sortBy: sortBy,
         sortOrder: sortOrder,
+        groupId:
+            groupId.isEmpty ? _selectedGroupIdForSubmissions.value : groupId,
+        attemptFilter: attemptFilter,
       );
 
-      _submissions.assignAll(response.data.submissions);
+      // Sắp xếp: những học sinh đã nộp lên trên, chưa nộp xuống dưới
+      final sortedSubmissions = List<SubmissionTrackingData>.from(
+        response.data.submissions,
+      )..sort((a, b) {
+          // Ưu tiên: đã nộp > chưa nộp
+          final aHasSubmitted = a.status != SubmissionStatus.notSubmitted;
+          final bHasSubmitted = b.status != SubmissionStatus.notSubmitted;
+
+          if (aHasSubmitted && !bHasSubmitted) return -1;
+          if (!aHasSubmitted && bHasSubmitted) return 1;
+
+          // Nếu cùng trạng thái, sắp xếp theo thời gian nộp (mới nhất lên trên)
+          if (aHasSubmitted && bHasSubmitted) {
+            final aTime = a.latestSubmission?.submittedAt;
+            final bTime = b.latestSubmission?.submittedAt;
+            if (aTime != null && bTime != null) {
+              return bTime.compareTo(aTime);
+            }
+            if (aTime != null) return -1;
+            if (bTime != null) return 1;
+          }
+
+          // Nếu chưa nộp hoặc không có thời gian, sắp xếp theo tên
+          return a.fullName.compareTo(b.fullName);
+        });
+
+      _submissions.assignAll(sortedSubmissions);
     } catch (e) {
       _error.value = e.toString();
       Get.snackbar('Lỗi', 'Không thể tải danh sách nộp bài: $e');

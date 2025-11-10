@@ -47,6 +47,7 @@ class Course {
       semesterBrief: semesterBrief,
     );
   }
+@override
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -112,6 +113,7 @@ class CourseSemesterBrief {
 
   factory CourseSemesterBrief.fromJson(Map<String, dynamic> json) =>
       _$CourseSemesterBriefFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$CourseSemesterBriefToJson(this);
 }
 
@@ -127,6 +129,7 @@ class CourseListData {
 
   factory CourseListData.fromJson(Map<String, dynamic> json) =>
       _$CourseListDataFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$CourseListDataToJson(this);
 }
 
@@ -144,6 +147,7 @@ class CourseListResponse extends BaseResponse {
 
   factory CourseListResponse.fromJson(Map<String, dynamic> json) =>
       _$CourseListResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$CourseListResponseToJson(this);
 }
 
@@ -161,6 +165,7 @@ class CourseResponse extends BaseResponse {
 
   factory CourseResponse.fromJson(Map<String, dynamic> json) =>
       _$CourseResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$CourseResponseToJson(this);
 
   Course? get course => data?.course;
@@ -176,5 +181,6 @@ class CourseData {
 
   factory CourseData.fromJson(Map<String, dynamic> json) =>
       _$CourseDataFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$CourseDataToJson(this);
 }

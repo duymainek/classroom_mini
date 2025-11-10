@@ -162,3 +162,31 @@ Map<String, dynamic> _$QuestionOptionCreateRequestToJson(
       'is_correct': instance.isCorrect,
       'order_index': instance.orderIndex,
     };
+
+QuizSubmissionRequest _$QuizSubmissionRequestFromJson(
+        Map<String, dynamic> json) =>
+    QuizSubmissionRequest(
+      answers: (json['answers'] as List<dynamic>)
+          .map((e) => QuizAnswerRequest.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+
+Map<String, dynamic> _$QuizSubmissionRequestToJson(
+        QuizSubmissionRequest instance) =>
+    <String, dynamic>{
+      'answers': instance.answers,
+    };
+
+QuizAnswerRequest _$QuizAnswerRequestFromJson(Map<String, dynamic> json) =>
+    QuizAnswerRequest(
+      questionId: json['questionId'] as String,
+      answerText: json['answerText'] as String?,
+      selectedOptionId: json['selectedOptionId'] as String?,
+    );
+
+Map<String, dynamic> _$QuizAnswerRequestToJson(QuizAnswerRequest instance) =>
+    <String, dynamic>{
+      'questionId': instance.questionId,
+      'answerText': instance.answerText,
+      'selectedOptionId': instance.selectedOptionId,
+    };

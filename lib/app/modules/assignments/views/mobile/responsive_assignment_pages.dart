@@ -52,8 +52,8 @@ class AssignmentCreatePage extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          colorScheme.primaryContainer.withOpacity(0.3),
-                          colorScheme.secondaryContainer.withOpacity(0.1),
+                          colorScheme.primaryContainer.withValues(alpha: 0.3),
+                          colorScheme.secondaryContainer.withValues(alpha: 0.1),
                         ],
                       ),
                     ),
@@ -69,14 +69,14 @@ class AssignmentCreatePage extends StatelessWidget {
                     onCancel: () => Navigator.pop(context),
                     onSubmit: (form) async {
                       // Debug: Log attachment information
-                      print('=== ASSIGNMENT SUBMIT DEBUG ===');
-                      print(
+                      debugPrint('=== ASSIGNMENT SUBMIT DEBUG ===');
+                      debugPrint(
                           'Total uploadedAttachments: ${form.uploadedAttachments.length}');
                       for (int i = 0;
                           i < form.uploadedAttachments.length;
                           i++) {
                         final att = form.uploadedAttachments[i];
-                        print(
+                        debugPrint(
                             'Attachment $i: ${att.fileName} - Status: ${att.status} - ID: ${att.attachmentId} - isUploaded: ${att.isUploaded}');
                       }
 
@@ -86,8 +86,8 @@ class AssignmentCreatePage extends StatelessWidget {
                           .map((attachment) => attachment.attachmentId!)
                           .toList();
 
-                      print('Filtered attachmentIds: $attachmentIds');
-                      print('=== END ASSIGNMENT SUBMIT DEBUG ===');
+                      debugPrint('Filtered attachmentIds: $attachmentIds');
+                      debugPrint('=== END ASSIGNMENT SUBMIT DEBUG ===');
 
                       final req = AssignmentCreateRequest(
                         title: form.title,
@@ -165,12 +165,12 @@ class _AssignmentEditPageState extends State<AssignmentEditPage> {
       // Set selected groups for the form after groups are loaded
       final selectedGroupIds =
           widget.assignment.groups.map((g) => g.id).toList();
-      print(
+      debugPrint(
           'Assignment groups: ${widget.assignment.groups.map((g) => '${g.id}:${g.name}').toList()}');
-      print('Selected group IDs: $selectedGroupIds');
+      debugPrint('Selected group IDs: $selectedGroupIds');
       if (selectedGroupIds.isNotEmpty) {
         controller.setSelectedGroupsForForm(selectedGroupIds);
-        print(
+        debugPrint(
             'Set selected groups in controller: ${controller.selectedGroupIdsForForm}');
       }
     } catch (e) {
@@ -209,8 +209,8 @@ class _AssignmentEditPageState extends State<AssignmentEditPage> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          colorScheme.primaryContainer.withOpacity(0.3),
-                          colorScheme.secondaryContainer.withOpacity(0.1),
+                          colorScheme.primaryContainer.withValues(alpha: 0.3),
+                          colorScheme.secondaryContainer.withValues(alpha: 0.1),
                         ],
                       ),
                     ),
@@ -225,10 +225,10 @@ class _AssignmentEditPageState extends State<AssignmentEditPage> {
                             padding: const EdgeInsets.all(24),
                             decoration: BoxDecoration(
                               color:
-                                  colorScheme.surfaceVariant.withOpacity(0.3),
+                                  colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: colorScheme.outline.withOpacity(0.2),
+                                color: colorScheme.outline.withValues(alpha: 0.2),
                               ),
                             ),
                             child: Column(

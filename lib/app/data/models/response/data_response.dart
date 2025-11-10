@@ -26,6 +26,7 @@ class DataResponse<T> extends BaseResponse {
 
   // Override base toJson for compatibility
   @override
+@override
   Map<String, dynamic> toJson() =>
       _$DataResponseToJson(this, (value) => value as Object?);
 }

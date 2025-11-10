@@ -60,7 +60,7 @@ class _QuizAddQuestionDialogState extends State<QuizAddQuestionDialog> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
@@ -251,12 +251,12 @@ class _QuizAddQuestionDialogState extends State<QuizAddQuestionDialog> {
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: option['isCorrect']
-                                  ? Colors.green.withOpacity(0.1)
-                                  : Colors.grey.withOpacity(0.05),
+                                  ? Colors.green.withValues(alpha: 0.1)
+                                  : Colors.grey.withValues(alpha: 0.05),
                               border: Border.all(
                                 color: option['isCorrect']
                                     ? Colors.green
-                                    : Colors.grey.withOpacity(0.3),
+                                    : Colors.grey.withValues(alpha: 0.3),
                                 width: 1.5,
                               ),
                               borderRadius: BorderRadius.circular(8),
@@ -272,7 +272,7 @@ class _QuizAddQuestionDialogState extends State<QuizAddQuestionDialog> {
                                         shape: BoxShape.circle,
                                         color: option['isCorrect']
                                             ? Colors.green
-                                            : Colors.grey.withOpacity(0.3),
+                                            : Colors.grey.withValues(alpha: 0.3),
                                       ),
                                       child: Center(
                                         child: Text(
@@ -360,7 +360,7 @@ class _QuizAddQuestionDialogState extends State<QuizAddQuestionDialog> {
                                   margin: const EdgeInsets.only(top: 8),
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.orange.withOpacity(0.1),
+                                    color: Colors.orange.withValues(alpha: 0.1),
                                     border: Border.all(color: Colors.orange),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
@@ -391,7 +391,7 @@ class _QuizAddQuestionDialogState extends State<QuizAddQuestionDialog> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.05),
+                  color: Colors.grey.withValues(alpha: 0.05),
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(12),
                     bottomRight: Radius.circular(12),

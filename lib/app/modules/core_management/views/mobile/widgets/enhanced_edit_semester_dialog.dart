@@ -141,7 +141,7 @@ class _EnhancedEditSemesterDialogState extends State<EnhancedEditSemesterDialog>
                 Text(
                   'Cập nhật thông tin học kỳ',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                     fontSize: 14,
                   ),
                 ),
@@ -298,7 +298,7 @@ class _EnhancedEditSemesterDialogState extends State<EnhancedEditSemesterDialog>
                     _isActive = value;
                   });
                 },
-                activeColor: Colors.green,
+                activeThumbColor: Colors.green,
               ),
             ],
           ),

@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:classroom_mini/app/routes/app_routes.dart';
 import 'package:classroom_mini/app/data/services/connectivity_service.dart';
+import 'package:classroom_mini/app/core/app_config.dart';
 import '../../controllers/announcement_controller.dart';
 import '../../widgets/announcement_card.dart';
 
-/**
- * Mobile Announcement List View
- * Displays list of announcements with modern UI design
- */
+/// Mobile Announcement List View
+/// Displays list of announcements with modern UI design
 class MobileAnnouncementListView extends StatelessWidget {
-  const MobileAnnouncementListView({Key? key}) : super(key: key);
+  const MobileAnnouncementListView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -56,35 +55,42 @@ class MobileAnnouncementListView extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                colorScheme.primaryContainer.withOpacity(0.3),
-                colorScheme.secondaryContainer.withOpacity(0.1),
+                colorScheme.primaryContainer.withValues(alpha: 0.3),
+                colorScheme.secondaryContainer.withValues(alpha: 0.1),
               ],
             ),
           ),
         ),
       ),
       actions: [
-        IconButton(
-          icon: Icon(Icons.add, color: colorScheme.primary),
-          onPressed: _navigateToCreateAnnouncement,
-          tooltip: 'Tạo thông báo mới',
-        ),
+        if (AppConfig.instance.isInstructor)
+          IconButton(
+            icon: Icon(Icons.add, color: colorScheme.primary),
+            onPressed: _navigateToCreateAnnouncement,
+            tooltip: 'Tạo thông báo mới',
+          ),
         IconButton(
           icon: Icon(Icons.search, color: colorScheme.primary),
           onPressed: () => _showSearchDialog(controller),
           tooltip: 'Tìm kiếm thông báo',
         ),
-        IconButton(
-          icon: Icon(Icons.filter_list, color: colorScheme.primary),
-          onPressed: () => _showFilterDialog(controller),
-          tooltip: 'Lọc thông báo',
-        ),
+        if (AppConfig.instance.isInstructor)
+          IconButton(
+            icon: Icon(Icons.filter_list, color: colorScheme.primary),
+            onPressed: () => _showFilterDialog(controller),
+            tooltip: 'Lọc thông báo',
+          ),
       ],
     );
   }
 
   Widget _buildFilterBar(
       BuildContext context, AnnouncementController controller) {
+    // Only show filter bar for instructors
+    if (!AppConfig.instance.isInstructor) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -95,7 +101,7 @@ class MobileAnnouncementListView extends StatelessWidget {
           children: [
             Expanded(
               child: Obx(() => DropdownButtonFormField<String>(
-                    value: controller.scopeFilter,
+                    initialValue: controller.scopeFilter,
                     decoration: InputDecoration(
                       labelText: 'Phạm vi',
                       border: OutlineInputBorder(
@@ -123,7 +129,7 @@ class MobileAnnouncementListView extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Obx(() => DropdownButtonFormField<String>(
-                    value: controller.sortBy,
+                    initialValue: controller.sortBy,
                     decoration: InputDecoration(
                       labelText: 'Sắp xếp',
                       border: OutlineInputBorder(
@@ -201,8 +207,10 @@ class MobileAnnouncementListView extends StatelessWidget {
                   announcement: announcement,
                   onTap: () => _navigateToAnnouncementDetail(announcement),
                   onTrack: () => _navigateToAnnouncementTracking(announcement),
-                  onDelete: () =>
-                      _showDeleteConfirmation(controller, announcement),
+                  onDelete: AppConfig.instance.isInstructor
+                      ? () => _showDeleteConfirmation(controller, announcement)
+                      : null,
+                  showDeleteButton: AppConfig.instance.isInstructor,
                 ),
               );
             },
@@ -222,10 +230,10 @@ class MobileAnnouncementListView extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: colorScheme.surfaceVariant.withOpacity(0.3),
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: colorScheme.outline.withOpacity(0.2),
+            color: colorScheme.outline.withValues(alpha: 0.2),
           ),
         ),
         child: Column(
@@ -234,7 +242,7 @@ class MobileAnnouncementListView extends StatelessWidget {
             Icon(
               Icons.campaign,
               size: 64,
-              color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
             ),
             const SizedBox(height: 16),
             Text(
@@ -245,26 +253,21 @@ class MobileAnnouncementListView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              'Tạo thông báo đầu tiên để bắt đầu',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant.withOpacity(0.8),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: _navigateToCreateAnnouncement,
-              icon: const Icon(Icons.add),
-              label: const Text('Tạo thông báo'),
-              style: FilledButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            if (AppConfig.instance.isInstructor) ...[
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: _navigateToCreateAnnouncement,
+                icon: const Icon(Icons.add),
+                label: const Text('Tạo thông báo'),
+                style: FilledButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ),

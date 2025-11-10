@@ -1,4 +1,5 @@
 import 'package:classroom_mini/app/data/models/response/user_response.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../data/services/storage_service.dart';
 import '../../data/services/chat_socket_service.dart';
@@ -12,22 +13,22 @@ class AuthService extends GetxService {
   final Rx<UserModel?> user = Rx<UserModel?>(null);
 
   Future<AuthService> init() async {
-    print('[AuthService] Initializing...');
+    debugPrint('[AuthService] Initializing...');
     final token = await _storageService.getAccessToken();
-    print(
+    debugPrint(
         '[AuthService] Token from storage: ${token != null ? "Exists" : "Null"}');
 
     if (token != null) {
       final userModel =
           await _storageService.getUserData(); // This returns UserModel?
-      print(
+      debugPrint(
           '[AuthService] User data from storage: ${userModel != null ? "Exists" : "Null"}');
 
       if (userModel != null) {
         user.value = userModel;
         isAuthenticated.value = true;
         AppConfig.instance.setUserRole(userModel.isInstructor);
-        print('[AuthService] User authenticated: true, isInstructor: ${userModel.isInstructor}');
+        debugPrint('[AuthService] User authenticated: true, isInstructor: ${userModel.isInstructor}');
         
         // Connect to chat socket if user is authenticated
         try {
@@ -36,7 +37,7 @@ class AuthService extends GetxService {
             await chatSocketService.connect(token);
           }
         } catch (e) {
-          print('[AuthService] Failed to connect chat socket: $e');
+          debugPrint('[AuthService] Failed to connect chat socket: $e');
           // Try to reconnect with fresh token if connect fails
           try {
             if (Get.isRegistered<ChatSocketService>()) {
@@ -44,24 +45,24 @@ class AuthService extends GetxService {
               await chatSocketService.connect(null); // Will fetch token from storage
             }
           } catch (e2) {
-            print('[AuthService] Failed to reconnect chat socket: $e2');
+            debugPrint('[AuthService] Failed to reconnect chat socket: $e2');
           }
         }
       } else {
         // Has token but no valid UserModel? This is an inconsistent state.
-        print(
+        debugPrint(
             '[AuthService] Inconsistent state: Token exists but no valid UserModel. Clearing session.');
         await _storageService.clearAll();
         isAuthenticated.value = false;
         user.value = null;
-        print('[AuthService] User authenticated: false (cleared session)');
+        debugPrint('[AuthService] User authenticated: false (cleared session)');
       }
     } else {
       isAuthenticated.value = false;
       user.value = null;
-      print('[AuthService] User authenticated: false (no token)');
+      debugPrint('[AuthService] User authenticated: false (no token)');
     }
-    print(
+    debugPrint(
         '[AuthService] Initialization complete. isAuthenticated: ${isAuthenticated.value}');
     return this;
   }
@@ -71,16 +72,16 @@ class AuthService extends GetxService {
       user.value = loggedInUser;
       isAuthenticated.value = true;
       AppConfig.instance.setUserRole(loggedInUser.isInstructor);
-      print('[AuthService] User logged in, isInstructor: ${loggedInUser.isInstructor}');
+      debugPrint('[AuthService] User logged in, isInstructor: ${loggedInUser.isInstructor}');
     } else if (loggedInUser is Map<String, dynamic>) {
       final userModel = UserModel.fromJson(loggedInUser);
       user.value = userModel;
       isAuthenticated.value = true;
       AppConfig.instance.setUserRole(userModel.isInstructor);
-      print('[AuthService] User logged in, isInstructor: ${userModel.isInstructor}');
+      debugPrint('[AuthService] User logged in, isInstructor: ${userModel.isInstructor}');
     } else {
       // Handle unexpected type, perhaps log an error
-      print("AuthService Error: Could not parse user data on login.");
+      debugPrint("AuthService Error: Could not parse user data on login.");
       // Do not set isAuthenticated to true if user data is invalid
     }
   }
@@ -97,7 +98,7 @@ class AuthService extends GetxService {
         chatSocketService.disconnect();
       }
     } catch (e) {
-      print('Error disconnecting socket: $e');
+      debugPrint('Error disconnecting socket: $e');
     }
     
     // Also clear tokens from storage

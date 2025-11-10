@@ -8,9 +8,10 @@ import 'dart:io';
 import '../../controllers/assignment_controller.dart';
 import '../../widgets/assignment_card.dart';
 import 'package:classroom_mini/app/core/utils/semester_helper.dart';
+import 'package:classroom_mini/app/core/app_config.dart';
 
 class MobileAssignmentListView extends StatelessWidget {
-  const MobileAssignmentListView({Key? key}) : super(key: key);
+  const MobileAssignmentListView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -42,33 +43,37 @@ class MobileAssignmentListView extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          colorScheme.primaryContainer.withOpacity(0.3),
-                          colorScheme.secondaryContainer.withOpacity(0.1),
+                          colorScheme.primaryContainer.withValues(alpha: 0.3),
+                          colorScheme.secondaryContainer.withValues(alpha: 0.1),
                         ],
                       ),
                     ),
                   ),
                 ),
                 actions: [
-                  IconButton(
-                    icon: Icon(Icons.download, color: colorScheme.primary),
-                    onPressed: () => _exportAllAssignments(controller),
-                    tooltip: 'Xuất tất cả bài tập',
-                  ),
+                  if (AppConfig.instance.isInstructor) ...[
+                    IconButton(
+                      icon: Icon(Icons.download, color: colorScheme.primary),
+                      onPressed: () => _exportAllAssignments(controller),
+                      tooltip: 'Xuất tất cả bài tập',
+                    ),
+                  ],
                   IconButton(
                     icon: Icon(Icons.filter_list, color: colorScheme.primary),
                     onPressed: () => _showFilterDialog(controller),
                   ),
-                  Obx(() {
-                    final connectivityService = Get.find<ConnectivityService>();
-                    if (!connectivityService.isOnline.value) {
-                      return const SizedBox.shrink();
-                    }
-                    return IconButton(
-                      icon: Icon(Icons.add, color: colorScheme.primary),
-                      onPressed: () => _navigateToCreateAssignment(),
-                    );
-                  }),
+                  if (AppConfig.instance.isInstructor)
+                    Obx(() {
+                      final connectivityService =
+                          Get.find<ConnectivityService>();
+                      if (!connectivityService.isOnline.value) {
+                        return const SizedBox.shrink();
+                      }
+                      return IconButton(
+                        icon: Icon(Icons.add, color: colorScheme.primary),
+                        onPressed: () => _navigateToCreateAssignment(),
+                      );
+                    }),
                 ],
               ),
               SliverPadding(
@@ -109,61 +114,15 @@ class MobileAssignmentListView extends StatelessWidget {
                         }
 
                         final assignment = controller.assignments[index];
-                        return Obx(() {
-                          final connectivityService = Get.find<ConnectivityService>();
-                          final canDelete = connectivityService.isOnline.value;
-                          
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            child: Dismissible(
-                              key: Key('assignment_${assignment.id}'),
-                              direction: canDelete ? DismissDirection.endToStart : DismissDirection.none,
-                            background: Container(
-                              alignment: Alignment.centerRight,
-                              padding: const EdgeInsets.only(right: 20),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.errorContainer.withOpacity(0.3),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.delete_outline,
-                                    color: Theme.of(context).colorScheme.error,
-                                    size: 24,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Swipe to delete',
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.error,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            confirmDismiss: (direction) async {
-                              final confirmed = await controller.showDeleteConfirmation(assignment);
-                              return confirmed;
-                            },
-                            onDismissed: (direction) {
-                              // Card will be removed from list automatically after dismiss
-                            },
-                            child: AssignmentCard(
-                              assignment: assignment,
-                              onTap: () =>
-                                  _navigateToAssignmentDetail(assignment),
-                              showActions: canDelete,
-                              onTrack: () =>
-                                  _navigateToAssignmentTracking(assignment),
-                              onDelete: () => controller.showDeleteConfirmation(assignment),
-                            ),
-                          ),
+
+                        return _AssignmentListItem(
+                          assignment: assignment,
+                          onTap: () => _navigateToAssignmentDetail(assignment),
+                          onTrack: () =>
+                              _navigateToAssignmentTracking(assignment),
+                          onDelete: () =>
+                              controller.showDeleteConfirmation(assignment),
                         );
-                        });
                       },
                       childCount: controller.assignments.length +
                           (controller.hasMore ? 1 : 0),
@@ -186,10 +145,10 @@ class MobileAssignmentListView extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: colorScheme.surfaceVariant.withOpacity(0.3),
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: colorScheme.outline.withOpacity(0.2),
+            color: colorScheme.outline.withValues(alpha: 0.2),
           ),
         ),
         child: Column(
@@ -198,7 +157,7 @@ class MobileAssignmentListView extends StatelessWidget {
             Icon(
               Icons.assignment,
               size: 64,
-              color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
             ),
             const SizedBox(height: 16),
             Text(
@@ -212,33 +171,34 @@ class MobileAssignmentListView extends StatelessWidget {
             Text(
               'Tạo bài tập đầu tiên để bắt đầu',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
               ),
               textAlign: TextAlign.center,
             ),
-            Obx(() {
-              final connectivityService = Get.find<ConnectivityService>();
-              if (!connectivityService.isOnline.value) {
-                return const SizedBox.shrink();
-              }
-              return Column(
-                children: [
-                  const SizedBox(height: 24),
-                  FilledButton.icon(
-                    onPressed: _navigateToCreateAssignment,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Tạo bài tập'),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 16, horizontal: 24),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+            if (AppConfig.instance.isInstructor)
+              Obx(() {
+                final connectivityService = Get.find<ConnectivityService>();
+                if (!connectivityService.isOnline.value) {
+                  return const SizedBox.shrink();
+                }
+                return Column(
+                  children: [
+                    const SizedBox(height: 24),
+                    FilledButton.icon(
+                      onPressed: _navigateToCreateAssignment,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Tạo bài tập'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 16, horizontal: 24),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              );
-            }),
+                  ],
+                );
+              }),
           ],
         ),
       ),
@@ -254,10 +214,10 @@ class MobileAssignmentListView extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -443,7 +403,7 @@ class MobileAssignmentListView extends StatelessWidget {
 }
 
 class MobileStudentAssignmentListView extends StatelessWidget {
-  const MobileStudentAssignmentListView({Key? key}) : super(key: key);
+  const MobileStudentAssignmentListView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -504,10 +464,10 @@ class MobileStudentAssignmentListView extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: colorScheme.surfaceVariant.withOpacity(0.3),
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: colorScheme.outline.withOpacity(0.2),
+            color: colorScheme.outline.withValues(alpha: 0.2),
           ),
         ),
         child: Column(
@@ -516,7 +476,7 @@ class MobileStudentAssignmentListView extends StatelessWidget {
             Icon(
               Icons.assignment,
               size: 64,
-              color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
             ),
             const SizedBox(height: 16),
             Text(
@@ -530,7 +490,7 @@ class MobileStudentAssignmentListView extends StatelessWidget {
             Text(
               'Bài tập sẽ xuất hiện ở đây khi được giao',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
               ),
               textAlign: TextAlign.center,
             ),
@@ -553,12 +513,12 @@ class MobileStudentAssignmentListView extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -598,10 +558,11 @@ class MobileStudentAssignmentListView extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceVariant.withOpacity(0.3),
+                    color: colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: colorScheme.outline.withOpacity(0.2),
+                      color: colorScheme.outline.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Row(
@@ -609,7 +570,7 @@ class MobileStudentAssignmentListView extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: colorScheme.primary.withOpacity(0.1),
+                          color: colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Icon(
@@ -640,10 +601,11 @@ class MobileStudentAssignmentListView extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceVariant.withOpacity(0.3),
+                  color: colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: colorScheme.outline.withOpacity(0.2),
+                    color: colorScheme.outline.withValues(alpha: 0.2),
                   ),
                 ),
                 child: Column(
@@ -653,7 +615,7 @@ class MobileStudentAssignmentListView extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: colorScheme.primary.withOpacity(0.1),
+                            color: colorScheme.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Icon(
@@ -683,7 +645,7 @@ class MobileStudentAssignmentListView extends StatelessWidget {
                             decoration: BoxDecoration(
                               color:
                                   _getTimeRemainingColor(context, timeRemaining)
-                                      .withOpacity(0.1),
+                                      .withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Icon(
@@ -715,10 +677,11 @@ class MobileStudentAssignmentListView extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceVariant.withOpacity(0.3),
+                  color: colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: colorScheme.outline.withOpacity(0.2),
+                    color: colorScheme.outline.withValues(alpha: 0.2),
                   ),
                 ),
                 child: Row(
@@ -726,7 +689,7 @@ class MobileStudentAssignmentListView extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: colorScheme.primary.withOpacity(0.1),
+                        color: colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Icon(
@@ -763,7 +726,7 @@ class MobileStudentAssignmentListView extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: _getStatusColor(context, status).withOpacity(0.3),
+            color: _getStatusColor(context, status).withValues(alpha: 0.3),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -791,7 +754,7 @@ class MobileStudentAssignmentListView extends StatelessWidget {
       case AssignmentStatus.closed:
         return colorScheme.outline;
       case AssignmentStatus.inactive:
-        return colorScheme.surfaceVariant;
+        return colorScheme.surfaceContainerHighest;
     }
   }
 
@@ -913,5 +876,84 @@ class MobileStudentAssignmentListView extends StatelessWidget {
 
   void _navigateToAssignmentDetail(Assignment assignment) {
     Get.toNamed(Routes.ASSIGNMENTS_DETAIL, arguments: assignment);
+  }
+
+  void _navigateToAssignmentTracking(Assignment assignment) {
+    Get.toNamed(Routes.ASSIGNMENTS_TRACKING, arguments: assignment);
+  }
+}
+
+/// Separate widget for assignment list item to avoid Obx issues in itemBuilder
+class _AssignmentListItem extends StatelessWidget {
+  final Assignment assignment;
+  final VoidCallback onTap;
+  final VoidCallback onTrack;
+  final VoidCallback onDelete;
+
+  const _AssignmentListItem({
+    required this.assignment,
+    required this.onTap,
+    required this.onTrack,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<AssignmentController>();
+
+    final canDelete = AppConfig.instance.isInstructor;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Dismissible(
+        key: Key('assignment_${assignment.id}'),
+        direction:
+            canDelete ? DismissDirection.endToStart : DismissDirection.none,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          decoration: BoxDecoration(
+            color: Theme.of(context)
+                .colorScheme
+                .errorContainer
+                .withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.delete_outline,
+                color: Theme.of(context).colorScheme.error,
+                size: 24,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Swipe to delete',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        confirmDismiss: (direction) async {
+          final confirmed = await controller.showDeleteConfirmation(assignment);
+          return confirmed;
+        },
+        onDismissed: (direction) {
+          // Card will be removed from list automatically after dismiss
+        },
+        child: AssignmentCard(
+          assignment: assignment,
+          onTap: onTap,
+          showActions: canDelete,
+          onTrack: onTrack,
+          onDelete: onDelete,
+        ),
+      ),
+    );
   }
 }

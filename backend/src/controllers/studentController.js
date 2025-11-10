@@ -976,6 +976,168 @@ class StudentController {
   /**
    * Handle course/group assignments for imported students
    */
+  getEnrolledCourses = catchAsync(async (req, res) => {
+    const userId = req.user?.id;
+    const { semesterId } = req.query;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
+      });
+    }
+
+    let query = supabase
+      .from('student_enrollments')
+      .select(`
+        id,
+        enrolled_at,
+        is_active,
+        group_id,
+        groups(
+          id,
+          name,
+          course_id,
+          courses(
+            id,
+            code,
+            name,
+            session_count,
+            is_active,
+            semester_id,
+            semesters(
+              id,
+              code,
+              name,
+              is_active
+            )
+          )
+        )
+      `)
+      .eq('student_id', userId)
+      .eq('is_active', true);
+
+    if (semesterId) {
+      query = query.eq('semester_id', semesterId);
+    }
+
+    const { data: enrollments, error } = await query;
+
+    if (error) {
+      console.error('Get enrolled courses error:', error);
+      throw new AppError('Failed to fetch enrolled courses', 500, 'GET_ENROLLED_COURSES_FAILED');
+    }
+
+    const courses = (enrollments || [])
+      .filter(e => e.groups && e.groups.courses)
+      .map(e => ({
+        enrollment_id: e.id,
+        enrolled_at: e.enrolled_at,
+        group: {
+          id: e.groups.id,
+          name: e.groups.name
+        },
+        course: {
+          id: e.groups.courses.id,
+          code: e.groups.courses.code,
+          name: e.groups.courses.name,
+          session_count: e.groups.courses.session_count,
+          is_active: e.groups.courses.is_active
+        },
+        semester: e.groups.courses.semesters ? {
+          id: e.groups.courses.semesters.id,
+          code: e.groups.courses.semesters.code,
+          name: e.groups.courses.semesters.name,
+          is_active: e.groups.courses.semesters.is_active
+        } : null
+      }));
+
+    res.json(buildResponse(true, undefined, { courses }));
+  });
+
+  /**
+   * Get courses for student (from their enrolled courses)
+   */
+  getStudentCourses = catchAsync(async (req, res) => {
+    const userId = req.user?.id;
+    const { semesterId } = req.query;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
+      });
+    }
+
+    // Get student's enrolled courses
+    let query = supabase
+      .from('student_enrollments')
+      .select(`
+        groups!inner(
+          courses!inner(
+            id,
+            code,
+            name,
+            description,
+            session_count,
+            is_active,
+            semester_id,
+            semesters(
+              id,
+              code,
+              name,
+              is_active
+            )
+          )
+        )
+      `)
+      .eq('student_id', userId)
+      .eq('is_active', true);
+
+    if (semesterId) {
+      query = query.eq('semester_id', semesterId);
+    }
+
+    const { data: enrollments, error } = await query;
+
+    if (error) {
+      console.error('Get student courses error:', error);
+      throw new AppError('Failed to fetch student courses', 500, 'GET_STUDENT_COURSES_FAILED');
+    }
+
+    // Extract unique courses
+    const coursesMap = new Map();
+    for (const enrollment of enrollments || []) {
+      if (enrollment.groups?.courses) {
+        const course = enrollment.groups.courses;
+        if (!coursesMap.has(course.id)) {
+          coursesMap.set(course.id, {
+            id: course.id,
+            code: course.code,
+            name: course.name,
+            description: course.description,
+            sessionCount: course.session_count,
+            isActive: course.is_active,
+            semesterId: course.semester_id,
+            semester: course.semesters
+          });
+        }
+      }
+    }
+
+    const courses = Array.from(coursesMap.values());
+
+    res.json(buildResponse(true, undefined, { 
+      courses,
+      pagination: {
+        page: 1,
+        limit: courses.length,
+        total: courses.length,
+        totalPages: 1
+      }
+    }));
+  });
+
   handleStudentAssignments = async (students, originalIndexMap, globalCourseId, globalGroupId, assignments) => {
     console.log('[handleStudentAssignments] START');
     console.log('[handleStudentAssignments] students count:', students?.length || 0);

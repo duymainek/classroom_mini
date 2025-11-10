@@ -9,10 +9,10 @@ part of 'submission_response.dart';
 AssignmentSubmission _$AssignmentSubmissionFromJson(
         Map<String, dynamic> json) =>
     AssignmentSubmission(
-      id: json['id'] as String,
-      assignmentId: json['assignmentId'] as String,
-      studentId: json['studentId'] as String,
-      attemptNumber: (json['attemptNumber'] as num).toInt(),
+      id: json['id'] as String?,
+      assignmentId: json['assignmentId'] as String?,
+      studentId: json['studentId'] as String?,
+      attemptNumber: (json['attemptNumber'] as num?)?.toInt(),
       submissionText: json['submissionText'] as String?,
       submittedAt: DateTime.parse(json['submittedAt'] as String),
       isLate: json['isLate'] as bool,
@@ -22,8 +22,12 @@ AssignmentSubmission _$AssignmentSubmissionFromJson(
           ? null
           : DateTime.parse(json['gradedAt'] as String),
       gradedBy: json['gradedBy'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: json['createdAt'] == null
+          ? null
+          : DateTime.parse(json['createdAt'] as String),
+      updatedAt: json['updatedAt'] == null
+          ? null
+          : DateTime.parse(json['updatedAt'] as String),
       attachments: (json['attachments'] as List<dynamic>?)
               ?.map((e) =>
                   SubmissionAttachment.fromJson(e as Map<String, dynamic>))
@@ -48,8 +52,8 @@ Map<String, dynamic> _$AssignmentSubmissionToJson(
       'feedback': instance.feedback,
       'gradedAt': instance.gradedAt?.toIso8601String(),
       'gradedBy': instance.gradedBy,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'updatedAt': instance.updatedAt.toIso8601String(),
+      'createdAt': instance.createdAt?.toIso8601String(),
+      'updatedAt': instance.updatedAt?.toIso8601String(),
       'attachments': instance.attachments,
       'student': instance.student,
     };
@@ -62,7 +66,9 @@ SubmissionAttachment _$SubmissionAttachmentFromJson(
       fileUrl: json['fileUrl'] as String,
       fileSize: (json['fileSize'] as num?)?.toInt(),
       fileType: json['fileType'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: json['createdAt'] == null
+          ? null
+          : DateTime.parse(json['createdAt'] as String),
     );
 
 Map<String, dynamic> _$SubmissionAttachmentToJson(
@@ -73,7 +79,7 @@ Map<String, dynamic> _$SubmissionAttachmentToJson(
       'fileUrl': instance.fileUrl,
       'fileSize': instance.fileSize,
       'fileType': instance.fileType,
-      'createdAt': instance.createdAt.toIso8601String(),
+      'createdAt': instance.createdAt?.toIso8601String(),
     };
 
 StudentInfo _$StudentInfoFromJson(Map<String, dynamic> json) => StudentInfo(

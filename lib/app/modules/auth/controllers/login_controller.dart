@@ -96,7 +96,7 @@ class LoginController extends GetxController {
               await chatSocketService.connect(result.accessToken!);
             }
           } catch (e) {
-            print('Failed to connect chat socket: $e');
+            debugPrint('Failed to connect chat socket: $e');
           }
         }
 
@@ -123,14 +123,14 @@ class LoginController extends GetxController {
       await Future.delayed(const Duration(milliseconds: 500));
 
       // Debug: Print user info
-      print('User role: ${user?.role}');
-      print('User isInstructor: ${user?.isInstructor}');
+      debugPrint('User role: ${user?.role}');
+      debugPrint('User isInstructor: ${user?.isInstructor}');
 
       // Logic from RouteController is now here directly.
-      print('Redirecting to home after login...');
+      debugPrint('Redirecting to home after login...');
       Get.offAllNamed(Routes.HOME, arguments: {'justLoggedIn': true});
     } catch (e) {
-      print('Navigation error: $e');
+      debugPrint('Navigation error: $e');
       // Fallback navigation
       Get.offAllNamed(Routes.HOME, arguments: {'justLoggedIn': true});
     }
@@ -143,6 +143,62 @@ class LoginController extends GetxController {
       usernameController.text = 'admin';
       passwordController.text = 'admin';
       await login();
+    }
+  }
+
+  // Quick student login for testing (sv010/sv010)
+  Future<void> quickStudentLogin() async {
+    // Check if controller is still mounted
+    if (isClosed) return;
+
+    clearError();
+    isLoading.value = true;
+
+    try {
+      final result = await _authRepository.studentLogin('sv010', 'sv010');
+
+      if (result.success) {
+        // Show success message
+        Get.snackbar(
+          'Đăng nhập thành công',
+          result.message ?? 'Chào mừng bạn quay trở lại!',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.green.shade100,
+          colorText: Colors.green.shade800,
+          duration: const Duration(seconds: 2),
+        );
+
+        // Update the reactive authentication state
+        _authService.login(result.user);
+
+        // Connect to chat socket after login
+        if (result.accessToken != null) {
+          try {
+            final chatSocketService = Get.isRegistered<ChatSocketService>()
+                ? Get.find<ChatSocketService>()
+                : null;
+            if (chatSocketService != null) {
+              await chatSocketService.connect(result.accessToken!);
+            }
+          } catch (e) {
+            debugPrint('Failed to connect chat socket: $e');
+          }
+        }
+
+        await _navigateAfterLogin(result.user);
+      } else {
+        if (!isClosed) {
+          errorMessage.value = result.message ?? 'Đăng nhập thất bại';
+        }
+      }
+    } catch (e) {
+      if (!isClosed) {
+        errorMessage.value = 'Có lỗi xảy ra. Vui lòng thử lại.';
+      }
+    } finally {
+      if (!isClosed) {
+        isLoading.value = false;
+      }
     }
   }
 

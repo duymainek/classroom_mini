@@ -19,5 +19,6 @@ class BaseResponse {
   factory BaseResponse.fromJson(Map<String, dynamic> json) =>
       _$BaseResponseFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$BaseResponseToJson(this);
 }

@@ -77,7 +77,7 @@ class ChatListController extends GetxController {
         totalUnreadCount.value = response.data!.unreadCount;
       }
     } catch (e) {
-      print('Failed to load unread count: $e');
+      debugPrint('Failed to load unread count: $e');
     }
   }
 

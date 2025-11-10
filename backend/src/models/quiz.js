@@ -108,9 +108,51 @@ function formatQuizSubmissionResponse(submission) {
   };
 }
 
+/**
+ * Format quiz groups data for response
+ * Handles different structures from Supabase queries (instructor vs student)
+ * @param {Array} quizGroups - Quiz groups array from database
+ * @returns {Array} - Formatted quiz groups array
+ */
+function formatQuizGroups(quizGroups) {
+  if (!Array.isArray(quizGroups)) {
+    return [];
+  }
+
+  return quizGroups.map(qg => {
+    // Handle different structures from Supabase queries
+    if (qg.groups) {
+      // Extract group info, preserving id and name, removing student_enrollments if present
+      const groupInfo = {
+        id: qg.groups.id || null,
+        name: qg.groups.name || null
+      };
+      
+      // Only include group info if we have at least id or name
+      const hasGroupInfo = groupInfo.id || groupInfo.name;
+      
+      return {
+        id: qg.id || null,
+        quizId: qg.quiz_id || null,
+        groupId: qg.group_id || qg.groups.id || null,
+        groups: hasGroupInfo ? groupInfo : null
+      };
+    }
+    
+    // Fallback if no groups nested object
+    return {
+      id: qg.id || null,
+      quizId: qg.quiz_id || null,
+      groupId: qg.group_id || null,
+      groups: null
+    };
+  });
+}
+
 module.exports = {
   calculateQuizSubmissionStatus,
   formatQuizResponse,
   formatQuestionResponse,
-  formatQuizSubmissionResponse
+  formatQuizSubmissionResponse,
+  formatQuizGroups
 };

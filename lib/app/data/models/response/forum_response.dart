@@ -28,6 +28,7 @@ class ForumAuthor {
   factory ForumAuthor.fromJson(Map<String, dynamic> json) =>
       _$ForumAuthorFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$ForumAuthorToJson(this);
 
   bool get isInstructor => role == 'instructor';
@@ -52,6 +53,7 @@ class ForumCourse {
   factory ForumCourse.fromJson(Map<String, dynamic> json) =>
       _$ForumCourseFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$ForumCourseToJson(this);
 }
 
@@ -90,6 +92,7 @@ class ForumAttachment {
   factory ForumAttachment.fromJson(Map<String, dynamic> json) =>
       _$ForumAttachmentFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$ForumAttachmentToJson(this);
 
   String get fileSizeFormatted {
@@ -151,6 +154,7 @@ class ForumReply {
   factory ForumReply.fromJson(Map<String, dynamic> json) =>
       _$ForumReplyFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$ForumReplyToJson(this);
 
   bool get hasReplies => replies != null && replies!.isNotEmpty;
@@ -206,6 +210,7 @@ class ForumTopic {
   factory ForumTopic.fromJson(Map<String, dynamic> json) =>
       _$ForumTopicFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$ForumTopicToJson(this);
 
   bool get hasAttachments => attachments != null && attachments!.isNotEmpty;
@@ -228,6 +233,7 @@ class TopicDetailResponse {
   factory TopicDetailResponse.fromJson(Map<String, dynamic> json) =>
       _$TopicDetailResponseFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$TopicDetailResponseToJson(this);
 }
 
@@ -245,5 +251,6 @@ class LikeResponse {
   factory LikeResponse.fromJson(Map<String, dynamic> json) =>
       _$LikeResponseFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$LikeResponseToJson(this);
 }

@@ -1,6 +1,7 @@
 import 'package:classroom_mini/app/data/models/response/dashboard_response.dart';
 import 'package:classroom_mini/app/data/models/response/semester_response.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../services/api_service.dart';
 import '../exceptions/api_exceptions.dart';
 
@@ -12,25 +13,25 @@ class DashboardRepository {
   /// Get instructor dashboard data
   Future<InstructorDashboardData> getInstructorDashboard() async {
     try {
-      print('🔍 [DashboardRepository] Calling getInstructorDashboard...');
+      debugPrint('🔍 [DashboardRepository] Calling getInstructorDashboard...');
       final response = await _apiService.getInstructorDashboard();
-      print('✅ [DashboardRepository] Response received');
-      print('📊 [DashboardRepository] Response data: ${response.data != null}');
+      debugPrint('✅ [DashboardRepository] Response received');
+      debugPrint('📊 [DashboardRepository] Response data: ${response.data != null}');
       
       if (response.data == null) {
         throw Exception('Response data is null');
       }
       
       final data = response.data;
-      print('📊 [DashboardRepository] Data stats: courses=${data.statistics.totalCourses}, students=${data.statistics.totalStudents}');
-      print('✅ [DashboardRepository] Returning data');
+      debugPrint('📊 [DashboardRepository] Data stats: courses=${data.statistics.totalCourses}, students=${data.statistics.totalStudents}');
+      debugPrint('✅ [DashboardRepository] Returning data');
       return data;
     } on DioException catch (e) {
-      print('❌ [DashboardRepository] DioException: ${e.message}');
+      debugPrint('❌ [DashboardRepository] DioException: ${e.message}');
       throw _handleError(e);
     } catch (e, stackTrace) {
-      print('❌ [DashboardRepository] Error: $e');
-      print('❌ [DashboardRepository] Stack trace: $stackTrace');
+      debugPrint('❌ [DashboardRepository] Error: $e');
+      debugPrint('❌ [DashboardRepository] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -38,25 +39,32 @@ class DashboardRepository {
   /// Get student dashboard data
   Future<StudentDashboardData> getStudentDashboard() async {
     try {
-      print('🔍 [DashboardRepository] Calling getStudentDashboard...');
+      debugPrint('🔍 [DashboardRepository] Calling getStudentDashboard...');
       final response = await _apiService.getStudentDashboard();
-      print('✅ [DashboardRepository] Student response received');
-      print('📊 [DashboardRepository] Student response data: ${response.data != null}');
+      debugPrint('✅ [DashboardRepository] Student response received');
+      debugPrint('📊 [DashboardRepository] Student response data: ${response.data != null}');
       
       if (response.data == null) {
         throw Exception('Response data is null');
       }
       
       final data = response.data;
-      print('📊 [DashboardRepository] Student enrolled courses: ${data.enrolledCourses.length}');
-      print('✅ [DashboardRepository] Returning student data');
+      debugPrint('📊 [DashboardRepository] Student enrolled courses: ${data.enrolledCourses.length}');
+      debugPrint('📊 [DashboardRepository] Student studyProgress: ${data.studyProgress != null}');
+      if (data.studyProgress != null) {
+        debugPrint('   - Assignments: ${data.studyProgress!.assignments.completed}/${data.studyProgress!.assignments.total}');
+        debugPrint('   - Quizzes: ${data.studyProgress!.quizzes.completed}/${data.studyProgress!.quizzes.total}');
+      } else {
+        debugPrint('   ⚠️ studyProgress is NULL - may be cached old data');
+      }
+      debugPrint('✅ [DashboardRepository] Returning student data');
       return data;
     } on DioException catch (e) {
-      print('❌ [DashboardRepository] DioException: ${e.message}');
+      debugPrint('❌ [DashboardRepository] DioException: ${e.message}');
       throw _handleError(e);
     } catch (e, stackTrace) {
-      print('❌ [DashboardRepository] Error: $e');
-      print('❌ [DashboardRepository] Stack trace: $stackTrace');
+      debugPrint('❌ [DashboardRepository] Error: $e');
+      debugPrint('❌ [DashboardRepository] Stack trace: $stackTrace');
       rethrow;
     }
   }

@@ -330,7 +330,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: colorScheme.outline.withOpacity(0.3),
+                          color: colorScheme.outline.withValues(alpha: 0.3),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -341,7 +341,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
                         ),
                       ),
                       filled: true,
-                      fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                      fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                       alignLabelWithHint: true,
                     ),
                     minLines: 8,
@@ -353,9 +353,9 @@ class _AssignmentFormState extends State<AssignmentForm> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: colorScheme.surfaceVariant.withOpacity(0.3),
+                      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                       border: Border.all(
-                        color: colorScheme.outline.withOpacity(0.2),
+                        color: colorScheme.outline.withValues(alpha: 0.2),
                       ),
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -385,7 +385,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: colorScheme.outline.withOpacity(0.3),
+                      color: colorScheme.outline.withValues(alpha: 0.3),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -396,7 +396,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
                     ),
                   ),
                   filled: true,
-                  fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                  fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 ),
                 items: _getController()
                         ?.formState
@@ -554,7 +554,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
       trailing: const Icon(Icons.calendar_today),
       onTap: onTap,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      tileColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+      tileColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
     );
   }
 
@@ -678,10 +678,10 @@ class _AssignmentFormState extends State<AssignmentForm> {
             return Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: colorScheme.outline.withOpacity(0.2),
+                  color: colorScheme.outline.withValues(alpha: 0.2),
                 ),
               ),
               child: Text(
@@ -697,10 +697,10 @@ class _AssignmentFormState extends State<AssignmentForm> {
             return Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: colorScheme.outline.withOpacity(0.2),
+                  color: colorScheme.outline.withValues(alpha: 0.2),
                 ),
               ),
               child: Column(
@@ -721,10 +721,10 @@ class _AssignmentFormState extends State<AssignmentForm> {
             return Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: colorScheme.outline.withOpacity(0.2),
+                  color: colorScheme.outline.withValues(alpha: 0.2),
                 ),
               ),
               child: Text(
@@ -742,10 +742,10 @@ class _AssignmentFormState extends State<AssignmentForm> {
             return Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: colorScheme.outline.withOpacity(0.2),
+                  color: colorScheme.outline.withValues(alpha: 0.2),
                 ),
               ),
               child: Text(
@@ -762,10 +762,10 @@ class _AssignmentFormState extends State<AssignmentForm> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withOpacity(0.3),
+                  color: colorScheme.primaryContainer.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: colorScheme.primary.withOpacity(0.2),
+                    color: colorScheme.primary.withValues(alpha: 0.2),
                   ),
                 ),
                 child: Text(
@@ -819,12 +819,12 @@ class _AssignmentFormState extends State<AssignmentForm> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1001,12 +1001,12 @@ class _AssignmentFormState extends State<AssignmentForm> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1017,7 +1017,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.3),
+              color: colorScheme.primaryContainer.withValues(alpha: 0.3),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
@@ -1028,7 +1028,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: colorScheme.primary.withOpacity(0.1),
+                    color: colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: colorScheme.primary, size: 20),
@@ -1076,12 +1076,12 @@ class _AssignmentFormState extends State<AssignmentForm> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1111,7 +1111,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: colorScheme.outline.withOpacity(0.3),
+                      color: colorScheme.outline.withValues(alpha: 0.3),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -1122,7 +1122,7 @@ class _AssignmentFormState extends State<AssignmentForm> {
                     ),
                   ),
                   filled: true,
-                  fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                  fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 ),
               ),
           ],
@@ -1144,17 +1144,17 @@ class _AssignmentFormState extends State<AssignmentForm> {
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: colorScheme.primary.withOpacity(0.1),
+            color: colorScheme.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: colorScheme.primary, size: 20),
@@ -1193,10 +1193,10 @@ class _AssignmentFormState extends State<AssignmentForm> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: SwitchListTile(
@@ -1217,24 +1217,24 @@ class _AssignmentFormState extends State<AssignmentForm> {
         secondary: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: colorScheme.primary.withOpacity(0.1),
+            color: colorScheme.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: colorScheme.primary, size: 20),
         ),
-        activeColor: colorScheme.primary,
+        activeThumbColor: colorScheme.primary,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
     );
   }
 
   Widget _buildFileAttachmentsSection(BuildContext context, ThemeData theme) {
-    print('=== BUILDING FILE ATTACHMENTS SECTION ===');
-    print('Current _uploadedAttachments count: ${_uploadedAttachments.length}');
-    print('Attachment details:');
+    debugPrint('=== BUILDING FILE ATTACHMENTS SECTION ===');
+    debugPrint('Current _uploadedAttachments count: ${_uploadedAttachments.length}');
+    debugPrint('Attachment details:');
     for (int i = 0; i < _uploadedAttachments.length; i++) {
       final att = _uploadedAttachments[i];
-      print(
+      debugPrint(
           '  [$i] ${att.fileName} - Status: ${att.status} - ID: ${att.attachmentId}');
     }
 
@@ -1246,22 +1246,22 @@ class _AssignmentFormState extends State<AssignmentForm> {
         SharedFileAttachmentPicker(
           tag: 'assignment_attachments',
           onAttachmentsChanged: (attachments) {
-            print('=== ASSIGNMENT FORM CALLBACK ===');
-            print('Received attachments changed callback');
-            print('New attachments count: ${attachments.length}');
-            print(
+            debugPrint('=== ASSIGNMENT FORM CALLBACK ===');
+            debugPrint('Received attachments changed callback');
+            debugPrint('New attachments count: ${attachments.length}');
+            debugPrint(
                 'Uploaded count: ${attachments.where((a) => a.isUploaded).length}');
-            print('Attachment details:');
+            debugPrint('Attachment details:');
             for (int i = 0; i < attachments.length; i++) {
               final att = attachments[i];
-              print(
+              debugPrint(
                   '  [$i] ${att.fileName} - Status: ${att.status} - ID: ${att.attachmentId}');
             }
-            print('Updating _uploadedAttachments...');
+            debugPrint('Updating _uploadedAttachments...');
             _uploadedAttachments.assignAll(attachments);
-            print(
+            debugPrint(
                 'Update completed. Current _uploadedAttachments count: ${_uploadedAttachments.length}');
-            print('=== END ASSIGNMENT FORM CALLBACK ===');
+            debugPrint('=== END ASSIGNMENT FORM CALLBACK ===');
           },
           maxFiles: 10,
           maxFileSizeMB: _maxFileSize,

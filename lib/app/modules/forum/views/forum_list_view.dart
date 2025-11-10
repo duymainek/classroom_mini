@@ -7,10 +7,8 @@ import 'package:classroom_mini/app/modules/forum/widgets/forum_topic_form.dart';
 import 'package:classroom_mini/app/modules/forum/design/forum_design_system.dart';
 import 'package:classroom_mini/app/data/services/connectivity_service.dart';
 
-/**
- * Enhanced Forum List View
- * Implements responsive design and improved UX patterns
- */
+/// Enhanced Forum List View
+/// Implements responsive design and improved UX patterns
 class ForumListView extends StatefulWidget {
   const ForumListView({super.key});
 
@@ -43,7 +41,7 @@ class _ForumListViewState extends State<ForumListView>
 
     // Force reload topics if list is empty
     if (controller.topics.isEmpty && !controller.isLoading.value) {
-      print('🔍 [ForumListView] Topics list is empty, forcing reload...');
+      debugPrint('🔍 [ForumListView] Topics list is empty, forcing reload...');
       controller.loadTopics(refresh: true);
     }
   }
@@ -110,7 +108,7 @@ class _ForumListViewState extends State<ForumListView>
           Container(
             padding: EdgeInsets.all(ForumDesignSystem.spacingSM),
             decoration: BoxDecoration(
-              color: ForumDesignSystem.primary.withOpacity(0.1),
+              color: ForumDesignSystem.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(ForumDesignSystem.radiusMD),
             ),
             child: Icon(
@@ -239,7 +237,7 @@ class _ForumListViewState extends State<ForumListView>
           color: ForumDesignSystem.primary,
         ),
         style: IconButton.styleFrom(
-          backgroundColor: ForumDesignSystem.primary.withOpacity(0.1),
+          backgroundColor: ForumDesignSystem.primary.withValues(alpha: 0.1),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(ForumDesignSystem.radiusMD),
           ),
@@ -250,15 +248,24 @@ class _ForumListViewState extends State<ForumListView>
 
   Widget _buildBody(BuildContext context, bool isTablet) {
     return Obx(() {
-      if (controller.isLoading.value) {
+      if (controller.isLoading.value && controller.topics.isEmpty) {
         return _buildLoadingState(context);
       }
 
-      if (controller.topics.isEmpty) {
-        return _buildEmptyState(context);
-      }
-
-      return _buildTopicsList(context, isTablet);
+      return RefreshIndicator(
+        onRefresh: () async {
+          HapticFeedback.lightImpact();
+          await controller.loadTopics(refresh: true);
+        },
+        color: ForumDesignSystem.primary,
+        backgroundColor: ForumDesignSystem.getSurfaceColor(context),
+        strokeWidth: 2.5,
+        displacement: 40.0,
+        triggerMode: RefreshIndicatorTriggerMode.onEdge,
+        child: controller.topics.isEmpty
+            ? _buildEmptyState(context)
+            : _buildTopicsList(context, isTablet),
+      );
     });
   }
 
@@ -284,105 +291,102 @@ class _ForumListViewState extends State<ForumListView>
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: ForumDesignSystem.getResponsivePadding(context),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: EdgeInsets.all(ForumDesignSystem.spacingXL),
-              decoration: BoxDecoration(
-                color: ForumDesignSystem.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(ForumDesignSystem.radiusXL),
+    return ListView(
+      controller: _scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: ForumDesignSystem.getResponsivePadding(context),
+      children: [
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.3,
+        ),
+        Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: EdgeInsets.all(ForumDesignSystem.spacingXL),
+                decoration: BoxDecoration(
+                  color: ForumDesignSystem.primary.withValues(alpha: 0.1),
+                  borderRadius:
+                      BorderRadius.circular(ForumDesignSystem.radiusXL),
+                ),
+                child: Icon(
+                  Icons.forum_outlined,
+                  size: ForumDesignSystem.iconXL * 2,
+                  color: ForumDesignSystem.primary,
+                ),
               ),
-              child: Icon(
-                Icons.forum_outlined,
-                size: ForumDesignSystem.iconXL * 2,
-                color: ForumDesignSystem.primary,
+              SizedBox(height: ForumDesignSystem.spacingLG),
+              Text(
+                'No topics yet',
+                style: ForumDesignSystem.headingStyle.copyWith(
+                  color: ForumDesignSystem.getTextColor(context),
+                ),
               ),
-            ),
-            SizedBox(height: ForumDesignSystem.spacingLG),
-            Text(
-              'No topics yet',
-              style: ForumDesignSystem.headingStyle.copyWith(
-                color: ForumDesignSystem.getTextColor(context),
+              SizedBox(height: ForumDesignSystem.spacingSM),
+              Text(
+                'Be the first to start a discussion!',
+                style: ForumDesignSystem.bodyStyle.copyWith(
+                  color: ForumDesignSystem.getTextColor(context,
+                      isSecondary: true),
+                ),
+                textAlign: TextAlign.center,
               ),
-            ),
-            SizedBox(height: ForumDesignSystem.spacingSM),
-            Text(
-              'Be the first to start a discussion!',
-              style: ForumDesignSystem.bodyStyle.copyWith(
-                color:
-                    ForumDesignSystem.getTextColor(context, isSecondary: true),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            Obx(() {
-              final connectivityService = Get.find<ConnectivityService>();
-              if (!connectivityService.isOnline.value) {
-                return const SizedBox.shrink();
-              }
-              return Column(
-                children: [
-                  SizedBox(height: ForumDesignSystem.spacingLG),
-                  ElevatedButton.icon(
-                    onPressed: () => _showCreateTopicDialog(context),
-                    icon: Icon(Icons.add),
-                    label: Text('Create First Topic'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: ForumDesignSystem.primary,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: ForumDesignSystem.spacingLG,
-                        vertical: ForumDesignSystem.spacingMD,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(ForumDesignSystem.radiusMD),
+              Obx(() {
+                final connectivityService = Get.find<ConnectivityService>();
+                if (!connectivityService.isOnline.value) {
+                  return const SizedBox.shrink();
+                }
+                return Column(
+                  children: [
+                    SizedBox(height: ForumDesignSystem.spacingLG),
+                    ElevatedButton.icon(
+                      onPressed: () => _showCreateTopicDialog(context),
+                      icon: Icon(Icons.add),
+                      label: Text('Create First Topic'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: ForumDesignSystem.primary,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: ForumDesignSystem.spacingLG,
+                          vertical: ForumDesignSystem.spacingMD,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(ForumDesignSystem.radiusMD),
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              );
-            }),
-          ],
+                  ],
+                );
+              }),
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
   Widget _buildTopicsList(BuildContext context, bool isTablet) {
-    return RefreshIndicator(
-      onRefresh: () async {
-        HapticFeedback.lightImpact();
-        await controller.loadTopics(refresh: true);
+    return ListView.builder(
+      controller: _scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: ForumDesignSystem.getResponsivePadding(context),
+      itemCount: controller.topics.length,
+      itemBuilder: (context, index) {
+        final topic = controller.topics[index];
+        return AnimatedContainer(
+          duration: ForumDesignSystem.animationFast,
+          curve: ForumAnimations.easeOut,
+          child: ForumTopicCard(
+            topic: topic,
+            onTap: () {
+              HapticFeedback.lightImpact();
+              Get.toNamed('/forum/detail/${topic.id}');
+            },
+          ),
+        );
       },
-      color: ForumDesignSystem.primary,
-      backgroundColor: ForumDesignSystem.getSurfaceColor(context),
-      strokeWidth: 2.5,
-      displacement: 40.0,
-      triggerMode: RefreshIndicatorTriggerMode.onEdge,
-      child: ListView.builder(
-        controller: _scrollController,
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: ForumDesignSystem.getResponsivePadding(context),
-        itemCount: controller.topics.length,
-        itemBuilder: (context, index) {
-          final topic = controller.topics[index];
-          return AnimatedContainer(
-            duration: ForumDesignSystem.animationFast,
-            curve: ForumAnimations.easeOut,
-            child: ForumTopicCard(
-              topic: topic,
-              onTap: () {
-                HapticFeedback.lightImpact();
-                Get.toNamed('/forum/detail/${topic.id}');
-              },
-            ),
-          );
-        },
-      ),
     );
   }
 

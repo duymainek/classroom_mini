@@ -27,6 +27,7 @@ class ChatUserResponse {
 
   factory ChatUserResponse.fromJson(Map<String, dynamic> json) =>
       _$ChatUserResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$ChatUserResponseToJson(this);
   
   bool get isOnline => metadata?['online'] == true;
@@ -92,6 +93,7 @@ class ChatMessageResponse {
 
   factory ChatMessageResponse.fromJson(Map<String, dynamic> json) =>
       _$ChatMessageResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$ChatMessageResponseToJson(this);
   
   bool get isTextMessage => type == 'text';
@@ -145,6 +147,7 @@ class ConversationResponse {
 
   factory ConversationResponse.fromJson(Map<String, dynamic> json) =>
       _$ConversationResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$ConversationResponseToJson(this);
   
   bool get isDirect => type == 'direct';
@@ -205,6 +208,7 @@ class ChatRoomResponse {
 
   factory ChatRoomResponse.fromJson(Map<String, dynamic> json) =>
       _$ChatRoomResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$ChatRoomResponseToJson(this);
 }
 
@@ -229,6 +233,7 @@ class SearchUserResponse {
 
   factory SearchUserResponse.fromJson(Map<String, dynamic> json) =>
       _$SearchUserResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$SearchUserResponseToJson(this);
 }
 

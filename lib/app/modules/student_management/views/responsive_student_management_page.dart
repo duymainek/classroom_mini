@@ -64,11 +64,11 @@ class _MobileView extends StatelessWidget {
                         Theme.of(context)
                             .colorScheme
                             .primaryContainer
-                            .withOpacity(0.3),
+                            .withValues(alpha: 0.3),
                         Theme.of(context)
                             .colorScheme
                             .secondaryContainer
-                            .withOpacity(0.1),
+                            .withValues(alpha: 0.1),
                       ],
                     ),
                   ),
@@ -94,7 +94,7 @@ class _MobileView extends StatelessWidget {
                         color: Theme.of(context)
                             .colorScheme
                             .outline
-                            .withOpacity(0.3),
+                            .withValues(alpha: 0.3),
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
@@ -107,8 +107,8 @@ class _MobileView extends StatelessWidget {
                     filled: true,
                     fillColor: Theme.of(context)
                         .colorScheme
-                        .surfaceVariant
-                        .withOpacity(0.3),
+                        .surfaceContainerHighest
+                        .withValues(alpha: 0.3),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 20,
                       vertical: 14,
@@ -199,14 +199,14 @@ class _MobileView extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: Theme.of(context)
                                 .colorScheme
-                                .surfaceVariant
-                                .withOpacity(0.3),
+                                .surfaceContainerHighest
+                                .withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: Theme.of(context)
                                   .colorScheme
                                   .outline
-                                  .withOpacity(0.2),
+                                  .withValues(alpha: 0.2),
                               width: 1,
                             ),
                           ),
@@ -216,7 +216,7 @@ class _MobileView extends StatelessWidget {
                             color: Theme.of(context)
                                 .colorScheme
                                 .onSurfaceVariant
-                                .withOpacity(0.6),
+                                .withValues(alpha: 0.6),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -239,7 +239,7 @@ class _MobileView extends StatelessWidget {
                                     color: Theme.of(context)
                                         .colorScheme
                                         .onSurfaceVariant
-                                        .withOpacity(0.9),
+                                        .withValues(alpha: 0.9),
                                     height: 1.5,
                                   ),
                         ),
@@ -315,7 +315,7 @@ class _StudentCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -336,7 +336,7 @@ class _StudentCard extends StatelessWidget {
                       color: Theme.of(context)
                           .colorScheme
                           .primary
-                          .withOpacity(0.1),
+                          .withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     padding: const EdgeInsets.all(6),
@@ -461,7 +461,7 @@ class _StudentCard extends StatelessWidget {
                     color: Theme.of(context)
                         .colorScheme
                         .onSurfaceVariant
-                        .withOpacity(0.7),
+                        .withValues(alpha: 0.7),
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -470,7 +470,7 @@ class _StudentCard extends StatelessWidget {
                           color: Theme.of(context)
                               .colorScheme
                               .onSurfaceVariant
-                              .withOpacity(0.85),
+                              .withValues(alpha: 0.85),
                           fontWeight: FontWeight.w500,
                         ),
                   ),
@@ -495,7 +495,7 @@ class _StudentCard extends StatelessWidget {
                             color: Theme.of(context)
                                 .colorScheme
                                 .onSurfaceVariant
-                                .withOpacity(0.7),
+                                .withValues(alpha: 0.7),
                           ),
                           const SizedBox(width: 6),
                           Expanded(
@@ -509,7 +509,7 @@ class _StudentCard extends StatelessWidget {
                                     color: Theme.of(context)
                                         .colorScheme
                                         .onSurfaceVariant
-                                        .withOpacity(0.9),
+                                        .withValues(alpha: 0.9),
                                   ),
                             ),
                           ),
@@ -526,7 +526,7 @@ class _StudentCard extends StatelessWidget {
                             color: Theme.of(context)
                                 .colorScheme
                                 .onSurfaceVariant
-                                .withOpacity(0.7),
+                                .withValues(alpha: 0.7),
                           ),
                           const SizedBox(width: 6),
                           Expanded(
@@ -540,7 +540,7 @@ class _StudentCard extends StatelessWidget {
                                     color: Theme.of(context)
                                         .colorScheme
                                         .onSurfaceVariant
-                                        .withOpacity(0.9),
+                                        .withValues(alpha: 0.9),
                                   ),
                             ),
                           ),
@@ -589,7 +589,7 @@ class _FabActions extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
                     color:
-                        Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                        Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -670,13 +670,13 @@ Widget _statusChip(bool isActive) {
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
     decoration: BoxDecoration(
       color: isActive
-          ? Colors.green.withOpacity(0.12)
-          : Colors.red.withOpacity(0.12),
+          ? Colors.green.withValues(alpha: 0.12)
+          : Colors.red.withValues(alpha: 0.12),
       borderRadius: BorderRadius.circular(16),
       border: Border.all(
         color: isActive
-            ? Colors.green.withOpacity(0.3)
-            : Colors.red.withOpacity(0.3),
+            ? Colors.green.withValues(alpha: 0.3)
+            : Colors.red.withValues(alpha: 0.3),
         width: 1,
       ),
     ),
@@ -878,10 +878,10 @@ Widget _buildFilterDropdown<T>(
 
   return Container(
     decoration: BoxDecoration(
-      color: colorScheme.surfaceVariant.withOpacity(0.3),
+      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
       borderRadius: BorderRadius.circular(12),
       border: Border.all(
-        color: colorScheme.outline.withOpacity(0.2),
+        color: colorScheme.outline.withValues(alpha: 0.2),
       ),
     ),
     child: ListTile(
@@ -898,7 +898,7 @@ Widget _buildFilterDropdown<T>(
           : Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: colorScheme.primary.withOpacity(0.1),
+                color: colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Icon(icon, color: colorScheme.primary, size: 16),
@@ -921,7 +921,7 @@ Widget _buildFilterDropdown<T>(
           : Text(
               'Tất cả',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
               ),
             ),
       trailing: const Icon(Icons.arrow_drop_down, size: 18),

@@ -20,7 +20,7 @@ void main() async {
   // --- SharedPreferences Persistence Test --- START
   final prefs = await SharedPreferences.getInstance();
   final dummyValue = prefs.getString('dummy_test_key');
-  print('[SharedPreferences Test] Dummy value on startup: $dummyValue');
+  debugPrint('[SharedPreferences Test] Dummy value on startup: $dummyValue');
   // --- SharedPreferences Persistence Test --- END
 
   await CoreBinding().init();
@@ -41,11 +41,11 @@ void main() async {
 
   // Determine initial route from the single source of truth: AuthService
   final authService = Get.find<AuthService>();
-  print(
+  debugPrint(
       '[main] AuthService.isAuthenticated.value: ${authService.isAuthenticated.value}');
   final initialRoute =
       authService.isAuthenticated.value ? Routes.HOME : Routes.LOGIN;
-  print('[main] Determined initialRoute: $initialRoute');
+  debugPrint('[main] Determined initialRoute: $initialRoute');
 
   runApp(MyApp(initialRoute: initialRoute));
 }

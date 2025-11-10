@@ -288,10 +288,10 @@ class _AnnouncementFormState extends State<AnnouncementForm> {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceVariant.withOpacity(0.3),
+            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: colorScheme.outline.withOpacity(0.2),
+              color: colorScheme.outline.withValues(alpha: 0.2),
             ),
           ),
           child: Row(
@@ -318,7 +318,7 @@ class _AnnouncementFormState extends State<AnnouncementForm> {
       return Container(
         decoration: BoxDecoration(
           border: Border.all(
-            color: colorScheme.outline.withOpacity(0.2),
+            color: colorScheme.outline.withValues(alpha: 0.2),
           ),
           borderRadius: BorderRadius.circular(8),
         ),
@@ -327,7 +327,7 @@ class _AnnouncementFormState extends State<AnnouncementForm> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(8),
                   topRight: Radius.circular(8),
@@ -410,25 +410,25 @@ class _AnnouncementFormState extends State<AnnouncementForm> {
         SharedFileAttachmentPicker(
           tag: 'announcement_attachments',
           onAttachmentsChanged: (attachments) {
-            print('=== ANNOUNCEMENT FORM CALLBACK ===');
-            print('Received attachments changed callback');
-            print('New attachments count: ${attachments.length}');
-            print(
+            debugPrint('=== ANNOUNCEMENT FORM CALLBACK ===');
+            debugPrint('Received attachments changed callback');
+            debugPrint('New attachments count: ${attachments.length}');
+            debugPrint(
                 'Uploaded count: ${attachments.where((a) => a.isUploaded).length}');
-            print('Attachment details:');
+            debugPrint('Attachment details:');
             for (int i = 0; i < attachments.length; i++) {
               final att = attachments[i];
-              print(
+              debugPrint(
                   '  [$i] ${att.fileName} - Status: ${att.status} - ID: ${att.attachmentId}');
             }
-            print('Updating _selectedAttachmentIds...');
+            debugPrint('Updating _selectedAttachmentIds...');
             _selectedAttachmentIds = attachments
                 .where((a) => a.isUploaded && a.attachmentId != null)
                 .map((a) => a.attachmentId!)
                 .toList();
-            print(
+            debugPrint(
                 'Update completed. Current _selectedAttachmentIds count: ${_selectedAttachmentIds.length}');
-            print('=== END ANNOUNCEMENT FORM CALLBACK ===');
+            debugPrint('=== END ANNOUNCEMENT FORM CALLBACK ===');
           },
           maxFiles: 10,
           maxFileSizeMB: 100,
@@ -465,10 +465,10 @@ class _AnnouncementFormState extends State<AnnouncementForm> {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceVariant.withOpacity(0.3),
+            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: colorScheme.outline.withOpacity(0.2),
+              color: colorScheme.outline.withValues(alpha: 0.2),
             ),
           ),
           child: Column(
@@ -551,12 +551,12 @@ class _AnnouncementFormState extends State<AnnouncementForm> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -567,7 +567,7 @@ class _AnnouncementFormState extends State<AnnouncementForm> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.3),
+              color: colorScheme.primaryContainer.withValues(alpha: 0.3),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
@@ -578,7 +578,7 @@ class _AnnouncementFormState extends State<AnnouncementForm> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: colorScheme.primary.withOpacity(0.1),
+                    color: colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: colorScheme.primary, size: 20),
@@ -631,8 +631,8 @@ class _AnnouncementFormState extends State<AnnouncementForm> {
   Future<void> _saveAnnouncement() async {
     if (!_validateForm()) return;
 
-    print('=== SAVING ANNOUNCEMENT ===');
-    print('Selected attachment IDs: $_selectedAttachmentIds');
+    debugPrint('=== SAVING ANNOUNCEMENT ===');
+    debugPrint('Selected attachment IDs: $_selectedAttachmentIds');
 
     final request = CreateAnnouncementRequest(
       title: _titleController.text.trim(),
@@ -665,7 +665,7 @@ class _AnnouncementFormState extends State<AnnouncementForm> {
       if (announcementId != null) {
         // Finalize attachments if any
         if (_selectedAttachmentIds.isNotEmpty) {
-          print('Finalizing attachments for announcement: $announcementId');
+          debugPrint('Finalizing attachments for announcement: $announcementId');
           await controller.finalizeAttachments(
               announcementId, _selectedAttachmentIds);
         }

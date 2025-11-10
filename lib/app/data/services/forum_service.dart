@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:dio/dio.dart';
 import 'package:classroom_mini/app/data/services/api_service.dart';
@@ -6,10 +7,8 @@ import 'package:classroom_mini/app/data/models/request/forum_request.dart';
 import 'package:classroom_mini/app/data/models/response/forum_response.dart';
 import 'package:classroom_mini/app/data/models/response/data_response.dart';
 
-/**
- * Forum Service
- * Handles forum-related business logic and API calls
- */
+/// Forum Service
+/// Handles forum-related business logic and API calls
 class ForumService extends GetxService {
   late final ForumApiService _forumApiService;
 
@@ -30,20 +29,20 @@ class ForumService extends GetxService {
     List<String>? attachmentIds,
   }) async {
     try {
-      print('🔍 [ForumService] createTopic called');
+      debugPrint('🔍 [ForumService] createTopic called');
       final request = CreateTopicRequest(
         title: title,
         content: content,
         attachmentIds: attachmentIds,
       );
-      print('🔍 [ForumService] Request created: ${request.toJson()}');
+      debugPrint('🔍 [ForumService] Request created: ${request.toJson()}');
 
-      print('🔍 [ForumService] Calling _forumApiService.createTopic...');
+      debugPrint('🔍 [ForumService] Calling _forumApiService.createTopic...');
       final response = await _forumApiService.createTopic(request);
-      print('🔍 [ForumService] API response received:');
-      print('  - success: ${response.success}');
-      print('  - data: ${response.data}');
-      print('  - message: ${response.message}');
+      debugPrint('🔍 [ForumService] API response received:');
+      debugPrint('  - success: ${response.success}');
+      debugPrint('  - data: ${response.data}');
+      debugPrint('  - message: ${response.message}');
 
       final dynamic responseWithExtra = response;
       try {
@@ -54,8 +53,8 @@ class ForumService extends GetxService {
 
       return response;
     } catch (e, stackTrace) {
-      print('❌ [ForumService] Error in createTopic: $e');
-      print('❌ [ForumService] Stack trace: $stackTrace');
+      debugPrint('❌ [ForumService] Error in createTopic: $e');
+      debugPrint('❌ [ForumService] Stack trace: $stackTrace');
       throw Exception('Failed to create topic: $e');
     }
   }
@@ -67,26 +66,26 @@ class ForumService extends GetxService {
     int offset = 0,
   }) async {
     try {
-      print('🔍 [ForumService] getTopics called');
-      print('  - sort: $sort');
-      print('  - limit: $limit');
-      print('  - offset: $offset');
+      debugPrint('🔍 [ForumService] getTopics called');
+      debugPrint('  - sort: $sort');
+      debugPrint('  - limit: $limit');
+      debugPrint('  - offset: $offset');
 
-      print('🔍 [ForumService] Calling _forumApiService.getTopics...');
+      debugPrint('🔍 [ForumService] Calling _forumApiService.getTopics...');
       final response = await _forumApiService.getTopics(
         sort,
         limit,
         offset,
       );
-      print('🔍 [ForumService] API response received:');
-      print('  - success: ${response.success}');
-      print('  - data length: ${response.data?.length}');
-      print('  - message: ${response.message}');
+      debugPrint('🔍 [ForumService] API response received:');
+      debugPrint('  - success: ${response.success}');
+      debugPrint('  - data length: ${response.data?.length}');
+      debugPrint('  - message: ${response.message}');
 
       return response;
     } catch (e, stackTrace) {
-      print('❌ [ForumService] Error in getTopics: $e');
-      print('❌ [ForumService] Stack trace: $stackTrace');
+      debugPrint('❌ [ForumService] Error in getTopics: $e');
+      debugPrint('❌ [ForumService] Stack trace: $stackTrace');
       throw Exception('Failed to get topics: $e');
     }
   }

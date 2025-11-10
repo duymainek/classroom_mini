@@ -206,8 +206,8 @@ class _QuizFormState extends State<QuizForm> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      colorScheme.primaryContainer.withOpacity(0.3),
-                      colorScheme.secondaryContainer.withOpacity(0.1),
+                      colorScheme.primaryContainer.withValues(alpha: 0.3),
+                      colorScheme.secondaryContainer.withValues(alpha: 0.1),
                     ],
                   ),
                 ),
@@ -502,12 +502,12 @@ class _QuizFormState extends State<QuizForm> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -520,7 +520,7 @@ class _QuizFormState extends State<QuizForm> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.3),
+              color: colorScheme.primaryContainer.withValues(alpha: 0.3),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
@@ -531,7 +531,7 @@ class _QuizFormState extends State<QuizForm> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: colorScheme.primary.withOpacity(0.1),
+                    color: colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -596,7 +596,7 @@ class _QuizFormState extends State<QuizForm> {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
           ),
         ),
         focusedBorder: OutlineInputBorder(
@@ -608,7 +608,7 @@ class _QuizFormState extends State<QuizForm> {
         ),
         filled: true,
         fillColor:
-            Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+            Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
       ),
     );
   }
@@ -628,17 +628,17 @@ class _QuizFormState extends State<QuizForm> {
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: _isEditable
-            ? colorScheme.surfaceVariant.withOpacity(0.3)
+            ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
             : value
-                ? colorScheme.primaryContainer.withOpacity(0.3)
-                : colorScheme.surfaceVariant.withOpacity(0.3),
+                ? colorScheme.primaryContainer.withValues(alpha: 0.3)
+                : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: _isEditable
-              ? colorScheme.outline.withOpacity(0.2)
+              ? colorScheme.outline.withValues(alpha: 0.2)
               : value
-                  ? colorScheme.primary.withOpacity(0.3)
-                  : colorScheme.outline.withOpacity(0.2),
+                  ? colorScheme.primary.withValues(alpha: 0.3)
+                  : colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: SwitchListTile(
@@ -665,7 +665,7 @@ class _QuizFormState extends State<QuizForm> {
               ? colorScheme.primary
               : (value ? colorScheme.primary : colorScheme.onSurfaceVariant),
         ),
-        activeColor: colorScheme.primary,
+        activeThumbColor: colorScheme.primary,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
     );
@@ -681,12 +681,12 @@ class _QuizFormState extends State<QuizForm> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -699,7 +699,7 @@ class _QuizFormState extends State<QuizForm> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.3),
+              color: colorScheme.primaryContainer.withValues(alpha: 0.3),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
@@ -710,7 +710,7 @@ class _QuizFormState extends State<QuizForm> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: colorScheme.primary.withOpacity(0.1),
+                    color: colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -747,7 +747,7 @@ class _QuizFormState extends State<QuizForm> {
                           tooltip: 'Add Question',
                           style: IconButton.styleFrom(
                             backgroundColor:
-                                colorScheme.primary.withOpacity(0.1),
+                                colorScheme.primary.withValues(alpha: 0.1),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -775,7 +775,7 @@ class _QuizFormState extends State<QuizForm> {
                               tooltip: 'Generate with AI',
                               style: IconButton.styleFrom(
                                 backgroundColor:
-                                    colorScheme.secondary.withOpacity(0.1),
+                                    colorScheme.secondary.withValues(alpha: 0.1),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -815,10 +815,10 @@ class _QuizFormState extends State<QuizForm> {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -826,7 +826,7 @@ class _QuizFormState extends State<QuizForm> {
           Icon(
             Icons.quiz_outlined,
             size: 48,
-            color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
           ),
           const SizedBox(height: 16),
           Text(
@@ -840,7 +840,7 @@ class _QuizFormState extends State<QuizForm> {
           Text(
             'Add questions manually or generate them with AI',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
             ),
             textAlign: TextAlign.center,
           ),
@@ -864,7 +864,7 @@ class _QuizFormState extends State<QuizForm> {
         color: colorScheme.surface,
         border: Border(
           top: BorderSide(
-            color: colorScheme.outline.withOpacity(0.2),
+            color: colorScheme.outline.withValues(alpha: 0.2),
           ),
         ),
       ),
@@ -938,7 +938,7 @@ class _QuizFormState extends State<QuizForm> {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: colorScheme.outline.withOpacity(0.3),
+            color: colorScheme.outline.withValues(alpha: 0.3),
           ),
         ),
         focusedBorder: OutlineInputBorder(
@@ -949,7 +949,7 @@ class _QuizFormState extends State<QuizForm> {
           ),
         ),
         filled: true,
-        fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
       ),
       items: _availableCourses
           .map((course) => DropdownMenuItem(
@@ -1022,17 +1022,17 @@ class _QuizFormState extends State<QuizForm> {
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: colorScheme.primary.withOpacity(0.1),
+            color: colorScheme.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -1098,7 +1098,7 @@ class _QuizFormState extends State<QuizForm> {
       return Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: colorScheme.surfaceVariant.withOpacity(0.3),
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -1122,10 +1122,10 @@ class _QuizFormState extends State<QuizForm> {
       return Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: colorScheme.surfaceVariant.withOpacity(0.3),
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: colorScheme.outline.withOpacity(0.2),
+            color: colorScheme.outline.withValues(alpha: 0.2),
             style: BorderStyle.solid,
           ),
         ),
@@ -1134,7 +1134,7 @@ class _QuizFormState extends State<QuizForm> {
             Icon(
               Icons.groups_outlined,
               size: 48,
-              color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
             ),
             const SizedBox(height: 16),
             Text(
@@ -1150,7 +1150,7 @@ class _QuizFormState extends State<QuizForm> {
                   ? 'No groups are available for the selected course.'
                   : 'This quiz is not assigned to any groups.',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
               ),
               textAlign: TextAlign.center,
             ),
@@ -1203,7 +1203,7 @@ class _QuizFormState extends State<QuizForm> {
               side: BorderSide(
                 color: isSelected
                     ? colorScheme.primary
-                    : colorScheme.outline.withOpacity(0.3),
+                    : colorScheme.outline.withValues(alpha: 0.3),
                 width: isSelected ? 2 : 1,
               ),
               shape: RoundedRectangleBorder(
@@ -1217,7 +1217,7 @@ class _QuizFormState extends State<QuizForm> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.3),
+              color: colorScheme.primaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -1256,10 +1256,10 @@ class _QuizFormState extends State<QuizForm> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withOpacity(0.3),
+            color: colorScheme.primaryContainer.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: colorScheme.primary.withOpacity(0.2),
+              color: colorScheme.primary.withValues(alpha: 0.2),
             ),
           ),
           child: Row(
@@ -1307,7 +1307,7 @@ class _QuizFormState extends State<QuizForm> {
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.only(right: 20),
           decoration: BoxDecoration(
-            color: colorScheme.errorContainer.withOpacity(0.3),
+            color: colorScheme.errorContainer.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
@@ -1381,11 +1381,11 @@ class _QuizFormState extends State<QuizForm> {
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: colorScheme.outline.withOpacity(0.2),
+              color: colorScheme.outline.withValues(alpha: 0.2),
             ),
             boxShadow: [
               BoxShadow(
-                color: colorScheme.shadow.withOpacity(0.05),
+                color: colorScheme.shadow.withValues(alpha: 0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -1398,7 +1398,7 @@ class _QuizFormState extends State<QuizForm> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceVariant.withOpacity(0.3),
+                  color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(16),
                     topRight: Radius.circular(16),
@@ -1409,7 +1409,7 @@ class _QuizFormState extends State<QuizForm> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: colorScheme.primary.withOpacity(0.1),
+                        color: colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -1439,7 +1439,7 @@ class _QuizFormState extends State<QuizForm> {
                         ),
                         tooltip: 'Edit question',
                         style: IconButton.styleFrom(
-                          backgroundColor: colorScheme.primary.withOpacity(0.1),
+                          backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
                         ),
                       ),
                   ],
@@ -1458,8 +1458,8 @@ class _QuizFormState extends State<QuizForm> {
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: question.questionType == 'multiple_choice'
-                            ? colorScheme.primaryContainer.withOpacity(0.5)
-                            : colorScheme.secondaryContainer.withOpacity(0.5),
+                            ? colorScheme.primaryContainer.withValues(alpha: 0.5)
+                            : colorScheme.secondaryContainer.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -1534,12 +1534,12 @@ class _QuizFormState extends State<QuizForm> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isCorrect
-            ? colorScheme.primaryContainer.withOpacity(0.3)
-            : colorScheme.surfaceVariant.withOpacity(0.3),
+            ? colorScheme.primaryContainer.withValues(alpha: 0.3)
+            : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         border: Border.all(
           color: isCorrect
-              ? colorScheme.primary.withOpacity(0.5)
-              : colorScheme.outline.withOpacity(0.2),
+              ? colorScheme.primary.withValues(alpha: 0.5)
+              : colorScheme.outline.withValues(alpha: 0.2),
           width: isCorrect ? 2 : 1,
         ),
         borderRadius: BorderRadius.circular(12),
@@ -1553,7 +1553,7 @@ class _QuizFormState extends State<QuizForm> {
               shape: BoxShape.circle,
               color: isCorrect
                   ? colorScheme.primary
-                  : colorScheme.outline.withOpacity(0.3),
+                  : colorScheme.outline.withValues(alpha: 0.3),
             ),
             child: Center(
               child: Text(

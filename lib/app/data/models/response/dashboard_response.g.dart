@@ -64,22 +64,44 @@ Map<String, dynamic> _$InstructorDashboardDataToJson(
 
 EnrolledCourse _$EnrolledCourseFromJson(Map<String, dynamic> json) =>
     EnrolledCourse(
-      id: json['id'] as String,
-      courseId: json['courseId'] as String,
-      groupId: json['groupId'] as String,
-      semesterId: json['semesterId'] as String,
+      enrollmentId: json['enrollmentId'] as String,
       course: Course.fromJson(json['course'] as Map<String, dynamic>),
       group: Group.fromJson(json['group'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$EnrolledCourseToJson(EnrolledCourse instance) =>
     <String, dynamic>{
-      'id': instance.id,
-      'courseId': instance.courseId,
-      'groupId': instance.groupId,
-      'semesterId': instance.semesterId,
+      'enrollmentId': instance.enrollmentId,
       'course': instance.course,
       'group': instance.group,
+    };
+
+StudyProgressItem _$StudyProgressItemFromJson(Map<String, dynamic> json) =>
+    StudyProgressItem(
+      total: (json['total'] as num).toInt(),
+      completed: (json['completed'] as num).toInt(),
+      pending: (json['pending'] as num).toInt(),
+    );
+
+Map<String, dynamic> _$StudyProgressItemToJson(StudyProgressItem instance) =>
+    <String, dynamic>{
+      'total': instance.total,
+      'completed': instance.completed,
+      'pending': instance.pending,
+    };
+
+StudyProgress _$StudyProgressFromJson(Map<String, dynamic> json) =>
+    StudyProgress(
+      assignments: StudyProgressItem.fromJson(
+          json['assignments'] as Map<String, dynamic>),
+      quizzes:
+          StudyProgressItem.fromJson(json['quizzes'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$StudyProgressToJson(StudyProgress instance) =>
+    <String, dynamic>{
+      'assignments': instance.assignments,
+      'quizzes': instance.quizzes,
     };
 
 StudentDashboardData _$StudentDashboardDataFromJson(
@@ -94,9 +116,10 @@ StudentDashboardData _$StudentDashboardDataFromJson(
       upcomingAssignments: (json['upcomingAssignments'] as List<dynamic>)
           .map((e) => Assignment.fromJson(e as Map<String, dynamic>))
           .toList(),
-      recentSubmissions: (json['recentSubmissions'] as List<dynamic>)
-          .map((e) => AssignmentSubmission.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      studyProgress: json['studyProgress'] == null
+          ? null
+          : StudyProgress.fromJson(
+              json['studyProgress'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$StudentDashboardDataToJson(
@@ -105,7 +128,7 @@ Map<String, dynamic> _$StudentDashboardDataToJson(
       'currentSemester': instance.currentSemester,
       'enrolledCourses': instance.enrolledCourses,
       'upcomingAssignments': instance.upcomingAssignments,
-      'recentSubmissions': instance.recentSubmissions,
+      'studyProgress': instance.studyProgress,
     };
 
 InstructorDashboardResponse _$InstructorDashboardResponseFromJson(

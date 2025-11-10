@@ -1,16 +1,18 @@
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:flutter/material.dart';
+import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:get/get.dart';
 import 'package:classroom_mini/app/data/models/request/chat_request.dart';
 import 'package:classroom_mini/app/data/models/response/chat_response.dart';
 import 'package:classroom_mini/app/core/constants/api_endpoints.dart';
 import 'package:classroom_mini/app/data/services/storage_service.dart';
 import 'package:classroom_mini/app/data/services/api_service.dart';
+import 'package:socket_io_client/socket_io_client.dart' as io;
 
 class ChatSocketService extends GetxService {
-  IO.Socket? _socket;
+  io.Socket? _socket;
   final RxBool isConnected = false.obs;
   final RxString currentRoomId = ''.obs;
-  
+
   Function(ChatMessageResponse)? onNewMessage;
   Function(String roomId, ChatMessageResponse)? onNewMessageNotification;
   Function(String userId, bool isTyping)? onUserTyping;
@@ -21,7 +23,7 @@ class ChatSocketService extends GetxService {
 
   Future<void> connect(String? token) async {
     if (_socket != null && _socket!.connected) {
-      print('Socket already connected');
+      debugPrint('Socket already connected');
       return;
     }
 
@@ -32,37 +34,40 @@ class ChatSocketService extends GetxService {
     }
 
     if (accessToken == null) {
-      print('No access token available for socket connection');
+      debugPrint('No access token available for socket connection');
       return;
     }
 
-    final socketUrl = ApiEndpoints.socketUrl;
-    
-    _socket = IO.io(
+    const socketUrl = ApiEndpoints.socketUrl;
+
+    _socket = io.io(
       '$socketUrl/chat',
-      IO.OptionBuilder()
-        .setTransports(['websocket', 'polling'])
-        .setAuth({'token': accessToken})
-        .enableAutoConnect()
-        .build(),
+      io.OptionBuilder()
+          .setTransports(['websocket', 'polling'])
+          .setAuth({'token': accessToken})
+          .enableAutoConnect()
+          .build(),
     );
 
     _socket!.onConnect((_) {
-      print('Socket connected');
+      debugPrint('Socket connected');
       isConnected.value = true;
     });
 
     _socket!.onDisconnect((_) {
-      print('Socket disconnected');
+      debugPrint('Socket disconnected');
       isConnected.value = false;
       currentRoomId.value = '';
     });
 
     _socket!.onConnectError((error) {
-      print('Socket connection error: $error');
+      debugPrint('Socket connection error: $error');
       final errorString = error.toString().toLowerCase();
-      if (errorString.contains('token') || errorString.contains('auth') || errorString.contains('expired')) {
-        print('Socket auth error detected, attempting to refresh token and reconnect...');
+      if (errorString.contains('token') ||
+          errorString.contains('auth') ||
+          errorString.contains('expired')) {
+        debugPrint(
+            'Socket auth error detected, attempting to refresh token and reconnect...');
         _handleAuthError();
       }
     });
@@ -72,12 +77,12 @@ class ChatSocketService extends GetxService {
 
   Future<void> _handleAuthError() async {
     try {
-      print('Attempting to refresh token for socket...');
+      debugPrint('Attempting to refresh token for socket...');
       final storageService = await StorageService.getInstance();
       final refreshToken = await storageService.getRefreshToken();
 
       if (refreshToken == null) {
-        print('No refresh token available for socket');
+        debugPrint('No refresh token available for socket');
         return;
       }
 
@@ -95,12 +100,12 @@ class ChatSocketService extends GetxService {
             tokens['refreshToken'],
           );
 
-          print('Token refreshed for socket, reconnecting...');
+          debugPrint('Token refreshed for socket, reconnecting...');
           await reconnect();
         }
       }
     } catch (e) {
-      print('Failed to refresh token for socket: $e');
+      debugPrint('Failed to refresh token for socket: $e');
     }
   }
 
@@ -109,7 +114,7 @@ class ChatSocketService extends GetxService {
       final currentRoom = currentRoomId.value;
       disconnect();
       await connect(null);
-      
+
       if (currentRoom.isNotEmpty) {
         Future.delayed(const Duration(milliseconds: 500), () {
           joinRoom(currentRoom);
@@ -120,46 +125,47 @@ class ChatSocketService extends GetxService {
 
   void _setupGlobalListeners() {
     _socket!.on('new_message_notification', (data) {
-      print('New message notification: $data');
+      debugPrint('New message notification: $data');
       final roomId = data['roomId'] as String;
       final messageData = data['message'] as Map<String, dynamic>;
       final message = ChatMessageResponse.fromJson(messageData);
-      
+
       onNewMessageNotification?.call(roomId, message);
     });
 
     _socket!.on('error', (data) {
-      print('Socket error: $data');
+      debugPrint('Socket error: $data');
       Get.snackbar('Error', data['message'] ?? 'Socket error occurred');
     });
   }
 
   void joinRoom(String roomId) {
     if (!isConnected.value) {
-      print('Socket not connected, cannot join room');
+      debugPrint('Socket not connected, cannot join room');
       return;
     }
 
     if (currentRoomId.value == roomId) {
-      print('Already in room $roomId');
+      debugPrint('Already in room $roomId');
       return;
     }
 
-    print('Joining room: $roomId');
+    debugPrint('Joining room: $roomId');
     _socket!.emit('join_room', {'roomId': roomId});
-    
+
     currentRoomId.value = roomId;
     _setupRoomListeners(roomId);
-    
+
     _socket!.once('joined_room', (data) {
-      print('Successfully joined room: ${data['roomId']}');
+      debugPrint('Successfully joined room: ${data['roomId']}');
     });
   }
 
   void _setupRoomListeners(String roomId) {
     _socket!.on('new_message', (data) {
-      print('New message in room $roomId: $data');
-      final message = ChatMessageResponse.fromJson(data as Map<String, dynamic>);
+      debugPrint('New message in room $roomId: $data');
+      final message =
+          ChatMessageResponse.fromJson(data as Map<String, dynamic>);
       onNewMessage?.call(message);
     });
 
@@ -185,7 +191,7 @@ class ChatSocketService extends GetxService {
     });
 
     _socket!.on('message_sent', (data) {
-      print('Message sent confirmation: $data');
+      debugPrint('Message sent confirmation: $data');
       final tempId = data['tempId'];
       final messageData = data['message'] as Map<String, dynamic>;
       final message = ChatMessageResponse.fromJson(messageData);
@@ -196,16 +202,16 @@ class ChatSocketService extends GetxService {
   void leaveRoom() {
     if (currentRoomId.value.isEmpty) return;
 
-    print('Leaving room: ${currentRoomId.value}');
+    debugPrint('Leaving room: ${currentRoomId.value}');
     _socket!.emit('leave_room', {'roomId': currentRoomId.value});
-    
+
     _socket!.off('new_message');
     _socket!.off('user_typing');
     _socket!.off('user_joined');
     _socket!.off('user_left');
     _socket!.off('messages_read');
     _socket!.off('message_sent');
-    
+
     currentRoomId.value = '';
   }
 
@@ -220,13 +226,13 @@ class ChatSocketService extends GetxService {
       return;
     }
 
-    print('Sending message: ${request.toJson()}');
+    debugPrint('Sending message: ${request.toJson()}');
     _socket!.emit('send_message', request.toJson());
   }
 
   void sendTypingIndicator(String roomId, bool isTyping) {
     if (!isConnected.value || currentRoomId.value != roomId) return;
-    
+
     _socket!.emit('typing', {
       'roomId': roomId,
       'isTyping': isTyping,
@@ -235,7 +241,7 @@ class ChatSocketService extends GetxService {
 
   void markAsRead(String roomId, String lastMessageId) {
     if (!isConnected.value) return;
-    
+
     _socket!.emit('mark_read', {
       'roomId': roomId,
       'lastMessageId': lastMessageId,
@@ -251,8 +257,8 @@ class ChatSocketService extends GetxService {
     _socket?.dispose();
     _socket = null;
     isConnected.value = false;
-    
-    print('Socket disconnected and disposed');
+
+    debugPrint('Socket disconnected and disposed');
   }
 
   @override
@@ -261,4 +267,3 @@ class ChatSocketService extends GetxService {
     super.onClose();
   }
 }
-

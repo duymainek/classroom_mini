@@ -10,6 +10,7 @@ require('dotenv').config();
 
 const authRoutes = require('./src/routes/auth');
 const studentRoutes = require('./src/routes/students');
+const studentSelfServiceRoutes = require('./src/routes/studentSelfService');
 const semesterRoutes = require('./src/routes/semesters');
 const courseRoutes = require('./src/routes/courses');
 const groupRoutes = require('./src/routes/groups');
@@ -23,6 +24,7 @@ const materialRoutes = require('./src/routes/materials');
 const forumRoutes = require('./src/routes/forum');
 const fileUploadRoutes = require('./src/routes/fileUploadRoutes');
 const chatRoutes = require('./src/routes/chatRoutes');
+const notificationRoutes = require('./src/routes/notifications');
 const { errorHandler, notFoundHandler } = require('./src/middleware/errorHandler');
 const { testConnection, initializeAdminUser } = require('./src/services/supabaseClient');
 const { initializeChatSocket } = require('./src/sockets/chatSocket');
@@ -109,6 +111,7 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
+app.use('/api/student', studentSelfServiceRoutes);
 app.use('/api/semesters', semesterRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/groups', groupRoutes);
@@ -121,6 +124,7 @@ app.use('/api/announcements', announcementRoutes);
 app.use('/api/materials', materialRoutes);
 app.use('/api/forum', forumRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api', fileUploadRoutes);
 
 // Root endpoint
@@ -144,7 +148,8 @@ app.get('/', (req, res) => {
       announcements: '/api/announcements',
       materials: '/api/materials',
       forum: '/api/forum',
-      chat: '/api/chat'
+      chat: '/api/chat',
+      notifications: '/api/notifications'
     }
   });
 });

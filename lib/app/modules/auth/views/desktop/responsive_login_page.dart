@@ -22,7 +22,7 @@ class ResponsiveLoginPage extends StatelessWidget {
           ),
           child: Card(
             elevation: 12,
-            shadowColor: Colors.black.withOpacity(0.15),
+            shadowColor: Colors.black.withValues(alpha: 0.15),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
@@ -99,7 +99,7 @@ class ResponsiveLoginPage extends StatelessWidget {
           height:
               ResponsiveBreakpoints.of(context).largerThan('4K') ? 120 : 100,
           decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(24),
           ),
           child: Icon(

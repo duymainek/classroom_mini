@@ -1,4 +1,5 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ConnectivityService extends GetxService {
@@ -19,9 +20,10 @@ class ConnectivityService extends GetxService {
       final result = await _connectivity.checkConnectivity();
       connectivityResult.value = result;
       isOnline.value = _isConnected(result);
-      print('📡 Connectivity initialized: ${isOnline.value ? "Online" : "Offline"}');
+      debugPrint(
+          '📡 Connectivity initialized: ${isOnline.value ? "Online" : "Offline"}');
     } catch (e) {
-      print('Error checking connectivity: $e');
+      debugPrint('Error checking connectivity: $e');
       isOnline.value = false;
     }
   }
@@ -29,10 +31,11 @@ class ConnectivityService extends GetxService {
   void _listenToConnectivityChanges() {
     _connectivity.onConnectivityChanged.listen((ConnectivityResult result) {
       if (isManualOverride.value) {
-        print('📡 Connectivity change ignored (manual override is active)');
+        debugPrint(
+            '📡 Connectivity change ignored (manual override is active)');
         return;
       }
-      
+
       connectivityResult.value = result;
       final wasOnline = isOnline.value;
       final nowOnline = _isConnected(result);
@@ -40,12 +43,12 @@ class ConnectivityService extends GetxService {
       isOnline.value = nowOnline;
 
       if (!wasOnline && nowOnline) {
-        print('📡 Connectivity changed: Offline → Online');
+        debugPrint('📡 Connectivity changed: Offline → Online');
       } else if (wasOnline && !nowOnline) {
-        print('📡 Connectivity changed: Online → Offline');
+        debugPrint('📡 Connectivity changed: Online → Offline');
       }
 
-      print('📡 Current status: ${nowOnline ? "Online" : "Offline"}');
+      debugPrint('📡 Current status: ${nowOnline ? "Online" : "Offline"}');
     });
   }
 
@@ -59,28 +62,27 @@ class ConnectivityService extends GetxService {
     if (isManualOverride.value) {
       return isOnline.value;
     }
-    
+
     try {
       final result = await _connectivity.checkConnectivity();
       final connected = _isConnected(result);
       isOnline.value = connected;
       return connected;
     } catch (e) {
-      print('Error checking connection: $e');
+      debugPrint('Error checking connection: $e');
       return false;
     }
   }
-  
+
   void setManualOverride(bool online) {
     isManualOverride.value = true;
     isOnline.value = online;
-    print('📡 Manual override: ${online ? "Online" : "Offline"}');
+    debugPrint('📡 Manual override: ${online ? "Online" : "Offline"}');
   }
-  
+
   void clearManualOverride() {
     isManualOverride.value = false;
     _initConnectivity();
-    print('📡 Manual override cleared, checking real connectivity');
+    debugPrint('📡 Manual override cleared, checking real connectivity');
   }
 }
-

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:classroom_mini/app/data/models/response/assignment_response.dart'; // For CourseInfo and GroupInfo
 import 'semester_response.dart';
@@ -65,6 +66,7 @@ class Quiz {
     }
     return _$QuizFromJson(json);
   }
+  @override
   Map<String, dynamic> toJson() => _$QuizToJson(this);
 }
 
@@ -95,6 +97,7 @@ class QuizGroup {
     return _$QuizGroupFromJson(json);
   }
 
+  @override
   Map<String, dynamic> toJson() => _$QuizGroupToJson(this);
 }
 
@@ -139,13 +142,13 @@ class QuizQuestion {
       List<QuizQuestionOption>? parsedOptions;
       if (optionsData != null && optionsData is List) {
         try {
-          parsedOptions = (optionsData as List)
+          parsedOptions = (optionsData)
               .where((e) => e != null)
               .map(
                   (e) => QuizQuestionOption.fromJson(e as Map<String, dynamic>))
               .toList();
         } catch (e) {
-          print('⚠️ Error parsing quiz question options: $e');
+          debugPrint('⚠️ Error parsing quiz question options: $e');
           parsedOptions = null;
         }
       }
@@ -165,12 +168,13 @@ class QuizQuestion {
         options: parsedOptions,
       );
     } catch (e, stackTrace) {
-      print('❌ Error parsing QuizQuestion: $e');
-      print('   JSON: $json');
-      print('   Stack: $stackTrace');
+      debugPrint('❌ Error parsing QuizQuestion: $e');
+      debugPrint('   JSON: $json');
+      debugPrint('   Stack: $stackTrace');
       rethrow;
     }
   }
+  @override
   Map<String, dynamic> toJson() => _$QuizQuestionToJson(this);
 }
 
@@ -208,12 +212,13 @@ class QuizQuestionOption {
             : ((orderIndexValue is num) ? orderIndexValue.toInt() : 0),
       );
     } catch (e, stackTrace) {
-      print('❌ Error parsing QuizQuestionOption: $e');
-      print('   JSON: $json');
-      print('   Stack: $stackTrace');
+      debugPrint('❌ Error parsing QuizQuestionOption: $e');
+      debugPrint('   JSON: $json');
+      debugPrint('   Stack: $stackTrace');
       rethrow;
     }
   }
+  @override
   Map<String, dynamic> toJson() => _$QuizQuestionOptionToJson(this);
 }
 
@@ -227,6 +232,7 @@ class QuizListData {
 
   factory QuizListData.fromJson(Map<String, dynamic> json) =>
       _$QuizListDataFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$QuizListDataToJson(this);
 }
 
@@ -239,6 +245,7 @@ class QuizListResponse {
 
   factory QuizListResponse.fromJson(Map<String, dynamic> json) =>
       _$QuizListResponseFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$QuizListResponseToJson(this);
 }
 
@@ -259,6 +266,7 @@ class QuizSingleResponse {
     }
     return _$QuizSingleResponseFromJson(json);
   }
+  @override
   Map<String, dynamic> toJson() => _$QuizSingleResponseToJson(this);
 }
 
@@ -271,6 +279,7 @@ class QuizQuestionSingleResponse {
 
   factory QuizQuestionSingleResponse.fromJson(Map<String, dynamic> json) =>
       _$QuizQuestionSingleResponseFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$QuizQuestionSingleResponseToJson(this);
 }
 
@@ -289,6 +298,7 @@ class QuizCreateResponse {
 
   factory QuizCreateResponse.fromJson(Map<String, dynamic> json) =>
       _$QuizCreateResponseFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$QuizCreateResponseToJson(this);
 }
 
@@ -300,6 +310,7 @@ class QuizCreateData {
 
   factory QuizCreateData.fromJson(Map<String, dynamic> json) =>
       _$QuizCreateDataFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$QuizCreateDataToJson(this);
 }
 
@@ -313,7 +324,356 @@ class UserInfo {
   factory UserInfo.fromJson(Map<String, dynamic> json) => UserInfo(
         fullName: json['fullName'] ?? json['full_name'] ?? '',
       );
+  @override
   Map<String, dynamic> toJson() => {
         'full_name': fullName,
       };
+}
+
+// --- Quiz Submission Models ---
+@JsonSerializable()
+class QuizSubmissionResponse {
+  final bool success;
+  final String message;
+  final QuizSubmissionData data;
+
+  QuizSubmissionResponse({
+    required this.success,
+    required this.message,
+    required this.data,
+  });
+
+  factory QuizSubmissionResponse.fromJson(Map<String, dynamic> json) =>
+      _$QuizSubmissionResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$QuizSubmissionResponseToJson(this);
+}
+
+@JsonSerializable()
+class QuizSubmissionData {
+  final String submissionId;
+  final int attemptNumber;
+  final bool isLate;
+  final String status;
+  final double? totalScore;
+  final double? maxScore;
+
+  QuizSubmissionData({
+    required this.submissionId,
+    required this.attemptNumber,
+    required this.isLate,
+    required this.status,
+    this.totalScore,
+    this.maxScore,
+  });
+
+  factory QuizSubmissionData.fromJson(Map<String, dynamic> json) =>
+      _$QuizSubmissionDataFromJson(json);
+  Map<String, dynamic> toJson() => _$QuizSubmissionDataToJson(this);
+}
+
+// --- Review Answer Response ---
+@JsonSerializable()
+class ReviewAnswerResponse {
+  final bool success;
+  final String? message;
+  final ReviewAnswerData? data;
+
+  ReviewAnswerResponse({
+    required this.success,
+    this.message,
+    this.data,
+  });
+
+  factory ReviewAnswerResponse.fromJson(Map<String, dynamic> json) =>
+      _$ReviewAnswerResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$ReviewAnswerResponseToJson(this);
+}
+
+@JsonSerializable()
+class ReviewAnswerData {
+  final ReviewedAnswer? answer;
+  final double? totalScore;
+
+  ReviewAnswerData({
+    this.answer,
+    this.totalScore,
+  });
+
+  factory ReviewAnswerData.fromJson(Map<String, dynamic> json) =>
+      _$ReviewAnswerDataFromJson(json);
+  Map<String, dynamic> toJson() => _$ReviewAnswerDataToJson(this);
+}
+
+@JsonSerializable()
+class ReviewedAnswer {
+  final String id;
+  final String? reviewStatus;
+  final double? manualScore;
+  final double? pointsEarned;
+  final bool? isCorrect;
+
+  ReviewedAnswer({
+    required this.id,
+    this.reviewStatus,
+    this.manualScore,
+    this.pointsEarned,
+    this.isCorrect,
+  });
+
+  factory ReviewedAnswer.fromJson(Map<String, dynamic> json) =>
+      _$ReviewedAnswerFromJson(json);
+  Map<String, dynamic> toJson() => _$ReviewedAnswerToJson(this);
+}
+
+// --- Complete Grading Response ---
+@JsonSerializable()
+class CompleteGradingResponse {
+  final bool success;
+  final String? message;
+  final CompleteGradingData? data;
+
+  CompleteGradingResponse({
+    required this.success,
+    this.message,
+    this.data,
+  });
+
+  factory CompleteGradingResponse.fromJson(Map<String, dynamic> json) =>
+      _$CompleteGradingResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$CompleteGradingResponseToJson(this);
+}
+
+@JsonSerializable()
+class CompleteGradingData {
+  final GradedSubmission? submission;
+
+  CompleteGradingData({
+    this.submission,
+  });
+
+  factory CompleteGradingData.fromJson(Map<String, dynamic> json) =>
+      _$CompleteGradingDataFromJson(json);
+  Map<String, dynamic> toJson() => _$CompleteGradingDataToJson(this);
+}
+
+@JsonSerializable()
+class GradedSubmission {
+  final String id;
+  final bool isGraded;
+  final DateTime? gradedAt;
+  final String? gradedBy;
+  final double? totalScore;
+  final double? maxScore;
+
+  GradedSubmission({
+    required this.id,
+    required this.isGraded,
+    this.gradedAt,
+    this.gradedBy,
+    this.totalScore,
+    this.maxScore,
+  });
+
+  factory GradedSubmission.fromJson(Map<String, dynamic> json) =>
+      _$GradedSubmissionFromJson(json);
+  Map<String, dynamic> toJson() => _$GradedSubmissionToJson(this);
+}
+
+// --- Quiz Submission Detail Models ---
+@JsonSerializable()
+class QuizSubmissionDetailResponse {
+  final bool success;
+  final QuizSubmissionDetail data;
+
+  QuizSubmissionDetailResponse({
+    required this.success,
+    required this.data,
+  });
+
+  factory QuizSubmissionDetailResponse.fromJson(Map<String, dynamic> json) =>
+      _$QuizSubmissionDetailResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$QuizSubmissionDetailResponseToJson(this);
+}
+
+@JsonSerializable()
+class QuizSubmissionDetail {
+  final String id;
+  final String quizId;
+  final String studentId;
+  final int attemptNumber;
+  final DateTime submittedAt;
+  final bool isLate;
+  final double? totalScore;
+  final double? maxScore;
+  final bool isGraded;
+  final double? grade;
+  final String? feedback;
+  final Quiz? quiz;
+  final StudentInfo? student;
+  final List<QuizAnswerDetail> answers;
+
+  QuizSubmissionDetail({
+    required this.id,
+    required this.quizId,
+    required this.studentId,
+    required this.attemptNumber,
+    required this.submittedAt,
+    required this.isLate,
+    this.totalScore,
+    this.maxScore,
+    required this.isGraded,
+    this.grade,
+    this.feedback,
+    this.quiz,
+    this.student,
+    required this.answers,
+  });
+
+  factory QuizSubmissionDetail.fromJson(Map<String, dynamic> json) {
+    try {
+      final jsonCopy = Map<String, dynamic>.from(json);
+
+      if (jsonCopy['quiz'] != null &&
+          jsonCopy['quiz'] is Map<String, dynamic>) {
+        final quizData = jsonCopy['quiz'] as Map<String, dynamic>;
+        if (quizData.length <= 2 &&
+            quizData.containsKey('id') &&
+            quizData.containsKey('title')) {
+          jsonCopy['quiz'] = null;
+        }
+      }
+
+      return _$QuizSubmissionDetailFromJson(jsonCopy);
+    } catch (e) {
+      debugPrint('❌ Error parsing QuizSubmissionDetail: $e');
+      debugPrint('   JSON: $json');
+      rethrow;
+    }
+  }
+
+  Map<String, dynamic> toJson() => _$QuizSubmissionDetailToJson(this);
+}
+
+@JsonSerializable()
+class QuizAnswerDetail {
+  final String id;
+  final String questionId;
+  final String? answerText;
+  final String? selectedOptionId;
+  final QuizQuestion? question;
+  final bool isCorrect;
+  final double? score;
+  final String? reviewStatus; // pending, approved, rejected
+  final double? manualScore;
+
+  QuizAnswerDetail({
+    required this.id,
+    required this.questionId,
+    this.answerText,
+    this.selectedOptionId,
+    this.question,
+    required this.isCorrect,
+    this.score,
+    this.reviewStatus,
+    this.manualScore,
+  });
+
+  factory QuizAnswerDetail.fromJson(Map<String, dynamic> json) =>
+      _$QuizAnswerDetailFromJson(json);
+  Map<String, dynamic> toJson() => _$QuizAnswerDetailToJson(this);
+}
+
+@JsonSerializable()
+class StudentInfo {
+  final String id;
+  final String fullName;
+  final String? email;
+
+  StudentInfo({
+    required this.id,
+    required this.fullName,
+    this.email,
+  });
+
+  factory StudentInfo.fromJson(Map<String, dynamic> json) => StudentInfo(
+        id: json['id'] ?? '',
+        fullName: json['fullName'] ?? json['full_name'] ?? '',
+        email: json['email'],
+      );
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'full_name': fullName,
+        'email': email,
+      };
+}
+
+@JsonSerializable()
+class StudentQuizSubmissionsResponse {
+  final bool success;
+  final StudentQuizSubmissionsData data;
+
+  StudentQuizSubmissionsResponse({
+    required this.success,
+    required this.data,
+  });
+
+  factory StudentQuizSubmissionsResponse.fromJson(Map<String, dynamic> json) =>
+      _$StudentQuizSubmissionsResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$StudentQuizSubmissionsResponseToJson(this);
+}
+
+@JsonSerializable()
+class StudentQuizSubmissionsData {
+  final List<StudentQuizSubmission> submissions;
+  final int maxAttempts;
+  final int currentAttempts;
+
+  StudentQuizSubmissionsData({
+    required this.submissions,
+    required this.maxAttempts,
+    required this.currentAttempts,
+  });
+
+  factory StudentQuizSubmissionsData.fromJson(Map<String, dynamic> json) =>
+      _$StudentQuizSubmissionsDataFromJson(json);
+  Map<String, dynamic> toJson() => _$StudentQuizSubmissionsDataToJson(this);
+}
+
+@JsonSerializable()
+class StudentQuizSubmission {
+  final String id;
+  final String quizId;
+  final String studentId;
+  final int attemptNumber;
+  final DateTime submittedAt;
+  final bool isLate;
+  final double? totalScore;
+  final double? maxScore;
+  final bool isGraded;
+  final double? grade;
+  final String? feedback;
+  final DateTime? gradedAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  StudentQuizSubmission({
+    required this.id,
+    required this.quizId,
+    required this.studentId,
+    required this.attemptNumber,
+    required this.submittedAt,
+    required this.isLate,
+    this.totalScore,
+    this.maxScore,
+    required this.isGraded,
+    this.grade,
+    this.feedback,
+    this.gradedAt,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory StudentQuizSubmission.fromJson(Map<String, dynamic> json) =>
+      _$StudentQuizSubmissionFromJson(json);
+  Map<String, dynamic> toJson() => _$StudentQuizSubmissionToJson(this);
 }

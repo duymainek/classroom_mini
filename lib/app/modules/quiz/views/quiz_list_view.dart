@@ -1,11 +1,9 @@
 import 'package:classroom_mini/app/routes/app_routes.dart';
 import 'package:classroom_mini/app/core/app_config.dart';
-import 'package:classroom_mini/app/data/services/connectivity_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../controllers/quiz_controller.dart';
-import 'quiz_detail_view.dart';
 
 class QuizListView extends GetView<QuizController> {
   const QuizListView({super.key});
@@ -16,22 +14,15 @@ class QuizListView extends GetView<QuizController> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      floatingActionButton: Obx(() {
-        final connectivityService = Get.find<ConnectivityService>();
-        final isInstructor = AppConfig.instance.isInstructor;
-
-        if (!isInstructor || !connectivityService.isOnline.value) {
-          return const SizedBox.shrink();
-        }
-
-        return FloatingActionButton.extended(
-          onPressed: () => Get.toNamed(Routes.QUIZZES_CREATE),
-          icon: const Icon(Icons.add),
-          label: const Text('Tạo Quiz'),
-          backgroundColor: colorScheme.primary,
-          foregroundColor: colorScheme.onPrimary,
-        );
-      }),
+      floatingActionButton: AppConfig.instance.isInstructor
+          ? FloatingActionButton.extended(
+              onPressed: () => Get.toNamed(Routes.QUIZZES_CREATE),
+              icon: const Icon(Icons.add),
+              label: const Text('Tạo Quiz'),
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+            )
+          : const SizedBox.shrink(),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -53,8 +44,8 @@ class QuizListView extends GetView<QuizController> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      colorScheme.primaryContainer.withOpacity(0.3),
-                      colorScheme.secondaryContainer.withOpacity(0.1),
+                      colorScheme.primaryContainer.withValues(alpha: 0.3),
+                      colorScheme.secondaryContainer.withValues(alpha: 0.1),
                     ],
                   ),
                 ),
@@ -115,7 +106,7 @@ class QuizListView extends GetView<QuizController> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -140,10 +131,10 @@ class QuizListView extends GetView<QuizController> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: colorScheme.errorContainer.withOpacity(0.3),
+        color: colorScheme.errorContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.error.withOpacity(0.2),
+          color: colorScheme.error.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -186,10 +177,10 @@ class QuizListView extends GetView<QuizController> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -197,7 +188,7 @@ class QuizListView extends GetView<QuizController> {
           Icon(
             Icons.quiz_outlined,
             size: 48,
-            color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
           ),
           const SizedBox(height: 16),
           Text(
@@ -211,7 +202,7 @@ class QuizListView extends GetView<QuizController> {
           Text(
             'Create your first quiz to get started',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
             ),
             textAlign: TextAlign.center,
           ),
@@ -233,258 +224,265 @@ class QuizListView extends GetView<QuizController> {
     final String questionCountText =
         questionCount != null ? '$questionCount' : '—';
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return GestureDetector(
+      onTap: () {
+        Get.toNamed(Routes.QUIZZES_DETAIL, arguments: quiz);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: colorScheme.outline.withValues(alpha: 0.2),
+            width: 1,
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Header với status và actions
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: quiz.isActive
-                  ? colorScheme.primaryContainer.withOpacity(0.3)
-                  : colorScheme.surfaceVariant.withOpacity(0.3),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.shadow.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: quiz.isActive
-                        ? colorScheme.primary.withOpacity(0.1)
-                        : colorScheme.outline.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.quiz_outlined,
-                    color: quiz.isActive
-                        ? colorScheme.primary
-                        : colorScheme.outline,
-                    size: 20,
-                  ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // Header với status và actions
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: quiz.isActive
+                    ? colorScheme.primaryContainer.withValues(alpha: 0.3)
+                    : colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 0.3),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        quiz.title,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                      if (quiz.description != null &&
-                          quiz.description!.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          quiz.description!,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: quiz.isActive ? Colors.green : Colors.red,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    quiz.isActive ? 'Active' : 'Closed',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: quiz.isActive
+                          ? colorScheme.primary.withValues(alpha: 0.1)
+                          : colorScheme.outline.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.quiz_outlined,
+                      color: quiz.isActive
+                          ? colorScheme.primary
+                          : colorScheme.outline,
+                      size: 20,
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          // Content
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                // Course info
-                _buildInfoRow(
-                  context,
-                  icon: Icons.school_outlined,
-                  label: 'Course',
-                  value: courseName,
-                ),
-
-                const SizedBox(height: 12),
-
-                // Date range
-                _buildInfoRow(
-                  context,
-                  icon: Icons.schedule_outlined,
-                  label: 'Start Date',
-                  value: startDate,
-                ),
-
-                const SizedBox(height: 8),
-
-                _buildInfoRow(
-                  context,
-                  icon: Icons.event_outlined,
-                  label: 'Due Date',
-                  value: dueDate,
-                ),
-
-                if (lateDueDate != null) ...[
-                  const SizedBox(height: 8),
-                  _buildInfoRow(
-                    context,
-                    icon: Icons.warning_outlined,
-                    label: 'Late Due Date',
-                    value: lateDueDate,
-                    valueColor: Colors.orange,
-                  ),
-                ],
-
-                const SizedBox(height: 16),
-
-                // Quiz details grid
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceVariant.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildDetailItem(
-                              context,
-                              icon: Icons.quiz_outlined,
-                              label: 'Questions',
-                              value: questionCountText,
-                            ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          quiz.title,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
                           ),
-                          Expanded(
-                            child: _buildDetailItem(
-                              context,
-                              icon: Icons.repeat_outlined,
-                              label: 'Max Attempts',
-                              value: '${quiz.maxAttempts}',
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      // Assigned groups
-                      if (quiz.quizGroups != null &&
-                          quiz.quizGroups!.isNotEmpty) ...[
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'Assigned Groups',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
+                        ),
+                        if (quiz.description != null &&
+                            quiz.description!.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            quiz.description!,
+                            style: theme.textTheme.bodyMedium?.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Align(
-                        //   alignment: Alignment.centerLeft,
-                        //   child: Wrap(
-                        //     spacing: 8,
-                        //     runSpacing: 8,
-                        //     children: quiz.quizGroups!
-                        //         .where((g) => g.groups != null)
-                        //         .map((g) => _buildGroupChip(
-                        //               context,
-                        //               g.groups!.name,
-                        //             ))
-                        //         .toList(),
-                        //   ),
-                        // ),
-                      ],
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Settings info
-                if (quiz.shuffleQuestions ||
-                    quiz.shuffleOptions ||
-                    quiz.showCorrectAnswers) ...[
-                  Container(
-                    width: double.infinity,
-                    child: Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        if (quiz.shuffleQuestions)
-                          _buildSettingChip(context, 'Shuffle Questions'),
-                        if (quiz.shuffleOptions)
-                          _buildSettingChip(context, 'Shuffle Options'),
-                        if (quiz.showCorrectAnswers)
-                          _buildSettingChip(context, 'Show Answers'),
+                        ],
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: quiz.isActive ? Colors.green : Colors.red,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      quiz.isActive ? 'Active' : 'Closed',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
                 ],
+              ),
+            ),
 
-                // Action buttons
-                Row(
-                  children: [
-                    Spacer(),
-                    Expanded(
-                      child: TextButton.icon(
-                        onPressed: () =>
-                            Get.to(() => QuizDetailView(quizId: quiz.id)),
-                        label: const Text('View Details'),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+            // Content
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  // Course info
+                  _buildInfoRow(
+                    context,
+                    icon: Icons.school_outlined,
+                    label: 'Course',
+                    value: courseName,
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Date range
+                  _buildInfoRow(
+                    context,
+                    icon: Icons.schedule_outlined,
+                    label: 'Start Date',
+                    value: startDate,
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  _buildInfoRow(
+                    context,
+                    icon: Icons.event_outlined,
+                    label: 'Due Date',
+                    value: dueDate,
+                  ),
+
+                  if (lateDueDate != null) ...[
+                    const SizedBox(height: 8),
+                    _buildInfoRow(
+                      context,
+                      icon: Icons.warning_outlined,
+                      label: 'Late Due Date',
+                      value: lateDueDate,
+                      valueColor: Colors.orange,
+                    ),
+                  ],
+
+                  const SizedBox(height: 16),
+
+                  // Quiz details grid
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildDetailItem(
+                                context,
+                                icon: Icons.quiz_outlined,
+                                label: 'Questions',
+                                value: questionCountText,
+                              ),
+                            ),
+                            Expanded(
+                              child: _buildDetailItem(
+                                context,
+                                icon: Icons.repeat_outlined,
+                                label: 'Max Attempts',
+                                value: '${quiz.maxAttempts}',
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        // Assigned groups
+                        if (quiz.quizGroups != null &&
+                            quiz.quizGroups!.isNotEmpty) ...[
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Assigned Groups',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          // Align(
+                          //   alignment: Alignment.centerLeft,
+                          //   child: Wrap(
+                          //     spacing: 8,
+                          //     runSpacing: 8,
+                          //     children: quiz.quizGroups!
+                          //         .where((g) => g.groups != null)
+                          //         .map((g) => _buildGroupChip(
+                          //               context,
+                          //               g.groups!.name,
+                          //             ))
+                          //         .toList(),
+                          //   ),
+                          // ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Settings info
+                  if (quiz.shuffleQuestions ||
+                      quiz.shuffleOptions ||
+                      quiz.showCorrectAnswers) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          if (quiz.shuffleQuestions)
+                            _buildSettingChip(context, 'Shuffle Questions'),
+                          if (quiz.shuffleOptions)
+                            _buildSettingChip(context, 'Shuffle Options'),
+                          if (quiz.showCorrectAnswers)
+                            _buildSettingChip(context, 'Show Answers'),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Action buttons
+                  Row(
+                    children: [
+                      Spacer(),
+                      Expanded(
+                        child: TextButton.icon(
+                          onPressed: () => Get.toNamed(Routes.QUIZZES_DETAIL,
+                              arguments: quiz),
+                          label: const Text('View Details'),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -568,7 +566,7 @@ class QuizListView extends GetView<QuizController> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: colorScheme.primary.withOpacity(0.15),
+        color: colorScheme.primary.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -588,9 +586,9 @@ class QuizListView extends GetView<QuizController> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: colorScheme.secondary.withOpacity(0.12),
+        color: colorScheme.secondary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.secondary.withOpacity(0.2)),
+        border: Border.all(color: colorScheme.secondary.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -631,7 +629,8 @@ class QuizListView extends GetView<QuizController> {
               borderRadius: BorderRadius.circular(12),
             ),
             filled: true,
-            fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+            fillColor:
+                colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           ),
           onSubmitted: (value) {
             controller.searchQuizzes(value);

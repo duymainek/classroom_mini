@@ -107,7 +107,7 @@ class _EnhancedFilterChipState extends State<EnhancedFilterChip>
                       shadowColor: Theme.of(context)
                           .colorScheme
                           .primary
-                          .withOpacity(0.3),
+                          .withValues(alpha: 0.3),
                     ),
                   ),
                 );

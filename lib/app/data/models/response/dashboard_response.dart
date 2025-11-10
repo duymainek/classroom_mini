@@ -2,7 +2,6 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:classroom_mini/app/data/models/response/course_response.dart';
 import 'package:classroom_mini/app/data/models/response/group_response.dart';
 import 'package:classroom_mini/app/data/models/response/assignment_response.dart';
-import 'package:classroom_mini/app/data/models/response/submission_response.dart';
 import 'semester_response.dart';
 
 part 'dashboard_response.g.dart';
@@ -27,6 +26,7 @@ class DashboardStats {
 
   factory DashboardStats.fromJson(Map<String, dynamic> json) =>
       _$DashboardStatsFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$DashboardStatsToJson(this);
 }
 
@@ -46,6 +46,7 @@ class ActivityLog {
 
   factory ActivityLog.fromJson(Map<String, dynamic> json) =>
       _$ActivityLogFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$ActivityLogToJson(this);
 }
 
@@ -63,30 +64,60 @@ class InstructorDashboardData {
 
   factory InstructorDashboardData.fromJson(Map<String, dynamic> json) =>
       _$InstructorDashboardDataFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$InstructorDashboardDataToJson(this);
 }
 
 @JsonSerializable()
 class EnrolledCourse {
-  final String id;
-  final String courseId;
-  final String groupId;
-  final String semesterId;
+  final String enrollmentId;
   final Course course;
   final Group group;
 
   const EnrolledCourse({
-    required this.id,
-    required this.courseId,
-    required this.groupId,
-    required this.semesterId,
+    required this.enrollmentId,
     required this.course,
     required this.group,
   });
 
   factory EnrolledCourse.fromJson(Map<String, dynamic> json) =>
       _$EnrolledCourseFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$EnrolledCourseToJson(this);
+}
+
+@JsonSerializable()
+class StudyProgressItem {
+  final int total;
+  final int completed;
+  final int pending;
+
+  const StudyProgressItem({
+    required this.total,
+    required this.completed,
+    required this.pending,
+  });
+
+  factory StudyProgressItem.fromJson(Map<String, dynamic> json) =>
+      _$StudyProgressItemFromJson(json);
+  @override
+  Map<String, dynamic> toJson() => _$StudyProgressItemToJson(this);
+}
+
+@JsonSerializable()
+class StudyProgress {
+  final StudyProgressItem assignments;
+  final StudyProgressItem quizzes;
+
+  const StudyProgress({
+    required this.assignments,
+    required this.quizzes,
+  });
+
+  factory StudyProgress.fromJson(Map<String, dynamic> json) =>
+      _$StudyProgressFromJson(json);
+  @override
+  Map<String, dynamic> toJson() => _$StudyProgressToJson(this);
 }
 
 @JsonSerializable()
@@ -94,17 +125,18 @@ class StudentDashboardData {
   final Semester? currentSemester;
   final List<EnrolledCourse> enrolledCourses;
   final List<Assignment> upcomingAssignments;
-  final List<AssignmentSubmission> recentSubmissions;
+  final StudyProgress? studyProgress;
 
   const StudentDashboardData({
     this.currentSemester,
     required this.enrolledCourses,
     required this.upcomingAssignments,
-    required this.recentSubmissions,
+    this.studyProgress,
   });
 
   factory StudentDashboardData.fromJson(Map<String, dynamic> json) =>
       _$StudentDashboardDataFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$StudentDashboardDataToJson(this);
 }
 
@@ -122,6 +154,7 @@ class InstructorDashboardResponse {
 
   factory InstructorDashboardResponse.fromJson(Map<String, dynamic> json) =>
       _$InstructorDashboardResponseFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$InstructorDashboardResponseToJson(this);
 }
 
@@ -139,6 +172,7 @@ class StudentDashboardResponse {
 
   factory StudentDashboardResponse.fromJson(Map<String, dynamic> json) =>
       _$StudentDashboardResponseFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$StudentDashboardResponseToJson(this);
 }
 
@@ -154,6 +188,7 @@ class CurrentSemesterResponse {
 
   factory CurrentSemesterResponse.fromJson(Map<String, dynamic> json) =>
       _$CurrentSemesterResponseFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$CurrentSemesterResponseToJson(this);
 }
 
@@ -168,6 +203,7 @@ class CurrentSemesterData {
 
   factory CurrentSemesterData.fromJson(Map<String, dynamic> json) =>
       _$CurrentSemesterDataFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$CurrentSemesterDataToJson(this);
 }
 
@@ -185,6 +221,7 @@ class SwitchSemesterResponse {
 
   factory SwitchSemesterResponse.fromJson(Map<String, dynamic> json) =>
       _$SwitchSemesterResponseFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$SwitchSemesterResponseToJson(this);
 }
 
@@ -198,5 +235,6 @@ class SwitchSemesterData {
 
   factory SwitchSemesterData.fromJson(Map<String, dynamic> json) =>
       _$SwitchSemesterDataFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$SwitchSemesterDataToJson(this);
 }

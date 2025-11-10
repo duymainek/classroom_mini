@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:classroom_mini/app/data/models/request/auth_request.dart';
 import 'package:classroom_mini/app/data/models/response/course_response.dart';
 import 'package:classroom_mini/app/data/models/response/group_response.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:file_picker/file_picker.dart';
@@ -154,7 +155,7 @@ class StudentManagementController extends GetxController {
         filterCourses.assignAll(courseResponse.data.courses);
       }
     } catch (e) {
-      print('[StudentController] Error loading filter courses: $e');
+      debugPrint('[StudentController] Error loading filter courses: $e');
     } finally {
       isLoadingFilterCourses.value = false;
     }
@@ -187,7 +188,7 @@ class StudentManagementController extends GetxController {
         filterGroup.value = null;
       }
     } catch (e) {
-      print('[StudentController] Error loading filter groups: $e');
+      debugPrint('[StudentController] Error loading filter groups: $e');
     } finally {
       isLoadingFilterGroups.value = false;
     }
@@ -272,7 +273,7 @@ class StudentManagementController extends GetxController {
       );
       return true;
     } catch (e) {
-      print('Export error: $e');
+      debugPrint('Export error: $e');
       return false;
     } finally {
       isExporting.value = false;
@@ -351,7 +352,7 @@ class StudentManagementController extends GetxController {
       }
       return false;
     } catch (e) {
-      print('Error updating student: $e');
+      debugPrint('Error updating student: $e');
       return false;
     }
   }
@@ -651,19 +652,19 @@ class StudentManagementController extends GetxController {
   Future<void> _ensureSemesterContext() async {
     final cfg = AppConfig.instance;
     if (cfg.hasSelectedSemester()) {
-      print(
+      debugPrint(
           '[StudentController] AppConfig semester: id=${cfg.selectedSemesterId} name=${cfg.selectedSemesterName}');
       selectedSemesterId.value = cfg.selectedSemesterId;
       await loadCourses(cfg.selectedSemesterId);
       return;
     }
     try {
-      print(
+      debugPrint(
           '[StudentController] No semester in AppConfig. Fetching current semester...');
       final current = await Get.find<ApiService>().getCurrentSemester();
       if (current.success && current.data?.currentSemester != null) {
         final s = current.data!.currentSemester!;
-        print(
+        debugPrint(
             '[StudentController] Fetched current semester: id=${s.id} name=${s.name}');
         AppConfig.instance.setSelectedSemester(
           semesterId: s.id,
@@ -674,14 +675,15 @@ class StudentManagementController extends GetxController {
         await loadCourses(s.id);
       }
     } catch (e) {
-      print('[StudentController] Error fetching current semester: $e');
+      debugPrint('[StudentController] Error fetching current semester: $e');
     }
   }
 
   Future<void> loadCourses(String semesterId) async {
     try {
       isLoadingCourses.value = true;
-      print('[StudentController] Loading courses for semester=$semesterId ...');
+      debugPrint(
+          '[StudentController] Loading courses for semester=$semesterId ...');
 
       final res = await _courseRepository.getCourses(
         page: 1,
@@ -695,17 +697,17 @@ class StudentManagementController extends GetxController {
         res.data.courses.map((c) => {'id': c.id, 'label': c.name}).toList(),
       );
 
-      print('[StudentController] Courses loaded: count=${courses.length}');
+      debugPrint('[StudentController] Courses loaded: count=${courses.length}');
 
       // Auto-select if only one course
       if (courses.length == 1) {
         selectedCourseId.value = courses.first['id']!;
-        print(
+        debugPrint(
             '[StudentController] Auto-selected single course: ${selectedCourseId.value}');
         await loadGroups(selectedCourseId.value);
       }
     } catch (e) {
-      print('[StudentController] Error loading courses: $e');
+      debugPrint('[StudentController] Error loading courses: $e');
     } finally {
       isLoadingCourses.value = false;
     }
@@ -714,16 +716,16 @@ class StudentManagementController extends GetxController {
   Future<void> loadGroups(String courseId) async {
     try {
       isLoadingGroups.value = true;
-      print('[StudentController] Loading groups for course=$courseId ...');
+      debugPrint('[StudentController] Loading groups for course=$courseId ...');
 
       final groupsList = await _metadataService.loadGroupsForCourse(courseId);
       groups.assignAll(
         groupsList.map((g) => {'id': g.id, 'label': g.name}).toList(),
       );
 
-      print('[StudentController] Groups loaded: count=${groups.length}');
+      debugPrint('[StudentController] Groups loaded: count=${groups.length}');
     } catch (e) {
-      print('[StudentController] Error loading groups: $e');
+      debugPrint('[StudentController] Error loading groups: $e');
     } finally {
       isLoadingGroups.value = false;
     }
@@ -825,7 +827,7 @@ class StudentManagementController extends GetxController {
         editCourses.assignAll(res.data.courses);
       }
     } catch (e) {
-      print('[StudentController] Error loading edit courses: $e');
+      debugPrint('[StudentController] Error loading edit courses: $e');
     } finally {
       isLoadingEditCourses.value = false;
     }
@@ -848,7 +850,7 @@ class StudentManagementController extends GetxController {
             .toList(),
       );
     } catch (e) {
-      print('[StudentController] Error loading edit groups: $e');
+      debugPrint('[StudentController] Error loading edit groups: $e');
     } finally {
       isLoadingEditGroups.value = false;
     }

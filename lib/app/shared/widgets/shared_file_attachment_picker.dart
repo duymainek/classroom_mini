@@ -67,7 +67,7 @@ class _SharedFileAttachmentPickerState
 
   void _onAttachmentUploaded(SubmissionAttachment attachment) {
     // Handle successful upload
-    print('Attachment uploaded: ${attachment.fileName}');
+    debugPrint('Attachment uploaded: ${attachment.fileName}');
   }
 
   void _onAttachmentFailed(String error) {
@@ -123,10 +123,10 @@ class _SharedFileAttachmentPickerState
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: colorScheme.outline.withOpacity(0.2),
+                  color: colorScheme.outline.withValues(alpha: 0.2),
                 ),
               ),
               child: Column(
@@ -211,10 +211,10 @@ class _SharedFileAttachmentPickerState
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -227,7 +227,7 @@ class _SharedFileAttachmentPickerState
                   .getFileTypeColor(
                     _controller.getCategoryFromMimeType(attachment.fileType),
                   )
-                  .withOpacity(0.1),
+                  .withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -274,7 +274,7 @@ class _SharedFileAttachmentPickerState
                     padding: const EdgeInsets.only(top: 4),
                     child: LinearProgressIndicator(
                       value: attachment.uploadProgress ?? 0.0,
-                      backgroundColor: colorScheme.surfaceVariant,
+                      backgroundColor: colorScheme.surfaceContainerHighest,
                       valueColor:
                           AlwaysStoppedAnimation<Color>(colorScheme.primary),
                     ),
@@ -326,7 +326,7 @@ class _SharedFileAttachmentPickerState
 
     switch (attachment.status) {
       case AttachmentUploadStatus.pending:
-        chipColor = colorScheme.surfaceVariant;
+        chipColor = colorScheme.surfaceContainerHighest;
         textColor = colorScheme.onSurfaceVariant;
         text = 'Chờ tải lên';
         icon = Icons.schedule;

@@ -1,6 +1,7 @@
 const { supabase } = require('../services/supabaseClient');
 const { buildResponse } = require('../utils/response');
 const { catchAsync } = require('../middleware/errorHandler');
+const notificationController = require('./notificationController');
 
 /**
  * Announcement Controller
@@ -165,6 +166,8 @@ class AnnouncementController {
 
   /**
    * Get announcements with filters and pagination
+   * - Instructor: get all announcements they created
+   * - Student: get announcements for their enrolled groups
    */
   getAnnouncements = catchAsync(async (req, res) => {
     const {
@@ -177,9 +180,16 @@ class AnnouncementController {
       sortOrder = 'desc'
     } = req.query;
 
-    const instructorId = req.user.id;
+    const userId = req.user.id;
+    const userRole = req.user.role;
     const offset = (page - 1) * limit;
 
+    // If student, redirect to student-specific endpoint
+    if (userRole === 'student') {
+      return this.getStudentAnnouncements(req, res);
+    }
+
+    // Instructor: get their own announcements
     let query = supabase
       .from('announcements')
       .select(`
@@ -193,7 +203,7 @@ class AnnouncementController {
         announcement_comments(id),
         announcement_views(id)
       `)
-      .eq('instructor_id', instructorId)
+      .eq('instructor_id', userId)
       .eq('is_deleted', false);
 
     // Apply filters
@@ -227,7 +237,7 @@ class AnnouncementController {
     let countQuery = supabase
       .from('announcements')
       .select('*', { count: 'exact', head: true })
-      .eq('instructor_id', instructorId)
+      .eq('instructor_id', userId)
       .eq('is_deleted', false);
 
     // Apply same filters for count
@@ -292,7 +302,8 @@ class AnnouncementController {
    */
   getAnnouncementById = catchAsync(async (req, res) => {
     const { id } = req.params;
-    const instructorId = req.user.id;
+    const userId = req.user.id;
+    const userRole = req.user.role;
 
     const announcement = await this.getAnnouncementWithRelations(id);
 
@@ -302,8 +313,37 @@ class AnnouncementController {
       );
     }
 
-    // Check if instructor owns this announcement
-    if (announcement.instructor.id !== instructorId) {
+    // Check access based on role
+    if (userRole === 'instructor') {
+      // Instructor can only see their own announcements
+      if (announcement.instructor.id !== userId) {
+        return res.status(403).json(
+          buildResponse(false, 'Access denied')
+        );
+      }
+    } else if (userRole === 'student') {
+      // Student can see announcements assigned to their groups
+      const { data: studentAccess, error: accessError } = await supabase
+        .from('announcements')
+        .select(`
+          id,
+          announcement_groups!inner(
+            groups!inner(
+              student_enrollments!inner(student_id)
+            )
+          )
+        `)
+        .eq('id', id)
+        .eq('announcement_groups.groups.student_enrollments.student_id', userId)
+        .eq('is_deleted', false)
+        .single();
+
+      if (accessError || !studentAccess) {
+        return res.status(403).json(
+          buildResponse(false, 'Access denied')
+        );
+      }
+    } else {
       return res.status(403).json(
         buildResponse(false, 'Access denied')
       );
@@ -527,6 +567,7 @@ class AnnouncementController {
     const { id } = req.params;
     const { commentText, parentCommentId } = req.body;
     const userId = req.user.id;
+    const userRole = req.user.role;
 
     const { data: comment, error } = await supabase
       .from('announcement_comments')
@@ -561,6 +602,47 @@ class AnnouncementController {
       },
       parentCommentId: comment.parent_comment_id
     };
+
+    // Create notification for instructor if student comments
+    if (userRole === 'student') {
+      try {
+        console.log('[Announcement Comment] Creating notification for student comment');
+        const { data: announcement, error: announcementError } = await supabase
+          .from('announcements')
+          .select('id, title, instructor_id')
+          .eq('id', id)
+          .single();
+
+        if (announcementError) {
+          console.error('[Announcement Comment] Error fetching announcement:', announcementError);
+        } else if (!announcement) {
+          console.error('[Announcement Comment] Announcement not found:', id);
+        } else if (!announcement.instructor_id) {
+          console.error('[Announcement Comment] Announcement has no instructor_id:', announcement);
+        } else {
+          console.log('[Announcement Comment] Creating notification for instructor:', announcement.instructor_id);
+          const result = await notificationController.createNotification(announcement.instructor_id, {
+            type: 'announcement_comment',
+            title: 'New Comment on Announcement',
+            body: `${comment.users.full_name} commented on "${announcement.title}"`,
+            data: {
+              announcement_id: id,
+              announcement_title: announcement.title,
+              comment_id: comment.id,
+              commenter_id: userId,
+              commenter_name: comment.users.full_name,
+              action_url: `/student/announcements/${id}`
+            }
+          });
+          console.log('[Announcement Comment] Notification creation result:', result);
+        }
+      } catch (notificationError) {
+        console.error('[Announcement Comment] Error creating notification:', notificationError);
+        console.error('[Announcement Comment] Error stack:', notificationError.stack);
+      }
+    } else {
+      console.log('[Announcement Comment] Skipping notification - user is not student, role:', userRole);
+    }
 
     res.status(201).json(
       buildResponse(true, 'Comment added successfully', {
@@ -939,6 +1021,192 @@ class AnnouncementController {
       viewCount: announcement.announcement_views?.length || 0
     };
   }
+
+  /**
+   * Get announcements for student (based on their enrolled groups)
+   */
+  getStudentAnnouncements = catchAsync(async (req, res) => {
+    const studentId = req.user.id;
+    const {
+      page = 1,
+      limit = 20,
+      sortBy = 'published_at',
+      sortOrder = 'desc'
+    } = req.query;
+
+    const offset = (page - 1) * limit;
+
+    // Get student's enrolled groups with course information
+    const { data: enrollments, error: enrollmentError } = await supabase
+      .from('student_enrollments')
+      .select(`
+        group_id,
+        groups!inner(
+          id,
+          name,
+          course_id,
+          courses!inner(
+            id,
+            semester_id
+          )
+        )
+      `)
+      .eq('student_id', studentId)
+      .eq('is_active', true);
+
+    if (enrollmentError) {
+      console.error('Enrollment query error:', enrollmentError);
+      return res.status(500).json(
+        buildResponse(false, 'Failed to fetch student enrollments', null, enrollmentError.message)
+      );
+    }
+
+    if (!enrollments || enrollments.length === 0) {
+      return res.json(
+        buildResponse(true, undefined, {
+          announcements: [],
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total: 0,
+            totalPages: 0
+          }
+        })
+      );
+    }
+
+    const groupIds = enrollments.map(e => e.groups.id);
+    const courseIds = [...new Set(enrollments.map(e => e.groups.courses.id))];
+
+    // Get announcements for these groups only
+    // Only show announcements that are assigned to groups the student is enrolled in
+    // and belong to courses the student is enrolled in
+    const { data: announcementGroups, error: announcementError } = await supabase
+      .from('announcement_groups')
+      .select(`
+        announcement_id,
+        group_id,
+        announcements!inner(
+          id,
+          title,
+          content,
+          course_id,
+          instructor_id,
+          scope_type,
+          published_at,
+          created_at,
+          updated_at,
+          is_deleted,
+          courses!inner(
+            id,
+            code,
+            name
+          ),
+          users!announcements_instructor_id_fkey(id, full_name, email)
+        )
+      `)
+      .in('group_id', groupIds)
+      .in('announcements.course_id', courseIds)
+      .eq('announcements.is_deleted', false);
+
+    if (announcementError) {
+      console.error('Announcement query error:', announcementError);
+      return res.status(500).json(
+        buildResponse(false, 'Failed to fetch announcements', null, announcementError.message)
+      );
+    }
+
+    // Get unique announcements (avoid duplicates if student is in multiple groups)
+    // Also collect groups for each announcement to show which groups it's assigned to
+    const uniqueAnnouncements = [];
+    const seenIds = new Set();
+    const announcementGroupsMap = new Map(); // announcement_id -> [group_ids]
+
+    for (const item of announcementGroups || []) {
+      if (item.announcements && item.announcements.id) {
+        const announcementId = item.announcements.id;
+        
+        // Track which groups this announcement is assigned to (for this student)
+        if (!announcementGroupsMap.has(announcementId)) {
+          announcementGroupsMap.set(announcementId, []);
+        }
+        if (item.group_id && !announcementGroupsMap.get(announcementId).includes(item.group_id)) {
+          announcementGroupsMap.get(announcementId).push(item.group_id);
+        }
+
+        // Only add unique announcements
+        if (!seenIds.has(announcementId)) {
+          seenIds.add(announcementId);
+          
+          // Get groups for this announcement (only groups student is enrolled in)
+          const assignedGroupIds = announcementGroupsMap.get(announcementId) || [];
+          
+          uniqueAnnouncements.push({
+            id: item.announcements.id,
+            title: item.announcements.title,
+            content: item.announcements.content,
+            courseId: item.announcements.course_id,
+            instructorId: item.announcements.instructor_id,
+            scopeType: item.announcements.scope_type,
+            publishedAt: item.announcements.published_at,
+            createdAt: item.announcements.created_at,
+            updatedAt: item.announcements.updated_at,
+            course: item.announcements.courses,
+            instructor: item.announcements.users,
+            // Only include groups that student is enrolled in
+            groups: enrollments
+              .filter(e => assignedGroupIds.includes(e.groups.id))
+              .map(e => ({
+                id: e.groups.id,
+                name: e.groups.name || `Group ${e.groups.id}`,
+                courseId: e.groups.course_id
+              })),
+            // Add required fields with default values
+            files: [],
+            commentCount: 0,
+            viewCount: 0
+          });
+        }
+      }
+    }
+
+    // Sort in memory
+    const sortField = sortBy || 'published_at';
+    const ascending = sortOrder === 'asc';
+    uniqueAnnouncements.sort((a, b) => {
+      let aVal = a[sortField];
+      let bVal = b[sortField];
+      
+      // Handle date strings
+      if (sortField.includes('At') || sortField.includes('at')) {
+        aVal = new Date(aVal || 0).getTime();
+        bVal = new Date(bVal || 0).getTime();
+      }
+      
+      if (aVal < bVal) return ascending ? -1 : 1;
+      if (aVal > bVal) return ascending ? 1 : -1;
+      return 0;
+    });
+
+    // Apply pagination after sorting
+    const paginatedAnnouncements = uniqueAnnouncements.slice(offset, offset + parseInt(limit));
+
+    // Get total count (unique announcements)
+    const total = uniqueAnnouncements.length;
+    const pages = Math.ceil(total / parseInt(limit));
+
+    res.json(
+      buildResponse(true, undefined, {
+        announcements: paginatedAnnouncements,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages
+        }
+      })
+    );
+  });
 }
 
 module.exports = new AnnouncementController();

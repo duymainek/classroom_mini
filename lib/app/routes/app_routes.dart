@@ -40,12 +40,16 @@ class Routes {
   static const String ASSIGNMENTS_DETAIL = '/assignments/detail';
   static const String ASSIGNMENTS_TRACKING = '/assignments/tracking';
   static const String ASSIGNMENTS_STUDENT_LIST = '/assignments/student';
+  static const String ASSIGNMENTS_SUBMIT = '/assignments/submit';
+  static const String SUBMISSION_DETAIL = '/submissions/detail';
 
   // Quiz routes
   static const String QUIZZES_LIST = '/quizzes';
   static const String QUIZZES_CREATE = '/quizzes/create';
   static const String QUIZZES_EDIT = '/quizzes/edit';
   static const String QUIZZES_DETAIL = '/quizzes/detail';
+  static const String QUIZZES_SUBMISSIONS = '/quizzes/detail/:quizId/submissions';
+  static const String QUIZ_SUBMISSION_DETAIL = '/quiz-submissions/detail';
 
   // Announcement routes
   static const String ANNOUNCEMENTS_LIST = '/announcements';
@@ -72,4 +76,7 @@ class Routes {
   static const String CHAT_LIST = '/chat';
   static const String CHAT_ROOM = '/chat/room';
   static const String CHAT_NEW = '/chat/new';
+
+  // Notification routes
+  static const String NOTIFICATIONS = '/notifications';
 }

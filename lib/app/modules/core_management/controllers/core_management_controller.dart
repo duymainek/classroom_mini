@@ -4,6 +4,7 @@ import 'package:classroom_mini/app/data/models/request/semester_request.dart';
 import 'package:classroom_mini/app/data/models/response/course_response.dart';
 import 'package:classroom_mini/app/data/models/response/group_response.dart';
 import 'package:classroom_mini/app/data/models/response/semester_response.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/repositories/semester_repository.dart';
 import '../../../data/repositories/course_repository.dart';
@@ -120,7 +121,7 @@ class CoreManagementController extends GetxController {
           : response.data.pagination.pages;
     } catch (e) {
       _errorMessage.value = e.toString();
-      print('error: $e');
+      debugPrint('error: $e');
     } finally {
       _isLoading.value = false;
       update();

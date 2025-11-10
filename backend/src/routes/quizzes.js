@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const quizController = require('../controllers/quizController');
-const { authenticateToken, requireInstructor, requireAuthenticated } = require('../middleware/auth');
+const { authenticateToken, requireInstructor, requireAuthenticated, requireStudent } = require('../middleware/auth');
 
 // Quiz CRUD routes (Instructor only)
 router.post('/', authenticateToken, requireInstructor, quizController.createQuiz);
@@ -17,9 +17,15 @@ router.delete('/:quizId/questions/:questionId', authenticateToken, requireInstru
 
 // Quiz submission routes
 router.post('/:quizId/submit', authenticateToken, quizController.submitQuiz);
+router.get('/:quizId/my-submissions', authenticateToken, requireStudent, quizController.getStudentQuizSubmissions);
 
-// Quiz tracking and grading (Instructor only)
-router.get('/:quizId/submissions', authenticateToken, requireInstructor, quizController.getQuizSubmissions);
+// Quiz tracking and grading
+router.get('/submissions/:submissionId', authenticateToken, requireAuthenticated, quizController.getQuizSubmissionById);
 router.put('/submissions/:submissionId/grade', authenticateToken, requireInstructor, quizController.gradeQuizSubmission);
+router.get('/:quizId/submissions', authenticateToken, requireInstructor, quizController.getQuizSubmissions);
+
+// Essay review endpoints (Instructor only)
+router.put('/submissions/:submissionId/answers/:answerId/review', authenticateToken, requireInstructor, quizController.reviewEssayAnswer);
+router.post('/submissions/:submissionId/complete-grading', authenticateToken, requireInstructor, quizController.completeGrading);
 
 module.exports = router;

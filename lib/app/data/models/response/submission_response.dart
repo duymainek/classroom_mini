@@ -5,10 +5,10 @@ part 'submission_response.g.dart';
 
 @JsonSerializable()
 class AssignmentSubmission {
-  final String id;
-  final String assignmentId;
-  final String studentId;
-  final int attemptNumber;
+  final String? id;
+  final String? assignmentId;
+  final String? studentId;
+  final int? attemptNumber;
   final String? submissionText;
   final DateTime submittedAt;
   final bool isLate;
@@ -16,15 +16,15 @@ class AssignmentSubmission {
   final String? feedback;
   final DateTime? gradedAt;
   final String? gradedBy;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
   final List<SubmissionAttachment> attachments;
   final StudentInfo? student;
 
   AssignmentSubmission({
     required this.id,
-    required this.assignmentId,
-    required this.studentId,
+    this.assignmentId,
+    this.studentId,
     required this.attemptNumber,
     this.submissionText,
     required this.submittedAt,
@@ -34,13 +34,14 @@ class AssignmentSubmission {
     this.gradedAt,
     this.gradedBy,
     required this.createdAt,
-    required this.updatedAt,
+    this.updatedAt,
     this.attachments = const [],
     this.student,
   });
 
   factory AssignmentSubmission.fromJson(Map<String, dynamic> json) =>
       _$AssignmentSubmissionFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$AssignmentSubmissionToJson(this);
 
   /// Check if submission is graded
@@ -75,7 +76,7 @@ class SubmissionAttachment {
   final String fileUrl;
   final int? fileSize;
   final String? fileType;
-  final DateTime createdAt;
+  final DateTime? createdAt;
 
   SubmissionAttachment({
     required this.id,
@@ -83,11 +84,12 @@ class SubmissionAttachment {
     required this.fileUrl,
     this.fileSize,
     this.fileType,
-    required this.createdAt,
+    this.createdAt,
   });
 
   factory SubmissionAttachment.fromJson(Map<String, dynamic> json) =>
       _$SubmissionAttachmentFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$SubmissionAttachmentToJson(this);
 
   /// Get file size display
@@ -134,6 +136,7 @@ class StudentInfo {
 
   factory StudentInfo.fromJson(Map<String, dynamic> json) =>
       _$StudentInfoFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$StudentInfoToJson(this);
 }
 
@@ -193,6 +196,7 @@ class SubmissionTrackingData {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() => {
         'studentId': studentId,
         'username': username,
@@ -309,6 +313,7 @@ class SubmissionData {
 
   factory SubmissionData.fromJson(Map<String, dynamic> json) =>
       _$SubmissionDataFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$SubmissionDataToJson(this);
 }
 
@@ -326,6 +331,7 @@ class SubmissionResponse {
 
   factory SubmissionResponse.fromJson(Map<String, dynamic> json) =>
       _$SubmissionResponseFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$SubmissionResponseToJson(this);
 }
 
@@ -339,6 +345,7 @@ class StudentSubmissionData {
 
   factory StudentSubmissionData.fromJson(Map<String, dynamic> json) =>
       _$StudentSubmissionDataFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$StudentSubmissionDataToJson(this);
 }
 
@@ -354,6 +361,7 @@ class StudentSubmissionResponse {
 
   factory StudentSubmissionResponse.fromJson(Map<String, dynamic> json) =>
       _$StudentSubmissionResponseFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$StudentSubmissionResponseToJson(this);
 }
 
@@ -369,6 +377,7 @@ class SubmissionListData {
 
   factory SubmissionListData.fromJson(Map<String, dynamic> json) =>
       _$SubmissionListDataFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$SubmissionListDataToJson(this);
 }
 
@@ -384,6 +393,7 @@ class SubmissionListResponse {
 
   factory SubmissionListResponse.fromJson(Map<String, dynamic> json) =>
       _$SubmissionListResponseFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$SubmissionListResponseToJson(this);
 }
 
@@ -399,6 +409,7 @@ class SubmissionTrackingList {
 
   factory SubmissionTrackingList.fromJson(Map<String, dynamic> json) =>
       _$SubmissionTrackingListFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$SubmissionTrackingListToJson(this);
 }
 
@@ -414,6 +425,7 @@ class SubmissionTrackingResponse {
 
   factory SubmissionTrackingResponse.fromJson(Map<String, dynamic> json) =>
       _$SubmissionTrackingResponseFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$SubmissionTrackingResponseToJson(this);
 }
 
@@ -427,6 +439,7 @@ class AttachmentData {
 
   factory AttachmentData.fromJson(Map<String, dynamic> json) =>
       _$AttachmentDataFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$AttachmentDataToJson(this);
 }
 
@@ -444,5 +457,6 @@ class AttachmentResponse {
 
   factory AttachmentResponse.fromJson(Map<String, dynamic> json) =>
       _$AttachmentResponseFromJson(json);
+  @override
   Map<String, dynamic> toJson() => _$AttachmentResponseToJson(this);
 }

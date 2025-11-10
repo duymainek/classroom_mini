@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:classroom_mini/app/data/models/response/assignment_response.dart';
 import 'package:classroom_mini/app/data/services/connectivity_service.dart';
+import 'package:classroom_mini/app/core/app_config.dart';
 
 class AssignmentCard extends StatelessWidget {
   final Assignment assignment;
@@ -33,12 +34,12 @@ class AssignmentCard extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -78,10 +79,10 @@ class AssignmentCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceVariant.withOpacity(0.3),
+                    color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: colorScheme.outline.withOpacity(0.2),
+                      color: colorScheme.outline.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Row(
@@ -89,7 +90,7 @@ class AssignmentCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: colorScheme.primary.withOpacity(0.1),
+                          color: colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Icon(
@@ -119,10 +120,10 @@ class AssignmentCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceVariant.withOpacity(0.3),
+                    color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: colorScheme.outline.withOpacity(0.2),
+                      color: colorScheme.outline.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Row(
@@ -130,7 +131,7 @@ class AssignmentCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: colorScheme.primary.withOpacity(0.1),
+                          color: colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Icon(
@@ -164,10 +165,10 @@ class AssignmentCard extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceVariant.withOpacity(0.3),
+                    color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: colorScheme.outline.withOpacity(0.2),
+                      color: colorScheme.outline.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Column(
@@ -206,7 +207,7 @@ class AssignmentCard extends StatelessWidget {
               _buildSubmissionInfo(context, theme),
 
               // Actions
-              if (showActions) ...[
+              if (showActions && AppConfig.instance.isInstructor) ...[
                 const SizedBox(height: 16),
                 _buildActions(context),
               ],
@@ -227,7 +228,7 @@ class AssignmentCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: _getStatusColor(context, status).withOpacity(0.3),
+            color: _getStatusColor(context, status).withValues(alpha: 0.3),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -255,7 +256,7 @@ class AssignmentCard extends StatelessWidget {
       case AssignmentStatus.closed:
         return colorScheme.outline;
       case AssignmentStatus.inactive:
-        return colorScheme.surfaceVariant;
+        return colorScheme.surfaceContainerHighest;
     }
   }
 
@@ -265,10 +266,10 @@ class AssignmentCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -279,7 +280,7 @@ class AssignmentCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.1),
+                  color: colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(
@@ -306,7 +307,7 @@ class AssignmentCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.1),
+                  color: colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(
@@ -334,7 +335,7 @@ class AssignmentCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: colorScheme.error.withOpacity(0.1),
+                    color: colorScheme.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Icon(
@@ -367,10 +368,10 @@ class AssignmentCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -381,7 +382,7 @@ class AssignmentCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.1),
+                  color: colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(
@@ -407,7 +408,7 @@ class AssignmentCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: colorScheme.primary.withOpacity(0.1),
+                    color: colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Icon(
@@ -518,15 +519,15 @@ class AssignmentListCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isSelected
-              ? colorScheme.primary.withOpacity(0.5)
-              : colorScheme.outline.withOpacity(0.2),
+              ? colorScheme.primary.withValues(alpha: 0.5)
+              : colorScheme.outline.withValues(alpha: 0.2),
           width: isSelected ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
             color: isSelected
-                ? colorScheme.primary.withOpacity(0.1)
-                : colorScheme.shadow.withOpacity(0.05),
+                ? colorScheme.primary.withValues(alpha: 0.1)
+                : colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: isSelected ? 8 : 4,
             offset: const Offset(0, 2),
           ),
@@ -544,7 +545,7 @@ class AssignmentListCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             boxShadow: [
               BoxShadow(
-                color: _getStatusColor(context, status).withOpacity(0.3),
+                color: _getStatusColor(context, status).withValues(alpha: 0.3),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -576,7 +577,7 @@ class AssignmentListCard extends StatelessWidget {
                 '${assignment.course!.code} - ${assignment.course!.name}',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: isSelected
-                      ? colorScheme.onPrimaryContainer.withOpacity(0.8)
+                      ? colorScheme.onPrimaryContainer.withValues(alpha: 0.8)
                       : colorScheme.onSurfaceVariant,
                 ),
               ),
@@ -585,7 +586,7 @@ class AssignmentListCard extends StatelessWidget {
               'Hạn chót: ${_formatDateTime(assignment.dueDate)}',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: isSelected
-                    ? colorScheme.onPrimaryContainer.withOpacity(0.8)
+                    ? colorScheme.onPrimaryContainer.withValues(alpha: 0.8)
                     : colorScheme.onSurface,
               ),
             ),
@@ -603,7 +604,7 @@ class AssignmentListCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: _getStatusColor(context, status).withOpacity(0.3),
+                    color: _getStatusColor(context, status).withValues(alpha: 0.3),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -622,7 +623,7 @@ class AssignmentListCard extends StatelessWidget {
               '${assignment.maxAttempts} lần',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: isSelected
-                    ? colorScheme.onPrimaryContainer.withOpacity(0.8)
+                    ? colorScheme.onPrimaryContainer.withValues(alpha: 0.8)
                     : colorScheme.onSurfaceVariant,
               ),
             ),
@@ -644,7 +645,7 @@ class AssignmentListCard extends StatelessWidget {
       case AssignmentStatus.closed:
         return colorScheme.outline;
       case AssignmentStatus.inactive:
-        return colorScheme.surfaceVariant;
+        return colorScheme.surfaceContainerHighest;
     }
   }
 

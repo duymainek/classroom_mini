@@ -143,7 +143,7 @@ class ProfileController {
       .toBuffer();
 
     const fileName = `avatar-${userId}-${Date.now()}.jpeg`;
-    const filePath = `avatars/${userId}/${fileName}`;
+    const filePath = `${userId}/${fileName}`;
 
     // Upload to Supabase Storage
     const { error: uploadError } = await supabase.storage
@@ -158,12 +158,27 @@ class ProfileController {
       throw new AppError('Failed to upload avatar', 500, 'AVATAR_UPLOAD_FAILED');
     }
 
-    // Get public URL
+    // Get public URL - ensure filePath doesn't start with 'avatars/'
+    const cleanFilePath = filePath.startsWith('avatars/') 
+      ? filePath.replace(/^avatars\//, '') 
+      : filePath;
+    
     const { data: urlData } = supabase.storage
       .from('avatars')
-      .getPublicUrl(filePath);
+      .getPublicUrl(cleanFilePath);
 
-    const avatar_url = urlData.publicUrl;
+    let avatar_url = urlData.publicUrl;
+    
+    // Validate URL doesn't have duplicate 'avatars' in path
+    if (avatar_url.includes('/avatars/avatars/')) {
+      console.warn('⚠️  Warning: URL has duplicate avatars path, fixing...');
+      avatar_url = avatar_url.replace('/avatars/avatars/', '/avatars/');
+    }
+    
+    console.log('✅ Avatar uploaded successfully:', {
+      filePath: cleanFilePath,
+      avatar_url
+    });
 
     // Update user's avatar_url
     const { error: updateUserError } = await supabase

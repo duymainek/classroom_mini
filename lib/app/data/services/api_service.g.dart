@@ -2075,7 +2075,7 @@ class _ApiService implements ApiService {
     )
         .compose(
           _dio.options,
-          '/submissions/assignments/${assignmentId}',
+          '/student/assignments/${assignmentId}/submit',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -2109,7 +2109,7 @@ class _ApiService implements ApiService {
     )
         .compose(
           _dio.options,
-          '/submissions/assignments/${assignmentId}',
+          '/student/assignments/${assignmentId}/submissions',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -2156,7 +2156,7 @@ class _ApiService implements ApiService {
     )
         .compose(
           _dio.options,
-          '/submissions',
+          '/student/submissions',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -2193,7 +2193,7 @@ class _ApiService implements ApiService {
     )
         .compose(
           _dio.options,
-          '/submissions/${submissionId}',
+          '/student/submissions/${submissionId}',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -2226,7 +2226,7 @@ class _ApiService implements ApiService {
     )
         .compose(
           _dio.options,
-          '/submissions/${submissionId}',
+          '/student/submissions/${submissionId}',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -2247,19 +2247,64 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<SimpleResponse> deleteAttachment(String attachmentId) async {
+  Future<TempAttachmentResponse> uploadSubmissionTempFile(File file) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    const Map<String, dynamic>? _data = null;
+    final _data = FormData();
+    _data.files.add(MapEntry(
+      'file',
+      MultipartFile.fromFileSync(
+        file.path,
+        filename: file.path.split(Platform.pathSeparator).last,
+      ),
+    ));
+    final _options = _setStreamType<TempAttachmentResponse>(Options(
+      method: 'POST',
+      headers: _headers,
+      extra: _extra,
+      contentType: 'multipart/form-data',
+    )
+        .compose(
+          _dio.options,
+          '/student/submissions/upload',
+          queryParameters: queryParameters,
+          data: _data,
+        )
+        .copyWith(
+            baseUrl: _combineBaseUrls(
+          _dio.options.baseUrl,
+          baseUrl,
+        )));
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late TempAttachmentResponse _value;
+    try {
+      _value = TempAttachmentResponse.fromJson(_result.data!);
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
+  Future<SimpleResponse> finalizeSubmissionAttachments(
+    String submissionId,
+    Map<String, dynamic> tempAttachmentIds,
+  ) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(tempAttachmentIds);
     final _options = _setStreamType<SimpleResponse>(Options(
-      method: 'DELETE',
+      method: 'POST',
       headers: _headers,
       extra: _extra,
     )
         .compose(
           _dio.options,
-          '/submissions/attachments/${attachmentId}',
+          '/student/submissions/${submissionId}/finalize',
           queryParameters: queryParameters,
           data: _data,
         )

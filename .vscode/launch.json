@@ -17,7 +17,7 @@
             "flutterMode": "profile",
         },
         {
-            "name": "Flutter: classroom_mini (release)",
+            "name": "Flutter: clasenv sroom_mini (release)",
             "program": "lib/main.dart",
             "request": "launch",
             "type": "dart",
@@ -29,7 +29,6 @@
             "request": "launch",
             "type": "dart",
             "flutterMode": "debug",
-            "deviceId": "iphone-16",
         }
     ]
 }

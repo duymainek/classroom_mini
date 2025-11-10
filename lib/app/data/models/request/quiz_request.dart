@@ -157,3 +157,33 @@ class QuestionOptionCreateRequest {
       _$QuestionOptionCreateRequestFromJson(json);
   Map<String, dynamic> toJson() => _$QuestionOptionCreateRequestToJson(this);
 }
+
+@JsonSerializable()
+class QuizSubmissionRequest {
+  final List<QuizAnswerRequest> answers;
+
+  QuizSubmissionRequest({
+    required this.answers,
+  });
+
+  factory QuizSubmissionRequest.fromJson(Map<String, dynamic> json) =>
+      _$QuizSubmissionRequestFromJson(json);
+  Map<String, dynamic> toJson() => _$QuizSubmissionRequestToJson(this);
+}
+
+@JsonSerializable()
+class QuizAnswerRequest {
+  final String questionId;
+  final String? answerText; // For essay questions
+  final String? selectedOptionId; // For multiple choice/true false
+
+  QuizAnswerRequest({
+    required this.questionId,
+    this.answerText,
+    this.selectedOptionId,
+  });
+
+  factory QuizAnswerRequest.fromJson(Map<String, dynamic> json) =>
+      _$QuizAnswerRequestFromJson(json);
+  Map<String, dynamic> toJson() => _$QuizAnswerRequestToJson(this);
+}

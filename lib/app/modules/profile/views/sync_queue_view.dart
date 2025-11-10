@@ -163,7 +163,7 @@ class SyncQueueView extends GetView<SyncQueueController> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: methodColor['color']?.withOpacity(0.2),
+                    color: methodColor['color']?.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
                     border: Border.all(
                       color: methodColor['color'] as Color,

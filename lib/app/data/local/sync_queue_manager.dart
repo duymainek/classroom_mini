@@ -1,5 +1,6 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'models/sync_operation.dart';
 
@@ -13,7 +14,7 @@ class SyncQueueManager {
     }
 
     _box = await Hive.openBox<SyncOperation>(_boxName);
-    print('SyncQueueManager initialized. Pending operations: ${getPendingCount()}');
+    debugPrint('SyncQueueManager initialized. Pending operations: ${getPendingCount()}');
   }
 
   static Box<SyncOperation> get box {
@@ -52,10 +53,10 @@ class SyncQueueManager {
       );
 
       await box.put(id, operation);
-      print('📥 Added to sync queue: $method $path (ID: $id)');
+      debugPrint('📥 Added to sync queue: $method $path (ID: $id)');
       return id;
     } catch (e) {
-      print('Error adding to sync queue: $e');
+      debugPrint('Error adding to sync queue: $e');
       rethrow;
     }
   }
@@ -67,7 +68,7 @@ class SyncQueueManager {
           .toList()
         ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
     } catch (e) {
-      print('Error getting pending operations: $e');
+      debugPrint('Error getting pending operations: $e');
       return [];
     }
   }
@@ -79,7 +80,7 @@ class SyncQueueManager {
           .toList()
         ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
     } catch (e) {
-      print('Error getting failed operations: $e');
+      debugPrint('Error getting failed operations: $e');
       return [];
     }
   }
@@ -94,10 +95,10 @@ class SyncQueueManager {
               status: 'completed',
             ));
         await box.delete(id);
-        print('✅ Marked as completed: $id');
+        debugPrint('✅ Marked as completed: $id');
       }
     } catch (e) {
-      print('Error marking as completed: $e');
+      debugPrint('Error marking as completed: $e');
     }
   }
 
@@ -118,31 +119,31 @@ class SyncQueueManager {
             ));
 
         if (status == 'failed') {
-          print('❌ Marked as failed (max retries): $id');
+          debugPrint('❌ Marked as failed (max retries): $id');
         } else {
-          print('⚠️ Retry $newRetryCount/3 for: $id');
+          debugPrint('⚠️ Retry $newRetryCount/3 for: $id');
         }
       }
     } catch (e) {
-      print('Error marking as failed: $e');
+      debugPrint('Error marking as failed: $e');
     }
   }
 
   static Future<void> remove(String id) async {
     try {
       await box.delete(id);
-      print('🗑️ Removed from sync queue: $id');
+      debugPrint('🗑️ Removed from sync queue: $id');
     } catch (e) {
-      print('Error removing from sync queue: $e');
+      debugPrint('Error removing from sync queue: $e');
     }
   }
 
   static Future<void> clear() async {
     try {
       await box.clear();
-      print('🗑️ Cleared all sync queue');
+      debugPrint('🗑️ Cleared all sync queue');
     } catch (e) {
-      print('Error clearing sync queue: $e');
+      debugPrint('Error clearing sync queue: $e');
     }
   }
 
@@ -155,10 +156,10 @@ class SyncQueueManager {
 
       if (completedIds.isNotEmpty) {
         await box.deleteAll(completedIds);
-        print('🗑️ Cleared ${completedIds.length} completed operations');
+        debugPrint('🗑️ Cleared ${completedIds.length} completed operations');
       }
     } catch (e) {
-      print('Error clearing completed operations: $e');
+      debugPrint('Error clearing completed operations: $e');
     }
   }
 

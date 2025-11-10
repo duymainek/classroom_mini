@@ -20,6 +20,7 @@ class BaseResponse {
 
   factory BaseResponse.fromJson(Map<String, dynamic> json) =>
       _$BaseResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$BaseResponseToJson(this);
 }
 
@@ -35,6 +36,7 @@ class TokenPair {
 
   factory TokenPair.fromJson(Map<String, dynamic> json) =>
       _$TokenPairFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$TokenPairToJson(this);
 }
 
@@ -52,6 +54,7 @@ class AuthResponse extends BaseResponse {
 
   factory AuthResponse.fromJson(Map<String, dynamic> json) =>
       _$AuthResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$AuthResponseToJson(this);
 }
 
@@ -67,6 +70,7 @@ class AuthData {
 
   factory AuthData.fromJson(Map<String, dynamic> json) =>
       _$AuthDataFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$AuthDataToJson(this);
 }
 
@@ -81,6 +85,7 @@ class LogoutResponse extends BaseResponse {
 
   factory LogoutResponse.fromJson(Map<String, dynamic> json) =>
       _$LogoutResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$LogoutResponseToJson(this);
 }
 
@@ -96,6 +101,7 @@ class StudentsListData {
 
   factory StudentsListData.fromJson(Map<String, dynamic> json) =>
       _$StudentsListDataFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$StudentsListDataToJson(this);
 }
 
@@ -113,6 +119,7 @@ class StudentsListResponse extends BaseResponse {
 
   factory StudentsListResponse.fromJson(Map<String, dynamic> json) =>
       _$StudentsListResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$StudentsListResponseToJson(this);
 }
 
@@ -130,6 +137,7 @@ class StudentUpdateData {
 
   factory StudentUpdateData.fromJson(Map<String, dynamic> json) =>
       _$StudentUpdateDataFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$StudentUpdateDataToJson(this);
 }
 
@@ -147,6 +155,7 @@ class StudentUpdateResponse extends BaseResponse {
 
   factory StudentUpdateResponse.fromJson(Map<String, dynamic> json) =>
       _$StudentUpdateResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$StudentUpdateResponseToJson(this);
 
   UserModel? get student => data?.student;
@@ -165,6 +174,7 @@ class SimpleResponse extends BaseResponse {
 
   factory SimpleResponse.fromJson(Map<String, dynamic> json) =>
       _$SimpleResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$SimpleResponseToJson(this);
 }
 
@@ -182,6 +192,7 @@ class BulkOperationResponse extends BaseResponse {
 
   factory BulkOperationResponse.fromJson(Map<String, dynamic> json) =>
       _$BulkOperationResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$BulkOperationResponseToJson(this);
 }
 
@@ -199,6 +210,7 @@ class StatisticsResponse extends BaseResponse {
 
   factory StatisticsResponse.fromJson(Map<String, dynamic> json) =>
       _$StatisticsResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$StatisticsResponseToJson(this);
 }
 
@@ -218,6 +230,7 @@ class ImportPreviewResponse extends BaseResponse {
 
   factory ImportPreviewResponse.fromJson(Map<String, dynamic> json) =>
       _$ImportPreviewResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$ImportPreviewResponseToJson(this);
 }
 
@@ -237,5 +250,6 @@ class ImportResponse extends BaseResponse {
 
   factory ImportResponse.fromJson(Map<String, dynamic> json) =>
       _$ImportResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$ImportResponseToJson(this);
 }

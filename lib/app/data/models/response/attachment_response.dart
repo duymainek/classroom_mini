@@ -16,6 +16,7 @@ class AttachmentUploadResponse {
 
   factory AttachmentUploadResponse.fromJson(Map<String, dynamic> json) =>
       _$AttachmentUploadResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$AttachmentUploadResponseToJson(this);
 }
 
@@ -31,6 +32,7 @@ class AttachmentUploadData {
 
   factory AttachmentUploadData.fromJson(Map<String, dynamic> json) =>
       _$AttachmentUploadDataFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$AttachmentUploadDataToJson(this);
 }
 
@@ -48,6 +50,7 @@ class AttachmentListResponse {
 
   factory AttachmentListResponse.fromJson(Map<String, dynamic> json) =>
       _$AttachmentListResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$AttachmentListResponseToJson(this);
 }
 
@@ -63,6 +66,7 @@ class AttachmentListData {
 
   factory AttachmentListData.fromJson(Map<String, dynamic> json) =>
       _$AttachmentListDataFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$AttachmentListDataToJson(this);
 }
 
@@ -86,6 +90,7 @@ class AttachmentFile {
 
   factory AttachmentFile.fromJson(Map<String, dynamic> json) =>
       _$AttachmentFileFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$AttachmentFileToJson(this);
 }
 
@@ -103,6 +108,7 @@ class TempAttachmentResponse {
 
   factory TempAttachmentResponse.fromJson(Map<String, dynamic> json) =>
       _$TempAttachmentResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$TempAttachmentResponseToJson(this);
 }
 
@@ -124,5 +130,6 @@ class TempAttachmentData {
 
   factory TempAttachmentData.fromJson(Map<String, dynamic> json) =>
       _$TempAttachmentDataFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$TempAttachmentDataToJson(this);
 }

@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dart run build_runner build:*)",
+      "Bash(flutter pub run build_runner build:*)",
+      "Bash(fvm flutter pub run build_runner build:*)",
+      "mcp__supabase__list_projects"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
+}

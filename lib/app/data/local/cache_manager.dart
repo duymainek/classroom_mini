@@ -1,5 +1,6 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'models/cache_entry.dart';
 
@@ -18,7 +19,7 @@ class CacheManager {
 
     await clearExpiredCache();
 
-    print('CacheManager initialized. Cached items: ${_box?.length ?? 0}');
+    debugPrint('CacheManager initialized. Cached items: ${_box?.length ?? 0}');
   }
 
   static Box<CacheEntry> get box {
@@ -62,7 +63,7 @@ class CacheManager {
 
       return entry;
     } catch (e) {
-      print('Error getting cache: $e');
+      debugPrint('Error getting cache: $e');
       return null;
     }
   }
@@ -91,9 +92,9 @@ class CacheManager {
       );
 
       await box.put(key, entry);
-      print('✅ Cached: $path (TTL: ${ttl.inMinutes}m)');
+      debugPrint('✅ Cached: $path (TTL: ${ttl.inMinutes}m)');
     } catch (e) {
-      print('Error saving cache: $e');
+      debugPrint('Error saving cache: $e');
     }
   }
 
@@ -101,9 +102,9 @@ class CacheManager {
     try {
       final key = generateKey(path, queryParams);
       await box.delete(key);
-      print('🗑️ Cleared cache: $path');
+      debugPrint('🗑️ Cleared cache: $path');
     } catch (e) {
-      print('Error clearing cache: $e');
+      debugPrint('Error clearing cache: $e');
     }
   }
 
@@ -120,19 +121,19 @@ class CacheManager {
 
       if (expiredKeys.isNotEmpty) {
         await box.deleteAll(expiredKeys);
-        print('🗑️ Cleared ${expiredKeys.length} expired cache entries');
+        debugPrint('🗑️ Cleared ${expiredKeys.length} expired cache entries');
       }
     } catch (e) {
-      print('Error clearing expired cache: $e');
+      debugPrint('Error clearing expired cache: $e');
     }
   }
 
   static Future<void> clearAll() async {
     try {
       await box.clear();
-      print('🗑️ Cleared all cache');
+      debugPrint('🗑️ Cleared all cache');
     } catch (e) {
-      print('Error clearing all cache: $e');
+      debugPrint('Error clearing all cache: $e');
     }
   }
 
@@ -168,10 +169,10 @@ class CacheManager {
 
       if (keysToDelete.isNotEmpty) {
         await box.deleteAll(keysToDelete);
-        print('🗑️ Cleared ${keysToDelete.length} cache entries matching: $pattern');
+        debugPrint('🗑️ Cleared ${keysToDelete.length} cache entries matching: $pattern');
       }
     } catch (e) {
-      print('Error clearing cache by pattern: $e');
+      debugPrint('Error clearing cache by pattern: $e');
     }
   }
 }

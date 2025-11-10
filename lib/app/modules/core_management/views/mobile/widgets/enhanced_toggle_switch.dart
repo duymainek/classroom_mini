@@ -32,13 +32,13 @@ class EnhancedToggleSwitch extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isActive
-            ? activeColorValue.withOpacity(0.1)
-            : inactiveColorValue.withOpacity(0.1),
+            ? activeColorValue.withValues(alpha: 0.1)
+            : inactiveColorValue.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isActive
-              ? activeColorValue.withOpacity(0.3)
-              : inactiveColorValue.withOpacity(0.3),
+              ? activeColorValue.withValues(alpha: 0.3)
+              : inactiveColorValue.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -69,8 +69,8 @@ class EnhancedToggleSwitch extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     color: isActive
-                        ? activeColorValue.withOpacity(0.7)
-                        : inactiveColorValue.withOpacity(0.7),
+                        ? activeColorValue.withValues(alpha: 0.7)
+                        : inactiveColorValue.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -79,9 +79,9 @@ class EnhancedToggleSwitch extends StatelessWidget {
           Switch(
             value: isActive,
             onChanged: onChanged,
-            activeColor: activeColorValue,
+            activeThumbColor: activeColorValue,
             inactiveThumbColor: inactiveColorValue,
-            inactiveTrackColor: inactiveColorValue.withOpacity(0.3),
+            inactiveTrackColor: inactiveColorValue.withValues(alpha: 0.3),
           ),
         ],
       ),

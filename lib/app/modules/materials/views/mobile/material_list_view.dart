@@ -86,13 +86,13 @@ class _MaterialListViewState extends State<MaterialListView> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(
-                    color: colorScheme.outline.withOpacity(0.3),
+                    color: colorScheme.outline.withValues(alpha: 0.3),
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(
-                    color: colorScheme.outline.withOpacity(0.3),
+                    color: colorScheme.outline.withValues(alpha: 0.3),
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
@@ -103,7 +103,7 @@ class _MaterialListViewState extends State<MaterialListView> {
                   ),
                 ),
                 filled: true,
-                fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               ),
               onChanged: (value) {
                 setState(() {});
@@ -169,7 +169,7 @@ class _MaterialListViewState extends State<MaterialListView> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: colorScheme.primary.withOpacity(0.3),
+                color: colorScheme.primary.withValues(alpha: 0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -196,10 +196,10 @@ class _MaterialListViewState extends State<MaterialListView> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.5),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: IconButton(
@@ -228,12 +228,12 @@ class _MaterialListViewState extends State<MaterialListView> {
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: colorScheme.outline.withOpacity(0.2),
+            color: colorScheme.outline.withValues(alpha: 0.2),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: colorScheme.shadow.withOpacity(0.05),
+              color: colorScheme.shadow.withValues(alpha: 0.05),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -245,7 +245,7 @@ class _MaterialListViewState extends State<MaterialListView> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withOpacity(0.3),
+                color: colorScheme.primaryContainer.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(50),
               ),
               child: Icon(

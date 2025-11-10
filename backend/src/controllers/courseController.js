@@ -7,10 +7,20 @@ require('../types/course.type');
 
 class CourseController {
   /**
-   * Create new course
+   * Create new course (instructor only)
    */
   createCourse = catchAsync(async (req, res) => {
     const { code, name, sessionCount, semesterId } = req.body;
+    const userRole = req.user.role;
+
+    // Check role
+    if (userRole !== 'instructor') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Only instructors can create courses',
+        code: 'INSUFFICIENT_PERMISSIONS'
+      });
+    }
 
     // Validate input
     const validation = validate(createCourseSchema, req.body);
@@ -94,6 +104,8 @@ class CourseController {
 
   /**
    * Get all courses with pagination, search, and filters
+   * - Instructor: get all courses
+   * - Student: get only enrolled courses
    */
   getCourses = catchAsync(async (req, res) => {
     const {
@@ -106,9 +118,74 @@ class CourseController {
       sortOrder = 'desc'
     } = req.query;
 
+    const userId = req.user.id;
+    const userRole = req.user.role;
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
-    // Build query
+    // If student, get only their enrolled courses
+    if (userRole === 'student') {
+      const { data: enrollments, error: enrollError } = await supabase
+        .from('student_enrollments')
+        .select(`
+          groups!inner(
+            courses!inner(
+              id, code, name, session_count, semester_id, is_active,
+              created_at, updated_at,
+              semesters(code, name)
+            )
+          )
+        `)
+        .eq('student_id', userId)
+        .eq('is_active', true);
+
+      if (enrollError) {
+        throw new AppError('Failed to fetch enrolled courses', 500, 'GET_ENROLLED_COURSES_FAILED');
+      }
+
+      // Extract unique courses
+      const coursesMap = new Map();
+      for (const enrollment of enrollments || []) {
+        if (enrollment.groups?.courses) {
+          const course = enrollment.groups.courses;
+          if (!coursesMap.has(course.id)) {
+            // Apply filters
+            if (semesterId && course.semester_id !== semesterId) continue;
+            if (status === 'active' && !course.is_active) continue;
+            if (status === 'inactive' && course.is_active) continue;
+            if (search && !course.name.toLowerCase().includes(search.toLowerCase()) && 
+                !course.code.toLowerCase().includes(search.toLowerCase())) continue;
+
+            coursesMap.set(course.id, {
+              id: course.id,
+              code: course.code,
+              name: course.name,
+              sessionCount: course.session_count,
+              semesterId: course.semester_id,
+              isActive: course.is_active,
+              createdAt: course.created_at,
+              updatedAt: course.updated_at,
+              semester: course.semesters
+            });
+          }
+        }
+      }
+
+      const courses = Array.from(coursesMap.values());
+
+      return res.json(
+        buildResponse(true, undefined, {
+          courses,
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total: courses.length,
+            pages: Math.ceil(courses.length / parseInt(limit))
+          }
+        })
+      );
+    }
+
+    // Instructor: get all courses
     let query = supabase
       .from('courses')
       .select(`

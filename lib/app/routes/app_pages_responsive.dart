@@ -2,7 +2,10 @@ import 'package:classroom_mini/app/modules/quiz/bindings/quiz_binding.dart';
 import 'package:classroom_mini/app/modules/quiz/views/quiz_list_view.dart';
 import 'package:classroom_mini/app/modules/quiz/views/quiz_create_view.dart';
 import 'package:classroom_mini/app/modules/quiz/views/quiz_edit_view.dart';
-import 'package:classroom_mini/app/modules/quiz/views/quiz_detail_view.dart';
+import '../modules/quiz/views/responsive/quiz_pages.dart';
+import '../modules/quiz/views/mobile/quiz_submission_detail_view.dart';
+import '../modules/quiz/controllers/quiz_controller.dart';
+import 'package:classroom_mini/app/data/models/response/quiz_response.dart';
 import 'package:classroom_mini/app/modules/home/bindings/home_binding.dart';
 import 'package:classroom_mini/app/modules/home/views/home_view.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +24,10 @@ import 'package:classroom_mini/app/data/models/response/assignment_response.dart
 import '../modules/assignments/views/mobile/assignment_list_view.dart';
 import '../modules/assignments/views/responsive/assignment_pages.dart';
 import '../modules/assignments/bindings/assignment_binding.dart';
-import '../modules/assignments/views/mobile/assignment_tracking_page.dart';
+import '../modules/assignments/controllers/assignment_controller.dart';
+import '../modules/student/submissions/views/submit_assignment_page.dart';
+import '../modules/student/submissions/views/submission_detail_view.dart';
+import '../modules/student/submissions/bindings/submit_assignment_binding.dart';
 
 // Announcement imports
 import '../modules/announcements/bindings/announcement_binding.dart';
@@ -30,6 +36,7 @@ import '../modules/announcements/views/mobile/announcement_create_view.dart';
 import '../modules/announcements/views/mobile/announcement_detail_view.dart';
 import '../modules/announcements/views/mobile/announcement_tracking_view.dart';
 import '../modules/announcements/views/mobile/announcement_file_tracking_view.dart';
+import '../modules/announcements/controllers/announcement_controller.dart';
 import 'package:classroom_mini/app/data/models/response/announcement_response.dart';
 
 // Material imports
@@ -52,6 +59,10 @@ import '../modules/chat/bindings/chat_binding.dart';
 // Profile imports
 import '../modules/profile/bindings/profile_binding.dart';
 import '../modules/profile/views/sync_queue_view.dart';
+
+// Notification imports
+import '../modules/notification/bindings/notification_binding.dart';
+import '../modules/notification/views/notification_view.dart';
 
 class AppPages {
   static const String INITIAL = Routes.HOME;
@@ -166,29 +177,43 @@ class AppPages {
     GetPage(
       name: Routes.ASSIGNMENTS_DETAIL,
       page: () {
-        final assignment = Get.arguments as Assignment?;
-        if (assignment == null) {
+        Assignment? assignment;
+        String assignmentId = '';
+
+        final arguments = Get.arguments;
+        if (arguments is Assignment) {
+          assignment = arguments;
+        } else if (arguments is Map<String, dynamic> &&
+            arguments.containsKey('id')) {
+          assignmentId = arguments['id'] as String;
+        }
+
+        if (assignment != null) {
+          return ResponsiveAssignmentDetailPage(assignment: assignment);
+        }
+
+        if (assignmentId.isEmpty) {
           return const Scaffold(
             body: Center(child: Text('Assignment not found')),
           );
         }
-        return ResponsiveAssignmentDetailPage(assignment: assignment);
-      },
-      binding: AssignmentBinding(),
-      transition: Transition.rightToLeft,
-    ),
 
-    // Assignment Tracking Route
-    GetPage(
-      name: Routes.ASSIGNMENTS_TRACKING,
-      page: () {
-        final args = Get.arguments as Map<String, dynamic>? ?? {};
-        final assignmentId = args['assignmentId'] as String? ?? '';
-        final assignmentTitle =
-            args['assignmentTitle'] as String? ?? 'Theo dõi nộp bài';
-        return AssignmentTrackingPage(
-          assignmentId: assignmentId,
-          assignmentTitle: assignmentTitle,
+        return FutureBuilder<Assignment?>(
+          future:
+              Get.find<AssignmentController>().getAssignmentById(assignmentId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+            if (snapshot.hasError || !snapshot.hasData) {
+              return const Scaffold(
+                body: Center(child: Text('Assignment not found')),
+              );
+            }
+            return ResponsiveAssignmentDetailPage(assignment: snapshot.data!);
+          },
         );
       },
       binding: AssignmentBinding(),
@@ -200,6 +225,21 @@ class AppPages {
       page: () => const MobileStudentAssignmentListView(),
       binding: AssignmentBinding(),
       transition: Transition.fadeIn,
+    ),
+
+    // Assignment Submit Route (Student)
+    GetPage(
+      name: Routes.ASSIGNMENTS_SUBMIT,
+      page: () => const SubmitAssignmentPage(),
+      binding: SubmitAssignmentBinding(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // Submission Detail Route (Student)
+    GetPage(
+      name: Routes.SUBMISSION_DETAIL,
+      page: () => const SubmissionDetailView(),
+      transition: Transition.rightToLeft,
     ),
 
     // Quiz Routes
@@ -227,13 +267,64 @@ class AppPages {
     GetPage(
       name: Routes.QUIZZES_DETAIL,
       page: () {
-        final quizId = Get.parameters['id'] ?? '';
-        return QuizDetailView(quizId: quizId);
+        Quiz? quiz;
+        String quizId = '';
+
+        final arguments = Get.arguments;
+        if (arguments is Quiz) {
+          quiz = arguments;
+        } else if (arguments is Map<String, dynamic> &&
+            arguments.containsKey('id')) {
+          quizId = arguments['id'] as String;
+        } else {
+          quizId = Get.parameters['id'] ?? '';
+        }
+
+        if (quiz != null) {
+          return ResponsiveQuizDetailPage(quiz: quiz);
+        }
+
+        if (quizId.isEmpty) {
+          return const Scaffold(
+            body: Center(child: Text('Quiz not found')),
+          );
+        }
+
+        return FutureBuilder<Quiz?>(
+          future: Get.find<QuizController>().getQuizById(quizId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+            if (snapshot.hasError || !snapshot.hasData) {
+              return const Scaffold(
+                body: Center(child: Text('Quiz not found')),
+              );
+            }
+            return ResponsiveQuizDetailPage(quiz: snapshot.data!);
+          },
+        );
       },
       binding: QuizBinding(),
       transition: Transition.rightToLeft,
     ),
-
+    GetPage(
+      name: Routes.QUIZ_SUBMISSION_DETAIL,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>?;
+        final submissionId = args?['submissionId'] as String? ?? '';
+        if (submissionId.isEmpty) {
+          return const Scaffold(
+            body: Center(child: Text('Submission not found')),
+          );
+        }
+        return QuizSubmissionDetailView(submissionId: submissionId);
+      },
+      binding: QuizBinding(),
+      transition: Transition.rightToLeft,
+    ),
     // Announcement Routes
     GetPage(
       name: Routes.ANNOUNCEMENTS_LIST,
@@ -264,13 +355,44 @@ class AppPages {
     GetPage(
       name: Routes.ANNOUNCEMENTS_DETAIL,
       page: () {
-        final announcement = Get.arguments as Announcement?;
-        if (announcement == null) {
+        Announcement? announcement;
+        String announcementId = '';
+
+        final arguments = Get.arguments;
+        if (arguments is Announcement) {
+          announcement = arguments;
+        } else if (arguments is Map<String, dynamic> &&
+            arguments.containsKey('id')) {
+          announcementId = arguments['id'] as String;
+        }
+
+        if (announcement != null) {
+          return MobileAnnouncementDetailView(announcement: announcement);
+        }
+
+        if (announcementId.isEmpty) {
           return const Scaffold(
             body: Center(child: Text('Thông báo không tìm thấy')),
           );
         }
-        return MobileAnnouncementDetailView(announcement: announcement);
+
+        return FutureBuilder<Announcement?>(
+          future: Get.find<AnnouncementController>()
+              .getAnnouncementById(announcementId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+            if (snapshot.hasError || !snapshot.hasData) {
+              return const Scaffold(
+                body: Center(child: Text('Thông báo không tìm thấy')),
+              );
+            }
+            return MobileAnnouncementDetailView(announcement: snapshot.data!);
+          },
+        );
       },
       binding: AnnouncementBinding(),
       transition: Transition.rightToLeft,
@@ -395,6 +517,14 @@ class AppPages {
       name: Routes.CHAT_NEW,
       page: () => const NewChatView(),
       binding: ChatBinding(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // Notification Routes
+    GetPage(
+      name: Routes.NOTIFICATIONS,
+      page: () => const NotificationView(),
+      binding: NotificationBinding(),
       transition: Transition.rightToLeft,
     ),
   ];

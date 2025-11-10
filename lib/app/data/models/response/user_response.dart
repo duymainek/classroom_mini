@@ -50,6 +50,7 @@ class UserModel {
   factory UserModel.fromJson(Map<String, dynamic> json) =>
       _$UserModelFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$UserModelToJson(this);
 
   UserModel copyWith({
@@ -93,6 +94,7 @@ class UserData {
 
   factory UserData.fromJson(Map<String, dynamic> json) =>
       _$UserDataFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$UserDataToJson(this);
 }
 
@@ -110,5 +112,6 @@ class UserSingleResponse {
 
   factory UserSingleResponse.fromJson(Map<String, dynamic> json) =>
       _$UserSingleResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$UserSingleResponseToJson(this);
 }

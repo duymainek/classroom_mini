@@ -231,7 +231,7 @@ class _ForumTopicCardState extends State<ForumTopicCard>
       children: [
         CircleAvatar(
           radius: ForumDesignSystem.avatarSM / 2,
-          backgroundColor: ForumDesignSystem.primary.withOpacity(0.1),
+          backgroundColor: ForumDesignSystem.primary.withValues(alpha: 0.1),
           backgroundImage: widget.topic.author.avatarUrl != null
               ? NetworkImage(widget.topic.author.avatarUrl!)
               : null,
@@ -318,9 +318,9 @@ class _ForumTopicCardState extends State<ForumTopicCard>
         vertical: ForumDesignSystem.spacingXS,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(ForumDesignSystem.radiusPill),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

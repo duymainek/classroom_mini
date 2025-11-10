@@ -82,11 +82,11 @@ class AssignmentUpdateRequest {
 @JsonSerializable()
 class SubmitAssignmentRequest {
   final String? submissionText;
-  final List<SubmissionAttachment>? attachments;
+  final List<String> tempAttachmentIds;
 
   SubmitAssignmentRequest({
     this.submissionText,
-    this.attachments,
+    this.tempAttachmentIds = const [],
   });
 
   factory SubmitAssignmentRequest.fromJson(Map<String, dynamic> json) =>

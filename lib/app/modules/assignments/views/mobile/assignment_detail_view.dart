@@ -5,6 +5,7 @@ import 'package:classroom_mini/app/data/models/response/assignment_response.dart
 import 'package:classroom_mini/app/data/models/response/submission_response.dart';
 import 'package:classroom_mini/app/routes/app_routes.dart';
 import '../../controllers/assignment_controller.dart';
+import 'package:classroom_mini/app/core/app_config.dart';
 
 class MobileAssignmentDetailView extends StatelessWidget {
   final Assignment assignment;
@@ -15,15 +16,19 @@ class MobileAssignmentDetailView extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isInstructor = AppConfig.instance.isInstructor;
 
     return GetBuilder<AssignmentController>(
       init: AssignmentController(),
       initState: (_) {
-        // Sử dụng WidgetsBinding để đảm bảo gọi sau khi build hoàn tất
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          Get.find<AssignmentController>()
-              .loadAssignmentSubmissions(assignment.id);
-        });
+        // Chỉ load submissions khi user là instructor
+        if (isInstructor) {
+          // Sử dụng WidgetsBinding để đảm bảo gọi sau khi build hoàn tất
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Get.find<AssignmentController>()
+                .loadAssignmentSubmissions(assignment.id);
+          });
+        }
       },
       builder: (controller) {
         return Scaffold(
@@ -50,37 +55,41 @@ class MobileAssignmentDetailView extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          colorScheme.primaryContainer.withOpacity(0.3),
-                          colorScheme.secondaryContainer.withOpacity(0.1),
+                          colorScheme.primaryContainer.withValues(alpha: 0.3),
+                          colorScheme.secondaryContainer.withValues(alpha: 0.1),
                         ],
                       ),
                     ),
                   ),
                 ),
                 actions: [
-                  IconButton(
-                    icon: Icon(Icons.track_changes, color: colorScheme.primary),
-                    onPressed: () {
-                      Get.toNamed(
-                        Routes.ASSIGNMENTS_TRACKING,
-                        arguments: {
-                          'assignmentId': assignment.id,
-                          'assignmentTitle': assignment.title,
-                        },
-                      );
-                    },
-                    tooltip: 'Theo dõi nộp bài',
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.edit, color: colorScheme.primary),
-                    onPressed: () async {
-                      final result = await Get.toNamed(Routes.ASSIGNMENTS_EDIT,
-                          arguments: assignment);
-                      if (result == true) {
-                        controller.loadAssignments(refresh: true);
-                      }
-                    },
-                  ),
+                  if (isInstructor) ...[
+                    IconButton(
+                      icon:
+                          Icon(Icons.track_changes, color: colorScheme.primary),
+                      onPressed: () {
+                        Get.toNamed(
+                          Routes.ASSIGNMENTS_TRACKING,
+                          arguments: {
+                            'assignmentId': assignment.id,
+                            'assignmentTitle': assignment.title,
+                          },
+                        );
+                      },
+                      tooltip: 'Theo dõi nộp bài',
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.edit, color: colorScheme.primary),
+                      onPressed: () async {
+                        final result = await Get.toNamed(
+                            Routes.ASSIGNMENTS_EDIT,
+                            arguments: assignment);
+                        if (result == true) {
+                          controller.loadAssignments(refresh: true);
+                        }
+                      },
+                    ),
+                  ],
                 ],
               ),
               SliverPadding(
@@ -94,15 +103,38 @@ class MobileAssignmentDetailView extends StatelessWidget {
                     _buildTimeInfo(context),
                     const SizedBox(height: 16),
                     _buildSubmissionSettings(context),
-                    const SizedBox(height: 16),
-                    _buildTrackingOverview(context, controller),
-                    const SizedBox(height: 16),
-                    _buildSubmissions(context, controller),
+                    // Chỉ hiển thị tracking và submissions cho instructor
+                    if (isInstructor) ...[
+                      const SizedBox(height: 16),
+                      _buildGroupFilter(context, controller),
+                      const SizedBox(height: 16),
+                      _buildTrackingOverview(context, controller),
+                      const SizedBox(height: 16),
+                      _buildSubmissions(context, controller),
+                    ],
+                    // Thêm khoảng trống cho nút nộp bài của student
+                    if (!isInstructor) const SizedBox(height: 80),
                   ]),
                 ),
               ),
             ],
           ),
+          // Thêm nút nộp bài cho student
+          floatingActionButton: !isInstructor
+              ? FloatingActionButton.extended(
+                  onPressed: () {
+                    Get.toNamed(
+                      Routes.ASSIGNMENTS_SUBMIT,
+                      arguments: {'assignment': assignment},
+                    );
+                  },
+                  icon: const Icon(Icons.upload_file),
+                  label: const Text('Nộp bài'),
+                  backgroundColor: colorScheme.primary,
+                )
+              : null,
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.centerFloat,
         );
       },
     );
@@ -139,10 +171,10 @@ class MobileAssignmentDetailView extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: colorScheme.outline.withOpacity(0.2),
+                color: colorScheme.outline.withValues(alpha: 0.2),
               ),
             ),
             child: Text(
@@ -185,7 +217,8 @@ class MobileAssignmentDetailView extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: _statusColor(context, assignment.status).withOpacity(0.3),
+            color:
+                _statusColor(context, assignment.status).withValues(alpha: 0.3),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -213,7 +246,7 @@ class MobileAssignmentDetailView extends StatelessWidget {
       case AssignmentStatus.closed:
         return colorScheme.outline;
       case AssignmentStatus.inactive:
-        return colorScheme.surfaceVariant;
+        return colorScheme.surfaceContainerHighest;
     }
   }
 
@@ -335,19 +368,6 @@ class MobileAssignmentDetailView extends StatelessWidget {
                 color: Theme.of(context).colorScheme.error,
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                context,
-                title: 'Đã chấm',
-                value: controller.submissions
-                    .where((s) => s.status == SubmissionStatus.graded)
-                    .length
-                    .toString(),
-                icon: Icons.grade,
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -367,10 +387,10 @@ class MobileAssignmentDetailView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -416,11 +436,14 @@ class MobileAssignmentDetailView extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Theme.of(context)
                     .colorScheme
-                    .surfaceVariant
-                    .withOpacity(0.3),
+                    .surfaceContainerHighest
+                    .withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .outline
+                      .withValues(alpha: 0.2),
                 ),
               ),
               child: Column(
@@ -431,7 +454,7 @@ class MobileAssignmentDetailView extends StatelessWidget {
                     color: Theme.of(context)
                         .colorScheme
                         .onSurfaceVariant
-                        .withOpacity(0.6),
+                        .withValues(alpha: 0.6),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -448,7 +471,7 @@ class MobileAssignmentDetailView extends StatelessWidget {
                           color: Theme.of(context)
                               .colorScheme
                               .onSurfaceVariant
-                              .withOpacity(0.8),
+                              .withValues(alpha: 0.8),
                         ),
                     textAlign: TextAlign.center,
                   ),
@@ -469,12 +492,14 @@ class MobileAssignmentDetailView extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Theme.of(context)
                       .colorScheme
-                      .surfaceVariant
-                      .withOpacity(0.3),
+                      .surfaceContainerHighest
+                      .withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color:
-                        Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .outline
+                        .withValues(alpha: 0.2),
                   ),
                 ),
                 child: ListTile(
@@ -507,7 +532,7 @@ class MobileAssignmentDetailView extends StatelessWidget {
                                     color: Theme.of(context)
                                         .colorScheme
                                         .onSurfaceVariant
-                                        .withOpacity(0.8),
+                                        .withValues(alpha: 0.8),
                                   ),
                         ),
                     ],
@@ -520,11 +545,34 @@ class MobileAssignmentDetailView extends StatelessWidget {
                   ),
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  onTap: () => _navigateToSubmissionDetail(s),
                 ),
               )),
         ],
       );
     });
+  }
+
+  void _navigateToSubmissionDetail(SubmissionTrackingData submissionData) {
+    if (submissionData.latestSubmission == null) {
+      Get.snackbar(
+        'Thông báo',
+        'Sinh viên này chưa có bài nộp',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    final submission = submissionData.latestSubmission!;
+
+    Get.toNamed(
+      Routes.SUBMISSION_DETAIL,
+      arguments: {
+        'submission': submission,
+        'studentName': submissionData.fullName,
+        'studentEmail': submissionData.email,
+      },
+    );
   }
 
   Widget _buildAttachments(BuildContext context) {
@@ -550,17 +598,18 @@ class MobileAssignmentDetailView extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: _getFileTypeColor(attachment.fileType).withOpacity(0.1),
+            color:
+                _getFileTypeColor(attachment.fileType).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -590,17 +639,21 @@ class MobileAssignmentDetailView extends StatelessWidget {
               Text(
                 attachment.fileType!,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                 ),
               ),
           ],
         ),
-        trailing: Icon(
-          Icons.open_in_new,
-          color: colorScheme.primary,
-          size: 20,
-        ),
-        onTap: () => _openAttachmentInBrowser(attachment.fileUrl),
+        trailing: AppConfig.instance.isInstructor
+            ? Icon(
+                Icons.open_in_new,
+                color: colorScheme.primary,
+                size: 20,
+              )
+            : null,
+        onTap: AppConfig.instance.isInstructor
+            ? () => _openAttachmentInBrowser(attachment.fileUrl)
+            : null,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
     );
@@ -643,7 +696,7 @@ class MobileAssignmentDetailView extends StatelessWidget {
   String _formatFileSize(int? fileSize) {
     if (fileSize == null) return 'Unknown size';
 
-    if (fileSize < 1024) return '${fileSize} B';
+    if (fileSize < 1024) return '$fileSize B';
     if (fileSize < 1024 * 1024)
       return '${(fileSize / 1024).toStringAsFixed(1)} KB';
     return '${(fileSize / (1024 * 1024)).toStringAsFixed(1)} MB';
@@ -708,12 +761,12 @@ class MobileAssignmentDetailView extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -724,7 +777,7 @@ class MobileAssignmentDetailView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.3),
+              color: colorScheme.primaryContainer.withValues(alpha: 0.3),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
@@ -735,7 +788,7 @@ class MobileAssignmentDetailView extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: colorScheme.primary.withOpacity(0.1),
+                    color: colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: colorScheme.primary, size: 20),
@@ -775,17 +828,17 @@ class MobileAssignmentDetailView extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: colorScheme.primary.withOpacity(0.1),
+            color: colorScheme.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: colorScheme.primary, size: 20),
@@ -822,10 +875,10 @@ class MobileAssignmentDetailView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -833,7 +886,7 @@ class MobileAssignmentDetailView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.1),
+              color: colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: colorScheme.primary, size: 16),
@@ -873,7 +926,7 @@ class MobileAssignmentDetailView extends StatelessWidget {
         title: const Text('Filter Submissions'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
+          children: const [
             // Add filter options here
             Text('Filter options to be implemented'),
           ],
@@ -894,7 +947,7 @@ class MobileAssignmentDetailView extends StatelessWidget {
         title: const Text('Sort Submissions'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
+          children: const [
             // Add sort options here
             Text('Sort options to be implemented'),
           ],
@@ -906,6 +959,60 @@ class MobileAssignmentDetailView extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildGroupFilter(
+      BuildContext context, AssignmentController controller) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final groups = assignment.groups;
+
+    if (groups.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return _buildModernSection(
+      context,
+      title: 'Lọc theo nhóm',
+      icon: Icons.filter_list,
+      children: [
+        Obx(() {
+          return DropdownButtonFormField<String?>(
+            initialValue: controller.selectedGroupIdForSubmissions.isEmpty
+                ? null
+                : controller.selectedGroupIdForSubmissions,
+            decoration: InputDecoration(
+              labelText: 'Chọn nhóm',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              filled: true,
+              fillColor:
+                  colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+            items: [
+              const DropdownMenuItem<String?>(
+                value: null,
+                child: Text('Tất cả nhóm'),
+              ),
+              ...groups.map((group) => DropdownMenuItem<String?>(
+                    value: group.id,
+                    child: Text(group.name),
+                  )),
+            ],
+            onChanged: (value) {
+              controller.updateSelectedGroupIdForSubmissions(value);
+              controller.loadAssignmentSubmissions(
+                assignment.id,
+                groupId: value ?? '',
+              );
+            },
+          );
+        }),
+      ],
     );
   }
 }

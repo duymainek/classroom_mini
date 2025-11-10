@@ -66,7 +66,7 @@ class EnhancedSemesterContent extends StatelessWidget {
         onSave: (data) {
           // TODO: Implement save logic in controller
           // controller.updateSemester(semester.id, data);
-          print('Save semester data: $data');
+          debugPrint('Save semester data: $data');
         },
       ),
     );

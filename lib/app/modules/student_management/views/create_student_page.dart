@@ -282,7 +282,7 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                 child: Container(
                   height: 2,
                   margin: const EdgeInsets.symmetric(horizontal: 8),
-                  color: colorScheme.outline.withOpacity(0.3),
+                  color: colorScheme.outline.withValues(alpha: 0.3),
                 ),
               ),
               _buildStepChip(context, 1, 'Gán nhóm', Icons.school),
@@ -292,7 +292,7 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
           LinearProgressIndicator(
             value: percent,
             color: colorScheme.primary,
-            backgroundColor: colorScheme.surfaceVariant.withOpacity(0.5),
+            backgroundColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
             minHeight: 4,
           ),
         ],
@@ -308,15 +308,15 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
       final isActive = _controller.currentStep.value == step;
       final isDone = _controller.currentStep.value > step;
       final bg = isActive
-          ? colorScheme.primary.withOpacity(0.12)
-          : colorScheme.surfaceVariant.withOpacity(0.4);
+          ? colorScheme.primary.withValues(alpha: 0.12)
+          : colorScheme.surfaceContainerHighest.withValues(alpha: 0.4);
       final fg = isActive ? colorScheme.primary : colorScheme.onSurfaceVariant;
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: fg.withOpacity(0.4)),
+          border: Border.all(color: fg.withValues(alpha: 0.4)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -340,10 +340,10 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -354,7 +354,7 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.3),
+              color: colorScheme.primaryContainer.withValues(alpha: 0.3),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
@@ -365,7 +365,7 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: colorScheme.primary.withOpacity(0.1),
+                    color: colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: colorScheme.primary, size: 20),
@@ -411,14 +411,14 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
+          borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         filled: true,
-        fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
       ),
     );
   }
@@ -447,14 +447,14 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
+          borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         filled: true,
-        fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
       ),
       icon: const Icon(Icons.arrow_drop_down_rounded),
       isExpanded: true,
@@ -471,14 +471,14 @@ class _CreateStudentPageState extends State<CreateStudentPage> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
+          borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         filled: true,
-        fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
       ),
       child: Text(value, style: theme.textTheme.bodyMedium),
     );

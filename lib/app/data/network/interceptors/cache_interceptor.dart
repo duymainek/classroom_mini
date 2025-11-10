@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../../local/cache_manager.dart';
 
 class CacheInterceptor extends Interceptor {
@@ -35,12 +36,12 @@ class CacheInterceptor extends Interceptor {
     RegExp(r'^/questions(\?.*)?$'): const Duration(days: 1),
     RegExp(r'^/forum/topics/[^/]+(\?.*)?$'): const Duration(minutes: 10),
     RegExp(r'^/forum/topics(\?.*)?$'): const Duration(minutes: 5),
-    RegExp(r'^/chat/conversations(\?.*)?$'): const Duration(minutes: 2),
   };
 
   static final List<RegExp> _noCachePatterns = [
     RegExp(r'^/forum/.*/replies'),
     RegExp(r'^/chat/unread-count'),
+    RegExp(r'^/chat/conversations'),
     RegExp(r'^/chat/messages'),
     RegExp(r'^/upload'),
     RegExp(r'^/.*/attachments'),
@@ -65,16 +66,16 @@ class CacheInterceptor extends Interceptor {
     }
 
     final path = _normalizePath(options.path);
-    print('🔍 Cache check: original=${options.path}, normalized=$path');
+    debugPrint('🔍 Cache check: original=${options.path}, normalized=$path');
 
     if (_shouldNotCache(path)) {
-      print('🚫 Not caching: $path (blocked by noCachePatterns)');
+      debugPrint('🚫 Not caching: $path (blocked by noCachePatterns)');
       return handler.next(options);
     }
 
     final ttl = _getTTL(path);
     if (ttl == null) {
-      print('⏭️ Not caching: $path (no TTL rule)');
+      debugPrint('⏭️ Not caching: $path (no TTL rule)');
       return handler.next(options);
     }
 
@@ -84,7 +85,7 @@ class CacheInterceptor extends Interceptor {
     );
 
     if (cachedEntry != null && cachedEntry.isValid) {
-      print('📦 Cache HIT: $path (TTL: ${ttl.inMinutes}m remaining)');
+      debugPrint('📦 Cache HIT: $path (TTL: ${ttl.inMinutes}m remaining)');
 
       final cachedData = _ensureMapStringDynamic(cachedEntry.responseData);
 
@@ -105,7 +106,7 @@ class CacheInterceptor extends Interceptor {
       return handler.resolve(response);
     }
 
-    print('📦 Cache MISS: $path (will cache with TTL: ${ttl.inMinutes}m)');
+    debugPrint('📦 Cache MISS: $path (will cache with TTL: ${ttl.inMinutes}m)');
 
     options.extra['shouldCache'] = true;
     options.extra['cachePath'] = path;
@@ -138,7 +139,7 @@ class CacheInterceptor extends Interceptor {
       final topicId = _extractTopicId(response.requestOptions.path);
       if (topicId != null) {
         await CacheManager.clear('/forum/topics/$topicId', null);
-        print('🗑️ Cleared cache for topic: $topicId (after view tracking)');
+        debugPrint('🗑️ Cleared cache for topic: $topicId (after view tracking)');
       }
     }
     
@@ -169,7 +170,7 @@ class CacheInterceptor extends Interceptor {
 
     try {
       if (response.data is! Map<String, dynamic>) {
-        print('⚠️ Skipping cache: response data is not Map<String, dynamic>');
+        debugPrint('⚠️ Skipping cache: response data is not Map<String, dynamic>');
         return handler.next(response);
       }
 
@@ -187,7 +188,7 @@ class CacheInterceptor extends Interceptor {
         headers: headersMap,
       );
     } catch (e) {
-      print('❌ Error caching response: $e');
+      debugPrint('❌ Error caching response: $e');
     }
 
     return handler.next(response);
@@ -207,7 +208,7 @@ class CacheInterceptor extends Interceptor {
       );
 
       if (cachedEntry != null) {
-        print('⚠️ Network error, using STALE cache: $path');
+        debugPrint('⚠️ Network error, using STALE cache: $path');
 
         final cachedData = _ensureMapStringDynamic(cachedEntry.responseData);
 
@@ -245,12 +246,12 @@ class CacheInterceptor extends Interceptor {
   Duration? _getTTL(String path) {
     for (final entry in _ttlRules.entries) {
       if (entry.key.hasMatch(path)) {
-        print(
+        debugPrint(
             '✅ [CacheInterceptor] Pattern matched: ${entry.key.pattern} → TTL: ${entry.value.inMinutes}m');
         return entry.value;
       }
     }
-    print('⚠️ [CacheInterceptor] No TTL pattern matched for: $path');
+    debugPrint('⚠️ [CacheInterceptor] No TTL pattern matched for: $path');
     return null;
   }
 
@@ -408,10 +409,10 @@ class CacheInterceptor extends Interceptor {
       // Clear cache by pattern for each matched path
       for (final pattern in patternsToClear) {
         await CacheManager.clearByPathPattern(pattern);
-        print('🗑️ Cleared cache pattern: $pattern (after $method $path)');
+        debugPrint('🗑️ Cleared cache pattern: $pattern (after $method $path)');
       }
     } catch (e) {
-      print('❌ Error clearing related cache: $e');
+      debugPrint('❌ Error clearing related cache: $e');
     }
   }
 }

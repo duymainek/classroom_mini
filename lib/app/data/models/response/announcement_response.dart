@@ -1,17 +1,18 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:classroom_mini/app/data/models/response/auth_response.dart';
 
 part 'announcement_response.g.dart';
 
 @JsonSerializable()
-class AnnouncementResponse {
-  final bool success;
-  final String message;
+class AnnouncementResponse extends BaseResponse {
   final AnnouncementData? data;
   final Map<String, dynamic>? meta;
 
-  const AnnouncementResponse({
-    required this.success,
-    required this.message,
+  AnnouncementResponse({
+    required super.success,
+    super.message,
+    super.code,
+    super.errors,
     this.data,
     this.meta,
   });
@@ -19,6 +20,7 @@ class AnnouncementResponse {
   factory AnnouncementResponse.fromJson(Map<String, dynamic> json) =>
       _$AnnouncementResponseFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$AnnouncementResponseToJson(this);
 }
 
@@ -85,6 +87,7 @@ class AnnouncementData {
     return _$AnnouncementDataFromJson(json);
   }
 
+  @override
   Map<String, dynamic> toJson() => _$AnnouncementDataToJson(this);
 }
 
@@ -102,10 +105,11 @@ class Announcement {
   final AnnouncementCourse course;
   final AnnouncementInstructor instructor;
   final List<AnnouncementGroup> groups;
+  @JsonKey(name: 'files', defaultValue: <AnnouncementFile>[])
   final List<AnnouncementFile> files;
-  @JsonKey(name: 'commentCount')
+  @JsonKey(name: 'commentCount', defaultValue: 0)
   final int commentCount;
-  @JsonKey(name: 'viewCount')
+  @JsonKey(name: 'viewCount', defaultValue: 0)
   final int viewCount;
 
   const Announcement({
@@ -118,14 +122,17 @@ class Announcement {
     required this.course,
     required this.instructor,
     required this.groups,
-    required this.files,
-    required this.commentCount,
-    required this.viewCount,
-  });
+    List<AnnouncementFile>? files,
+    int? commentCount,
+    int? viewCount,
+  })  : files = files ?? const [],
+        commentCount = commentCount ?? 0,
+        viewCount = viewCount ?? 0;
 
   factory Announcement.fromJson(Map<String, dynamic> json) =>
       _$AnnouncementFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$AnnouncementToJson(this);
 }
 
@@ -144,41 +151,50 @@ class AnnouncementCourse {
   factory AnnouncementCourse.fromJson(Map<String, dynamic> json) =>
       _$AnnouncementCourseFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$AnnouncementCourseToJson(this);
 }
 
 @JsonSerializable()
 class AnnouncementInstructor {
   final String id;
-  @JsonKey(name: 'fullName')
+  @JsonKey(name: 'fullName', defaultValue: '')
   final String fullName;
+  @JsonKey(name: 'email', defaultValue: '')
   final String email;
 
   const AnnouncementInstructor({
     required this.id,
-    required this.fullName,
-    required this.email,
-  });
+    String? fullName,
+    String? email,
+  })  : fullName = fullName ?? '',
+        email = email ?? '';
 
   factory AnnouncementInstructor.fromJson(Map<String, dynamic> json) =>
       _$AnnouncementInstructorFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$AnnouncementInstructorToJson(this);
 }
 
 @JsonSerializable()
 class AnnouncementGroup {
   final String id;
+  @JsonKey(name: 'name', defaultValue: '')
   final String name;
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final String? courseId;
 
   const AnnouncementGroup({
     required this.id,
-    required this.name,
-  });
+    String? name,
+    this.courseId,
+  }) : name = name ?? '';
 
   factory AnnouncementGroup.fromJson(Map<String, dynamic> json) =>
       _$AnnouncementGroupFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$AnnouncementGroupToJson(this);
 }
 
@@ -205,6 +221,7 @@ class AnnouncementFile {
   factory AnnouncementFile.fromJson(Map<String, dynamic> json) =>
       _$AnnouncementFileFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$AnnouncementFileToJson(this);
 }
 
@@ -230,6 +247,7 @@ class AnnouncementComment {
   factory AnnouncementComment.fromJson(Map<String, dynamic> json) =>
       _$AnnouncementCommentFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$AnnouncementCommentToJson(this);
 }
 
@@ -254,6 +272,7 @@ class AnnouncementUser {
   factory AnnouncementUser.fromJson(Map<String, dynamic> json) =>
       _$AnnouncementUserFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$AnnouncementUserToJson(this);
 }
 
@@ -270,6 +289,7 @@ class TrackingData {
   factory TrackingData.fromJson(Map<String, dynamic> json) =>
       _$TrackingDataFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$TrackingDataToJson(this);
 }
 
@@ -294,6 +314,7 @@ class StudentTracking {
   factory StudentTracking.fromJson(Map<String, dynamic> json) =>
       _$StudentTrackingFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$StudentTrackingToJson(this);
 }
 
@@ -313,6 +334,7 @@ class TrackingSummary {
   factory TrackingSummary.fromJson(Map<String, dynamic> json) =>
       _$TrackingSummaryFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$TrackingSummaryToJson(this);
 }
 
@@ -332,6 +354,7 @@ class FileTrackingData {
   factory FileTrackingData.fromJson(Map<String, dynamic> json) =>
       _$FileTrackingDataFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$FileTrackingDataToJson(this);
 }
 
@@ -352,15 +375,16 @@ class FileDownload {
   factory FileDownload.fromJson(Map<String, dynamic> json) =>
       _$FileDownloadFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$FileDownloadToJson(this);
 }
 
 @JsonSerializable()
 class Pagination {
-  final int page;
-  final int limit;
-  final int total;
-  final int pages;
+  final int? page;
+  final int? limit;
+  final int? total;
+  final int? pages;
 
   const Pagination({
     required this.page,
@@ -372,5 +396,6 @@ class Pagination {
   factory Pagination.fromJson(Map<String, dynamic> json) =>
       _$PaginationFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$PaginationToJson(this);
 }

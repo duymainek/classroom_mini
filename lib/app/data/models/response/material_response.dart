@@ -19,6 +19,7 @@ class MaterialResponse {
   factory MaterialResponse.fromJson(Map<String, dynamic> json) =>
       _$MaterialResponseFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$MaterialResponseToJson(this);
 }
 
@@ -43,6 +44,7 @@ class MaterialData {
   factory MaterialData.fromJson(Map<String, dynamic> json) =>
       _$MaterialDataFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$MaterialDataToJson(this);
 }
 
@@ -76,6 +78,7 @@ class Material {
   factory Material.fromJson(Map<String, dynamic> json) =>
       _$MaterialFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$MaterialToJson(this);
 }
 
@@ -94,6 +97,7 @@ class MaterialCourse {
   factory MaterialCourse.fromJson(Map<String, dynamic> json) =>
       _$MaterialCourseFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$MaterialCourseToJson(this);
 }
 
@@ -113,6 +117,7 @@ class MaterialInstructor {
   factory MaterialInstructor.fromJson(Map<String, dynamic> json) =>
       _$MaterialInstructorFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$MaterialInstructorToJson(this);
 }
 
@@ -139,6 +144,7 @@ class MaterialFile {
   factory MaterialFile.fromJson(Map<String, dynamic> json) =>
       _$MaterialFileFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$MaterialFileToJson(this);
 }
 
@@ -155,6 +161,7 @@ class TrackingData {
   factory TrackingData.fromJson(Map<String, dynamic> json) =>
       _$TrackingDataFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$TrackingDataToJson(this);
 }
 
@@ -179,6 +186,7 @@ class StudentTracking {
   factory StudentTracking.fromJson(Map<String, dynamic> json) =>
       _$StudentTrackingFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$StudentTrackingToJson(this);
 }
 
@@ -198,6 +206,7 @@ class TrackingSummary {
   factory TrackingSummary.fromJson(Map<String, dynamic> json) =>
       _$TrackingSummaryFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$TrackingSummaryToJson(this);
 }
 
@@ -217,6 +226,7 @@ class FileTrackingData {
   factory FileTrackingData.fromJson(Map<String, dynamic> json) =>
       _$FileTrackingDataFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$FileTrackingDataToJson(this);
 }
 
@@ -237,6 +247,7 @@ class FileDownload {
   factory FileDownload.fromJson(Map<String, dynamic> json) =>
       _$FileDownloadFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$FileDownloadToJson(this);
 }
 
@@ -261,6 +272,7 @@ class MaterialUser {
   factory MaterialUser.fromJson(Map<String, dynamic> json) =>
       _$MaterialUserFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$MaterialUserToJson(this);
 }
 
@@ -277,6 +289,7 @@ class MaterialGroup {
   factory MaterialGroup.fromJson(Map<String, dynamic> json) =>
       _$MaterialGroupFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$MaterialGroupToJson(this);
 }
 
@@ -297,5 +310,6 @@ class Pagination {
   factory Pagination.fromJson(Map<String, dynamic> json) =>
       _$PaginationFromJson(json);
 
+@override
   Map<String, dynamic> toJson() => _$PaginationToJson(this);
 }

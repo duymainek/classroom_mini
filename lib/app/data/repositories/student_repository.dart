@@ -4,6 +4,7 @@ import 'package:classroom_mini/app/data/models/response/auth_response.dart';
 import 'package:classroom_mini/app/data/models/response/semester_response.dart';
 import 'package:classroom_mini/app/data/models/response/user_response.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../services/api_service.dart';
 import '../../core/constants/api_endpoints.dart';
 import '../services/storage_service.dart';
@@ -210,7 +211,7 @@ class StudentRepository {
         );
       }
     } catch (e) {
-      print('StudentRepository.getStudents error: $e');
+      debugPrint('StudentRepository.getStudents error: $e');
       return StudentsListResult.failure(
         message: 'Network error occurred. Please try again.',
       );
@@ -304,7 +305,7 @@ class StudentRepository {
         );
       }
     } catch (e) {
-      print('StudentRepository.getStudentStatistics error: $e');
+      debugPrint('StudentRepository.getStudentStatistics error: $e');
       return StatisticsResult.failure(
         message: 'Network error occurred. Please try again.',
       );

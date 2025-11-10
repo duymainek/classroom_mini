@@ -218,7 +218,7 @@ class _ForumTopicFormState extends State<ForumTopicForm>
         Container(
           padding: EdgeInsets.all(ForumDesignSystem.spacingSM),
           decoration: BoxDecoration(
-            color: ForumDesignSystem.primary.withOpacity(0.1),
+            color: ForumDesignSystem.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(ForumDesignSystem.radiusMD),
           ),
           child: Icon(

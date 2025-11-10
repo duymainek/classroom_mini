@@ -5,6 +5,7 @@ import 'package:classroom_mini/app/data/models/response/announcement_response.da
 import 'package:classroom_mini/app/data/models/request/announcement_request.dart';
 import 'package:classroom_mini/app/data/services/connectivity_service.dart';
 import 'package:classroom_mini/app/routes/app_routes.dart';
+import 'package:classroom_mini/app/core/app_config.dart';
 import '../../controllers/announcement_controller.dart';
 
 /**
@@ -88,24 +89,25 @@ class MobileAnnouncementDetailView extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                colorScheme.primaryContainer.withOpacity(0.3),
-                colorScheme.secondaryContainer.withOpacity(0.1),
+                colorScheme.primaryContainer.withValues(alpha: 0.3),
+                colorScheme.secondaryContainer.withValues(alpha: 0.1),
               ],
             ),
           ),
         ),
       ),
       actions: [
-        Obx(() {
-          final connectivityService = Get.find<ConnectivityService>();
-          if (!connectivityService.isOnline.value) {
-            return const SizedBox.shrink();
-          }
-          return IconButton(
-            icon: Icon(Icons.edit, color: colorScheme.primary),
-            onPressed: () => _navigateToEdit(),
-          );
-        }),
+        if (AppConfig.instance.isInstructor)
+          Obx(() {
+            final connectivityService = Get.find<ConnectivityService>();
+            if (!connectivityService.isOnline.value) {
+              return const SizedBox.shrink();
+            }
+            return IconButton(
+              icon: Icon(Icons.edit, color: colorScheme.primary),
+              onPressed: () => _navigateToEdit(),
+            );
+          }),
       ],
     );
   }
@@ -139,10 +141,10 @@ class MobileAnnouncementDetailView extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceVariant.withOpacity(0.3),
+            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: colorScheme.outline.withOpacity(0.2),
+              color: colorScheme.outline.withValues(alpha: 0.2),
             ),
           ),
           child: Text(
@@ -191,10 +193,10 @@ class MobileAnnouncementDetailView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: scopeColor.withOpacity(0.1),
+        color: scopeColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: scopeColor.withOpacity(0.3),
+          color: scopeColor.withValues(alpha: 0.3),
         ),
       ),
       child: Text(
@@ -220,10 +222,10 @@ class MobileAnnouncementDetailView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.3),
+              color: colorScheme.primaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: colorScheme.primary.withOpacity(0.3),
+                color: colorScheme.primary.withValues(alpha: 0.3),
               ),
             ),
             child: Row(
@@ -266,10 +268,10 @@ class MobileAnnouncementDetailView extends StatelessWidget {
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: colorScheme.secondaryContainer.withOpacity(0.5),
+                color: colorScheme.secondaryContainer.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: colorScheme.secondary.withOpacity(0.3),
+                  color: colorScheme.secondary.withValues(alpha: 0.3),
                   width: 1.5,
                 ),
               ),
@@ -299,7 +301,7 @@ class MobileAnnouncementDetailView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -364,17 +366,17 @@ class MobileAnnouncementDetailView extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: _getFileTypeColor(file.fileType).withOpacity(0.1),
+            color: _getFileTypeColor(file.fileType).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -404,7 +406,7 @@ class MobileAnnouncementDetailView extends StatelessWidget {
               Text(
                 file.fileType!,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                 ),
               ),
           ],
@@ -523,10 +525,10 @@ class MobileAnnouncementDetailView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -595,10 +597,10 @@ class MobileAnnouncementDetailView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -652,10 +654,10 @@ class MobileAnnouncementDetailView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -663,7 +665,7 @@ class MobileAnnouncementDetailView extends StatelessWidget {
           Icon(
             Icons.comment_outlined,
             size: 48,
-            color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
           ),
           const SizedBox(height: 16),
           Text(
@@ -677,7 +679,7 @@ class MobileAnnouncementDetailView extends StatelessWidget {
           Text(
             'Hãy là người đầu tiên bình luận!',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
             ),
             textAlign: TextAlign.center,
           ),
@@ -694,10 +696,10 @@ class MobileAnnouncementDetailView extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -707,7 +709,7 @@ class MobileAnnouncementDetailView extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 16,
-                backgroundColor: colorScheme.primary.withOpacity(0.1),
+                backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
                 child: Text(
                   comment.user.fullName.isNotEmpty
                       ? comment.user.fullName[0].toUpperCase()
@@ -743,7 +745,7 @@ class MobileAnnouncementDetailView extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: colorScheme.primary.withOpacity(0.1),
+                    color: colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -783,12 +785,12 @@ class MobileAnnouncementDetailView extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -799,7 +801,7 @@ class MobileAnnouncementDetailView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.3),
+              color: colorScheme.primaryContainer.withValues(alpha: 0.3),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
@@ -810,7 +812,7 @@ class MobileAnnouncementDetailView extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: colorScheme.primary.withOpacity(0.1),
+                    color: colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: colorScheme.primary, size: 20),
@@ -849,10 +851,10 @@ class MobileAnnouncementDetailView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -860,7 +862,7 @@ class MobileAnnouncementDetailView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.1),
+              color: colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: colorScheme.primary, size: 16),

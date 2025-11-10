@@ -125,7 +125,7 @@ class _MaterialFormState extends State<MaterialForm> {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.3),
+                  color: colorScheme.primary.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -251,13 +251,13 @@ class _MaterialFormState extends State<MaterialForm> {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: colorScheme.outline.withOpacity(0.3),
+                color: colorScheme.outline.withValues(alpha: 0.3),
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: colorScheme.outline.withOpacity(0.3),
+                color: colorScheme.outline.withValues(alpha: 0.3),
               ),
             ),
             focusedBorder: OutlineInputBorder(
@@ -268,7 +268,7 @@ class _MaterialFormState extends State<MaterialForm> {
               ),
             ),
             filled: true,
-            fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+            fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
             counterStyle: theme.textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
@@ -313,10 +313,10 @@ class _MaterialFormState extends State<MaterialForm> {
             return Container(
               height: 56,
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: colorScheme.outline.withOpacity(0.3),
+                  color: colorScheme.outline.withValues(alpha: 0.3),
                 ),
               ),
               child: const Center(
@@ -335,7 +335,7 @@ class _MaterialFormState extends State<MaterialForm> {
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: colorScheme.outline.withOpacity(0.3),
+                  color: colorScheme.outline.withValues(alpha: 0.3),
                 ),
               ),
               focusedBorder: OutlineInputBorder(
@@ -346,7 +346,7 @@ class _MaterialFormState extends State<MaterialForm> {
                 ),
               ),
               filled: true,
-              fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+              fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               prefixIcon: const Icon(Icons.school_outlined),
             ),
             items: controller.courses
@@ -388,10 +388,10 @@ class _MaterialFormState extends State<MaterialForm> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color:
-                Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
             ),
           ),
           child: Column(
@@ -431,25 +431,25 @@ class _MaterialFormState extends State<MaterialForm> {
         SharedFileAttachmentPicker(
           tag: 'material_attachments',
           onAttachmentsChanged: (attachments) {
-            print('=== MATERIAL FORM CALLBACK ===');
-            print('Received attachments changed callback');
-            print('New attachments count: ${attachments.length}');
-            print(
+            debugPrint('=== MATERIAL FORM CALLBACK ===');
+            debugPrint('Received attachments changed callback');
+            debugPrint('New attachments count: ${attachments.length}');
+            debugPrint(
                 'Uploaded count: ${attachments.where((a) => a.isUploaded).length}');
-            print('Attachment details:');
+            debugPrint('Attachment details:');
             for (int i = 0; i < attachments.length; i++) {
               final att = attachments[i];
-              print(
+              debugPrint(
                   '  [$i] ${att.fileName} - Status: ${att.status} - ID: ${att.attachmentId}');
             }
-            print('Updating _selectedAttachmentIds...');
+            debugPrint('Updating _selectedAttachmentIds...');
             _selectedAttachmentIds = attachments
                 .where((a) => a.isUploaded && a.attachmentId != null)
                 .map((a) => a.attachmentId!)
                 .toList();
-            print(
+            debugPrint(
                 'Update completed. Current _selectedAttachmentIds count: ${_selectedAttachmentIds.length}');
-            print('=== END MATERIAL FORM CALLBACK ===');
+            debugPrint('=== END MATERIAL FORM CALLBACK ===');
           },
           maxFiles: 10,
           maxFileSizeMB: 100,
@@ -489,12 +489,12 @@ class _MaterialFormState extends State<MaterialForm> {
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: colorScheme.outline.withOpacity(0.3),
+              color: colorScheme.outline.withValues(alpha: 0.3),
               width: 2,
             ),
             boxShadow: [
               BoxShadow(
-                color: colorScheme.shadow.withOpacity(0.1),
+                color: colorScheme.shadow.withValues(alpha: 0.1),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -509,7 +509,7 @@ class _MaterialFormState extends State<MaterialForm> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withOpacity(0.3),
+                      color: colorScheme.primaryContainer.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -557,10 +557,10 @@ class _MaterialFormState extends State<MaterialForm> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceVariant.withOpacity(0.5),
+                    color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: colorScheme.outline.withOpacity(0.3),
+                      color: colorScheme.outline.withValues(alpha: 0.3),
                       style: BorderStyle.solid,
                     ),
                   ),
@@ -601,10 +601,10 @@ class _MaterialFormState extends State<MaterialForm> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withOpacity(0.1),
+                    color: colorScheme.primaryContainer.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: colorScheme.primary.withOpacity(0.2),
+                      color: colorScheme.primary.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Row(
@@ -650,10 +650,10 @@ class _MaterialFormState extends State<MaterialForm> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceVariant.withOpacity(0.5),
+                    color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: colorScheme.outline.withOpacity(0.2),
+                      color: colorScheme.outline.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Row(
@@ -697,12 +697,12 @@ class _MaterialFormState extends State<MaterialForm> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -713,7 +713,7 @@ class _MaterialFormState extends State<MaterialForm> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.3),
+              color: colorScheme.primaryContainer.withValues(alpha: 0.3),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
@@ -724,7 +724,7 @@ class _MaterialFormState extends State<MaterialForm> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: colorScheme.primary.withOpacity(0.1),
+                    color: colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: colorScheme.primary, size: 20),
@@ -754,8 +754,8 @@ class _MaterialFormState extends State<MaterialForm> {
   Future<void> _saveMaterial() async {
     if (!_validateForm()) return;
 
-    print('=== SAVING MATERIAL ===');
-    print('Selected attachment IDs: $_selectedAttachmentIds');
+    debugPrint('=== SAVING MATERIAL ===');
+    debugPrint('Selected attachment IDs: $_selectedAttachmentIds');
 
     // Hiển thị dialog loading thay vì thay đổi toàn bộ UI
     Get.dialog(
@@ -825,7 +825,7 @@ class _MaterialFormState extends State<MaterialForm> {
         if (materialId != null) {
           // Finalize attachments if any
           if (_selectedAttachmentIds.isNotEmpty) {
-            print('Finalizing attachments for material: $materialId');
+            debugPrint('Finalizing attachments for material: $materialId');
             await controller.finalizeAttachments(
                 materialId, _selectedAttachmentIds);
           }

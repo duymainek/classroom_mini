@@ -22,6 +22,7 @@ class Semester {
 
   factory Semester.fromJson(Map<String, dynamic> json) =>
       _$SemesterFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$SemesterToJson(this);
 
   Semester copyWith({
@@ -73,6 +74,7 @@ class PaginationInfo {
 
   factory PaginationInfo.fromJson(Map<String, dynamic> json) =>
       _$PaginationInfoFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$PaginationInfoToJson(this);
 }
 
@@ -88,6 +90,7 @@ class SemesterListData {
 
   factory SemesterListData.fromJson(Map<String, dynamic> json) =>
       _$SemesterListDataFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$SemesterListDataToJson(this);
 }
 
@@ -103,6 +106,7 @@ class SemesterListResponse {
 
   factory SemesterListResponse.fromJson(Map<String, dynamic> json) =>
       _$SemesterListResponseFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$SemesterListResponseToJson(this);
 }
 
@@ -126,6 +130,7 @@ class SemesterResponse {
     );
   }
 
+@override
   Map<String, dynamic> toJson() {
     return {
       'success': success,
@@ -145,5 +150,6 @@ class SemesterData {
 
   factory SemesterData.fromJson(Map<String, dynamic> json) =>
       _$SemesterDataFromJson(json);
+@override
   Map<String, dynamic> toJson() => _$SemesterDataToJson(this);
 }
