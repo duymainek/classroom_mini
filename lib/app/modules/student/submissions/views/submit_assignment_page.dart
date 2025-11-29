@@ -61,6 +61,10 @@ class SubmitAssignmentPage extends GetView<SubmitAssignmentController> {
           );
         }
 
+        final shouldShowSubmissionForm = controller.canSubmit ||
+            (controller.mySubmissions.isEmpty &&
+                controller.remainingAttempts > 0);
+
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -69,8 +73,10 @@ class SubmitAssignmentPage extends GetView<SubmitAssignmentController> {
               _buildAssignmentInfoCard(context),
               const SizedBox(height: 16),
               _buildAttemptInfo(context),
-              const SizedBox(height: 16),
-              _buildSubmissionForm(context),
+              if (shouldShowSubmissionForm) ...[
+                const SizedBox(height: 16),
+                _buildSubmissionForm(context),
+              ],
               const SizedBox(height: 16),
               _buildPreviousSubmissions(context),
               const SizedBox(height: 100), // Space for bottom button
@@ -567,7 +573,7 @@ class SubmitAssignmentPage extends GetView<SubmitAssignmentController> {
   }
 
   Widget _buildFileItem(file, int index) {
-    final fileName = file.path.split('/').last;
+    final fileName = file.name;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
@@ -627,10 +633,12 @@ class SubmitAssignmentPage extends GetView<SubmitAssignmentController> {
                 color: _getSubmissionColor(submission.status),
               ),
               title: Text('Attempt ${submission.attemptNumber}'),
-              subtitle: Text(
-                '${DateFormat('MMM dd, yyyy HH:mm').format(submission.submittedAt)}\n'
-                '${submission.status.displayName}${submission.isGraded ? ' - ${submission.gradeDisplay}' : ''}',
-              ),
+              subtitle: submission.submittedAt != null
+                  ? Text(
+                      '${DateFormat('MMM dd, yyyy HH:mm').format(submission.submittedAt!)}\n'
+                      '${submission.status.displayName}${submission.isGraded ? ' - ${submission.gradeDisplay}' : ''}',
+                    )
+                  : null,
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               onTap: () => controller.viewSubmission(submission),
             );

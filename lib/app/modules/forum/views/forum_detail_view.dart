@@ -5,109 +5,109 @@ import 'package:classroom_mini/app/modules/forum/controllers/forum_detail_contro
 import 'package:classroom_mini/app/modules/forum/widgets/forum_reply_widget.dart';
 import 'package:classroom_mini/app/modules/forum/widgets/forum_reply_form.dart';
 import 'package:classroom_mini/app/modules/forum/widgets/forum_topic_header.dart';
-import 'package:classroom_mini/app/modules/forum/widgets/forum_attachment_chips.dart';
+import 'package:classroom_mini/app/core/widgets/responsive_container.dart';
 
-/**
- * Forum Detail View
- * Shows topic detail with replies
- */
+/// Forum Detail View
+/// Shows topic detail with replies
 class ForumDetailView extends GetView<ForumDetailController> {
   const ForumDetailView({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Forum'),
-        actions: [
-          Obx(() {
-            final connectivityService = Get.find<ConnectivityService>();
-            if (!connectivityService.isOnline.value) {
-              return const SizedBox.shrink();
+        appBar: AppBar(
+          title: const Text('Forum'),
+          actions: [
+            Obx(() {
+              final connectivityService = Get.find<ConnectivityService>();
+              if (!connectivityService.isOnline.value) {
+                return const SizedBox.shrink();
+              }
+              return PopupMenuButton<String>(
+                onSelected: (value) {
+                  switch (value) {
+                    case 'edit':
+                      _showEditDialog(context);
+                      break;
+                    case 'delete':
+                      _showDeleteDialog(context);
+                      break;
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit),
+                        SizedBox(width: 8),
+                        Text('Edit Topic'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete),
+                        SizedBox(width: 8),
+                        Text('Delete Topic'),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }),
+          ],
+        ),
+        body: ResponsiveContainer(
+          padding: EdgeInsets.zero,
+          child: Obx(() {
+            if (controller.isLoading.value) {
+              return const Center(child: CircularProgressIndicator());
             }
-            return PopupMenuButton<String>(
-              onSelected: (value) {
-                switch (value) {
-                  case 'edit':
-                    _showEditDialog(context);
-                    break;
-                  case 'delete':
-                    _showDeleteDialog(context);
-                    break;
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'edit',
-                  child: Row(
-                    children: [
-                      Icon(Icons.edit),
-                      SizedBox(width: 8),
-                      Text('Edit Topic'),
-                    ],
+
+            final topic = controller.topic.value;
+            if (topic == null) {
+              return const Center(child: Text('Topic not found'));
+            }
+
+            return Column(
+              children: [
+                // Topic header
+                ForumTopicHeader(topic: topic),
+
+                // Replies list
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: controller.replies.length,
+                    itemBuilder: (context, index) {
+                      final reply = controller.replies[index];
+                      return ForumReplyWidget(
+                        reply: reply,
+                        onReply: () => controller.setReplyingTo(reply),
+                        onLike: () => controller.toggleLike(reply.id),
+                        onDelete: () => controller.deleteReply(reply.id),
+                      );
+                    },
                   ),
                 ),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete),
-                      SizedBox(width: 8),
-                      Text('Delete Topic'),
-                    ],
-                  ),
+
+                // Reply form
+                ForumReplyForm(
+                  content: controller.replyContent.value,
+                  replyingTo: controller.replyingTo.value,
+                  isPosting: controller.isPostingReply.value,
+                  onContentChanged: (value) =>
+                      controller.replyContent.value = value,
+                  onPost: controller.postReply,
+                  onCancelReply: controller.cancelReplyingTo,
                 ),
               ],
             );
           }),
-        ],
-      ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final topic = controller.topic.value;
-        if (topic == null) {
-          return const Center(child: Text('Topic not found'));
-        }
-
-        return Column(
-          children: [
-            // Topic header
-            ForumTopicHeader(topic: topic),
-
-            // Replies list
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: controller.replies.length,
-                itemBuilder: (context, index) {
-                  final reply = controller.replies[index];
-                  return ForumReplyWidget(
-                    reply: reply,
-                    onReply: () => controller.setReplyingTo(reply),
-                    onLike: () => controller.toggleLike(reply.id),
-                    onDelete: () => controller.deleteReply(reply.id),
-                  );
-                },
-              ),
-            ),
-
-            // Reply form
-            ForumReplyForm(
-              content: controller.replyContent.value,
-              replyingTo: controller.replyingTo.value,
-              isPosting: controller.isPostingReply.value,
-              onContentChanged: (value) =>
-                  controller.replyContent.value = value,
-              onPost: controller.postReply,
-              onCancelReply: controller.cancelReplyingTo,
-            ),
-          ],
-        );
-      }),
-    );
+        ));
   }
 
   void _showEditDialog(BuildContext context) {

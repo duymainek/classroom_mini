@@ -38,12 +38,12 @@ NotificationData _$NotificationDataFromJson(Map<String, dynamic> json) =>
           ? null
           : NotificationModel.fromJson(
               json['notification'] as Map<String, dynamic>),
-      total: (json['total'] as num?)?.toInt(),
-      limit: (json['limit'] as num?)?.toInt(),
-      offset: (json['offset'] as num?)?.toInt(),
-      unreadCount: (json['unreadCount'] as num?)?.toInt(),
-      deletedCount: (json['deletedCount'] as num?)?.toInt(),
-      updatedCount: (json['updatedCount'] as num?)?.toInt(),
+      total: json['total'] as int?,
+      limit: json['limit'] as int?,
+      offset: json['offset'] as int?,
+      unreadCount: json['unreadCount'] as int?,
+      deletedCount: json['deletedCount'] as int?,
+      updatedCount: json['updatedCount'] as int?,
     );
 
 Map<String, dynamic> _$NotificationDataToJson(NotificationData instance) =>

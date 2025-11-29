@@ -12,14 +12,11 @@ class _QuizApiService implements QuizApiService {
   _QuizApiService(
     this._dio, {
     this.baseUrl,
-    this.errorLogger,
   });
 
   final Dio _dio;
 
   String? baseUrl;
-
-  final ParseErrorLogger? errorLogger;
 
   @override
   Future<QuizCreateResponse> createQuiz(QuizCreateRequest request) async {
@@ -28,30 +25,24 @@ class _QuizApiService implements QuizApiService {
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(request.toJson());
-    final _options = _setStreamType<QuizCreateResponse>(Options(
+    final _result = await _dio
+        .fetch<Map<String, dynamic>>(_setStreamType<QuizCreateResponse>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/quizzes',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late QuizCreateResponse _value;
-    try {
-      _value = QuizCreateResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/quizzes',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = QuizCreateResponse.fromJson(_result.data!);
     return _value;
   }
 
@@ -79,30 +70,24 @@ class _QuizApiService implements QuizApiService {
     };
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<QuizListResponse>(Options(
+    final _result = await _dio
+        .fetch<Map<String, dynamic>>(_setStreamType<QuizListResponse>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/quizzes',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late QuizListResponse _value;
-    try {
-      _value = QuizListResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/quizzes',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = QuizListResponse.fromJson(_result.data!);
     return _value;
   }
 
@@ -112,30 +97,24 @@ class _QuizApiService implements QuizApiService {
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<QuizSingleResponse>(Options(
+    final _result = await _dio
+        .fetch<Map<String, dynamic>>(_setStreamType<QuizSingleResponse>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/quizzes/${quizId}',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late QuizSingleResponse _value;
-    try {
-      _value = QuizSingleResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/quizzes/${quizId}',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = QuizSingleResponse.fromJson(_result.data!);
     return _value;
   }
 
@@ -149,30 +128,24 @@ class _QuizApiService implements QuizApiService {
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(request.toJson());
-    final _options = _setStreamType<QuizSingleResponse>(Options(
+    final _result = await _dio
+        .fetch<Map<String, dynamic>>(_setStreamType<QuizSingleResponse>(Options(
       method: 'PUT',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/quizzes/${quizId}',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late QuizSingleResponse _value;
-    try {
-      _value = QuizSingleResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/quizzes/${quizId}',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = QuizSingleResponse.fromJson(_result.data!);
     return _value;
   }
 
@@ -182,7 +155,7 @@ class _QuizApiService implements QuizApiService {
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<void>(Options(
+    await _dio.fetch<void>(_setStreamType<void>(Options(
       method: 'DELETE',
       headers: _headers,
       extra: _extra,
@@ -197,8 +170,7 @@ class _QuizApiService implements QuizApiService {
             baseUrl: _combineBaseUrls(
           _dio.options.baseUrl,
           baseUrl,
-        )));
-    await _dio.fetch<void>(_options);
+        ))));
   }
 
   @override
@@ -211,30 +183,24 @@ class _QuizApiService implements QuizApiService {
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(request.toJson());
-    final _options = _setStreamType<QuizQuestionSingleResponse>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<QuizQuestionSingleResponse>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/quizzes/${quizId}/questions',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late QuizQuestionSingleResponse _value;
-    try {
-      _value = QuizQuestionSingleResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/quizzes/${quizId}/questions',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = QuizQuestionSingleResponse.fromJson(_result.data!);
     return _value;
   }
 
@@ -249,30 +215,24 @@ class _QuizApiService implements QuizApiService {
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(request.toJson());
-    final _options = _setStreamType<QuizQuestionSingleResponse>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<QuizQuestionSingleResponse>(Options(
       method: 'PUT',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/quizzes/${quizId}/questions/${questionId}',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late QuizQuestionSingleResponse _value;
-    try {
-      _value = QuizQuestionSingleResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/quizzes/${quizId}/questions/${questionId}',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = QuizQuestionSingleResponse.fromJson(_result.data!);
     return _value;
   }
 
@@ -285,7 +245,7 @@ class _QuizApiService implements QuizApiService {
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<void>(Options(
+    await _dio.fetch<void>(_setStreamType<void>(Options(
       method: 'DELETE',
       headers: _headers,
       extra: _extra,
@@ -300,8 +260,7 @@ class _QuizApiService implements QuizApiService {
             baseUrl: _combineBaseUrls(
           _dio.options.baseUrl,
           baseUrl,
-        )));
-    await _dio.fetch<void>(_options);
+        ))));
   }
 
   @override
@@ -329,30 +288,24 @@ class _QuizApiService implements QuizApiService {
     };
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<SubmissionTrackingResponse>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<SubmissionTrackingResponse>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/quizzes/${quizId}/submissions',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late SubmissionTrackingResponse _value;
-    try {
-      _value = SubmissionTrackingResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/quizzes/${quizId}/submissions',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = SubmissionTrackingResponse.fromJson(_result.data!);
     return _value;
   }
 
@@ -366,30 +319,24 @@ class _QuizApiService implements QuizApiService {
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(request.toJson());
-    final _options = _setStreamType<QuizSubmissionResponse>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<QuizSubmissionResponse>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/quizzes/${quizId}/submit',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late QuizSubmissionResponse _value;
-    try {
-      _value = QuizSubmissionResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/quizzes/${quizId}/submit',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = QuizSubmissionResponse.fromJson(_result.data!);
     return _value;
   }
 
@@ -400,30 +347,24 @@ class _QuizApiService implements QuizApiService {
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<QuizSubmissionDetailResponse>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<QuizSubmissionDetailResponse>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/quizzes/submissions/${submissionId}',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late QuizSubmissionDetailResponse _value;
-    try {
-      _value = QuizSubmissionDetailResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/quizzes/submissions/${submissionId}',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = QuizSubmissionDetailResponse.fromJson(_result.data!);
     return _value;
   }
 
@@ -438,30 +379,24 @@ class _QuizApiService implements QuizApiService {
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(reviewData);
-    final _options = _setStreamType<ReviewAnswerResponse>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<ReviewAnswerResponse>(Options(
       method: 'PUT',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/quizzes/submissions/${submissionId}/answers/${answerId}/review',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late ReviewAnswerResponse _value;
-    try {
-      _value = ReviewAnswerResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/quizzes/submissions/${submissionId}/answers/${answerId}/review',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = ReviewAnswerResponse.fromJson(_result.data!);
     return _value;
   }
 
@@ -471,30 +406,24 @@ class _QuizApiService implements QuizApiService {
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<CompleteGradingResponse>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<CompleteGradingResponse>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/quizzes/submissions/${submissionId}/complete-grading',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late CompleteGradingResponse _value;
-    try {
-      _value = CompleteGradingResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/quizzes/submissions/${submissionId}/complete-grading',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = CompleteGradingResponse.fromJson(_result.data!);
     return _value;
   }
 
@@ -505,30 +434,24 @@ class _QuizApiService implements QuizApiService {
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<StudentQuizSubmissionsResponse>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<StudentQuizSubmissionsResponse>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/quizzes/${quizId}/my-submissions',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late StudentQuizSubmissionsResponse _value;
-    try {
-      _value = StudentQuizSubmissionsResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/quizzes/${quizId}/my-submissions',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = StudentQuizSubmissionsResponse.fromJson(_result.data!);
     return _value;
   }
 

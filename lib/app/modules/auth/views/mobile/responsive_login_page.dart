@@ -4,6 +4,7 @@ import 'package:responsive_framework/responsive_framework.dart';
 import '../../controllers/login_controller.dart';
 import '../shared/login_form_widget.dart';
 import '../shared/login_validation_widget.dart';
+import 'package:classroom_mini/app/core/widgets/responsive_container.dart';
 
 class ResponsiveLoginPage extends StatelessWidget {
   const ResponsiveLoginPage({super.key});
@@ -12,8 +13,11 @@ class ResponsiveLoginPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      body: SafeArea(
-        child: SingleChildScrollView(
+      body: ResponsiveContainer(
+        padding: EdgeInsets.zero,
+        maxWidth: 600,
+        child: SafeArea(
+          child: SingleChildScrollView(
           padding: EdgeInsets.all(
             ResponsiveBreakpoints.of(context).largerThan(TABLET) ? 24 : 16,
           ),
@@ -104,6 +108,7 @@ class ResponsiveLoginPage extends StatelessWidget {
                 _buildFooter(context),
               ],
             ),
+          ),
           ),
         ),
       ),

@@ -9,6 +9,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'quiz_form_edit_dialog.dart';
 import 'quiz_add_question_dialog.dart';
+import 'package:classroom_mini/app/core/widgets/responsive_container.dart';
 
 class QuizForm extends StatefulWidget {
   final Quiz? quiz;
@@ -22,7 +23,7 @@ class QuizForm extends StatefulWidget {
   final VoidCallback? onDeletePressed;
 
   const QuizForm({
-    Key? key,
+    super.key,
     this.quiz,
     required this.onSubmit,
     this.onCancel,
@@ -32,7 +33,7 @@ class QuizForm extends StatefulWidget {
     this.appBarActions,
     this.onEditPressed,
     this.onDeletePressed,
-  }) : super(key: key);
+  });
 
   @override
   State<QuizForm> createState() => _QuizFormState();
@@ -173,207 +174,210 @@ class _QuizFormState extends State<QuizForm> {
 
     return Form(
       key: _formKey,
-      child: CustomScrollView(
-        slivers: [
-          // App Bar
-          SliverAppBar(
-            expandedHeight: 120,
-            floating: false,
-            pinned: true,
-            backgroundColor: colorScheme.surface,
-            surfaceTintColor: colorScheme.surfaceTint,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => Get.back(),
-            ),
-            actions: widget.appBarActions,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                widget.onlyView
-                    ? 'Quiz Details'
-                    : widget.quiz != null
-                        ? 'Edit Quiz'
-                        : 'Create Quiz',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                ),
+      child: ResponsiveContainer(
+        padding: EdgeInsets.zero,
+        child: CustomScrollView(
+          slivers: [
+            // App Bar
+            SliverAppBar(
+              expandedHeight: 120,
+              floating: false,
+              pinned: true,
+              backgroundColor: colorScheme.surface,
+              surfaceTintColor: colorScheme.surfaceTint,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Get.back(),
               ),
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      colorScheme.primaryContainer.withValues(alpha: 0.3),
-                      colorScheme.secondaryContainer.withValues(alpha: 0.1),
-                    ],
+              actions: widget.appBarActions,
+              flexibleSpace: FlexibleSpaceBar(
+                title: Text(
+                  widget.onlyView
+                      ? 'Quiz Details'
+                      : widget.quiz != null
+                          ? 'Edit Quiz'
+                          : 'Create Quiz',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        colorScheme.primaryContainer.withValues(alpha: 0.3),
+                        colorScheme.secondaryContainer.withValues(alpha: 0.1),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
 
-          // Form Content
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                // Basic Information Section
-                _buildModernSection(
-                  context,
-                  title: 'Basic Information',
-                  icon: Icons.info_outline_rounded,
-                  children: [
-                    _buildModernTextField(
-                      controller: _titleController,
-                      label: 'Quiz Title',
-                      hint: 'Enter a descriptive title for your quiz',
-                      validator: (value) =>
-                          value?.isEmpty == true ? 'Title is required' : null,
-                      prefixIcon: Icons.quiz_outlined,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildModernTextField(
-                      controller: _descriptionController,
-                      label: 'Description',
-                      hint:
-                          'Provide additional details about this quiz (optional)',
-                      maxLines: 3,
-                      prefixIcon: Icons.description_outlined,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildModernCourseDropdown(context),
-                  ],
-                ),
+            // Form Content
+            SliverPadding(
+              padding: const EdgeInsets.all(16),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  // Basic Information Section
+                  _buildModernSection(
+                    context,
+                    title: 'Basic Information',
+                    icon: Icons.info_outline_rounded,
+                    children: [
+                      _buildModernTextField(
+                        controller: _titleController,
+                        label: 'Quiz Title',
+                        hint: 'Enter a descriptive title for your quiz',
+                        validator: (value) =>
+                            value?.isEmpty == true ? 'Title is required' : null,
+                        prefixIcon: Icons.quiz_outlined,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildModernTextField(
+                        controller: _descriptionController,
+                        label: 'Description',
+                        hint:
+                            'Provide additional details about this quiz (optional)',
+                        maxLines: 3,
+                        prefixIcon: Icons.description_outlined,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildModernCourseDropdown(context),
+                    ],
+                  ),
 
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                // Timing & Attempts Section
-                _buildModernSection(
-                  context,
-                  title: 'Timing & Attempts',
-                  icon: Icons.schedule_rounded,
-                  children: [
-                    _buildModernDatePickers(context),
-                    const SizedBox(height: 16),
-                    _buildModernSwitchTile(
-                      context,
-                      title: 'Allow Late Submission',
-                      subtitle: 'Students can submit after the due date',
-                      value: _allowLateSubmission,
-                      onChanged: (value) =>
-                          setState(() => _allowLateSubmission = value),
-                      icon: Icons.schedule_send_outlined,
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildModernTextField(
-                            initialValue: _maxAttempts.toString(),
-                            label: 'Max Attempts',
-                            hint: 'Number of attempts allowed',
-                            keyboardType: TextInputType.number,
-                            validator: (value) => value == null ||
-                                    int.tryParse(value) == null ||
-                                    int.parse(value) <= 0
-                                ? 'Enter a valid number'
-                                : null,
-                            onChanged: (value) =>
-                                _maxAttempts = int.tryParse(value) ?? 1,
-                            prefixIcon: Icons.repeat_outlined,
+                  // Timing & Attempts Section
+                  _buildModernSection(
+                    context,
+                    title: 'Timing & Attempts',
+                    icon: Icons.schedule_rounded,
+                    children: [
+                      _buildModernDatePickers(context),
+                      const SizedBox(height: 16),
+                      _buildModernSwitchTile(
+                        context,
+                        title: 'Allow Late Submission',
+                        subtitle: 'Students can submit after the due date',
+                        value: _allowLateSubmission,
+                        onChanged: (value) =>
+                            setState(() => _allowLateSubmission = value),
+                        icon: Icons.schedule_send_outlined,
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildModernTextField(
+                              initialValue: _maxAttempts.toString(),
+                              label: 'Max Attempts',
+                              hint: 'Number of attempts allowed',
+                              keyboardType: TextInputType.number,
+                              validator: (value) => value == null ||
+                                      int.tryParse(value) == null ||
+                                      int.parse(value) <= 0
+                                  ? 'Enter a valid number'
+                                  : null,
+                              onChanged: (value) =>
+                                  _maxAttempts = int.tryParse(value) ?? 1,
+                              prefixIcon: Icons.repeat_outlined,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _buildModernTextField(
-                            initialValue: _timeLimit?.toString(),
-                            label: 'Time Limit (minutes)',
-                            hint: 'Optional time limit',
-                            keyboardType: TextInputType.number,
-                            validator: (value) => value != null &&
-                                    value.isNotEmpty &&
-                                    (int.tryParse(value) == null ||
-                                        int.parse(value) <= 0)
-                                ? 'Enter a valid number or leave empty'
-                                : null,
-                            onChanged: (value) =>
-                                _timeLimit = int.tryParse(value),
-                            prefixIcon: Icons.timer_outlined,
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildModernTextField(
+                              initialValue: _timeLimit?.toString(),
+                              label: 'Time Limit (minutes)',
+                              hint: 'Optional time limit',
+                              keyboardType: TextInputType.number,
+                              validator: (value) => value != null &&
+                                      value.isNotEmpty &&
+                                      (int.tryParse(value) == null ||
+                                          int.parse(value) <= 0)
+                                  ? 'Enter a valid number or leave empty'
+                                  : null,
+                              onChanged: (value) =>
+                                  _timeLimit = int.tryParse(value),
+                              prefixIcon: Icons.timer_outlined,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                        ],
+                      ),
+                    ],
+                  ),
 
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                // Settings Section
-                _buildModernSection(
-                  context,
-                  title: 'Quiz Settings',
-                  icon: Icons.settings_rounded,
-                  children: [
-                    _buildModernSwitchTile(
-                      context,
-                      title: 'Shuffle Questions',
-                      subtitle: 'Randomize question order for each student',
-                      value: _shuffleQuestions,
-                      onChanged: (value) =>
-                          setState(() => _shuffleQuestions = value),
-                      icon: Icons.shuffle_rounded,
-                    ),
-                    _buildModernSwitchTile(
-                      context,
-                      title: 'Shuffle Options',
-                      subtitle: 'Randomize answer options order',
-                      value: _shuffleOptions,
-                      onChanged: (value) =>
-                          setState(() => _shuffleOptions = value),
-                      icon: Icons.swap_vert_rounded,
-                    ),
-                    _buildModernSwitchTile(
-                      context,
-                      title: 'Show Correct Answers',
-                      subtitle: 'Display correct answers after submission',
-                      value: _showCorrectAnswers,
-                      onChanged: (value) =>
-                          setState(() => _showCorrectAnswers = value),
-                      icon: Icons.visibility_outlined,
-                    ),
-                  ],
-                ),
+                  // Settings Section
+                  _buildModernSection(
+                    context,
+                    title: 'Quiz Settings',
+                    icon: Icons.settings_rounded,
+                    children: [
+                      _buildModernSwitchTile(
+                        context,
+                        title: 'Shuffle Questions',
+                        subtitle: 'Randomize question order for each student',
+                        value: _shuffleQuestions,
+                        onChanged: (value) =>
+                            setState(() => _shuffleQuestions = value),
+                        icon: Icons.shuffle_rounded,
+                      ),
+                      _buildModernSwitchTile(
+                        context,
+                        title: 'Shuffle Options',
+                        subtitle: 'Randomize answer options order',
+                        value: _shuffleOptions,
+                        onChanged: (value) =>
+                            setState(() => _shuffleOptions = value),
+                        icon: Icons.swap_vert_rounded,
+                      ),
+                      _buildModernSwitchTile(
+                        context,
+                        title: 'Show Correct Answers',
+                        subtitle: 'Display correct answers after submission',
+                        value: _showCorrectAnswers,
+                        onChanged: (value) =>
+                            setState(() => _showCorrectAnswers = value),
+                        icon: Icons.visibility_outlined,
+                      ),
+                    ],
+                  ),
 
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                // Group Assignment Section
-                _buildModernSection(
-                  context,
-                  title: 'Assign to Groups',
-                  icon: Icons.groups_rounded,
-                  children: [
-                    _buildModernGroupSelection(context),
-                  ],
-                ),
+                  // Group Assignment Section
+                  _buildModernSection(
+                    context,
+                    title: 'Assign to Groups',
+                    icon: Icons.groups_rounded,
+                    children: [
+                      _buildModernGroupSelection(context),
+                    ],
+                  ),
 
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                // Questions Section
-                _buildModernQuestionsSection(context),
+                  // Questions Section
+                  _buildModernQuestionsSection(context),
 
-                const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-                // Bottom Action Buttons
-                _buildBottomActionButtons(context),
+                  // Bottom Action Buttons
+                  _buildBottomActionButtons(context),
 
-                const SizedBox(height: 24),
-              ]),
+                  const SizedBox(height: 24),
+                ]),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -607,8 +611,10 @@ class _QuizFormState extends State<QuizForm> {
           ),
         ),
         filled: true,
-        fillColor:
-            Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        fillColor: Theme.of(context)
+            .colorScheme
+            .surfaceContainerHighest
+            .withValues(alpha: 0.3),
       ),
     );
   }
@@ -774,8 +780,8 @@ class _QuizFormState extends State<QuizForm> {
                                     ),
                               tooltip: 'Generate with AI',
                               style: IconButton.styleFrom(
-                                backgroundColor:
-                                    colorScheme.secondary.withValues(alpha: 0.1),
+                                backgroundColor: colorScheme.secondary
+                                    .withValues(alpha: 0.1),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -914,7 +920,7 @@ class _QuizFormState extends State<QuizForm> {
     final colorScheme = theme.colorScheme;
 
     return DropdownButtonFormField<String>(
-      value: _selectedCourseId,
+      initialValue: _selectedCourseId,
       onChanged: _isEditable
           ? (value) async {
               setState(() {
@@ -1398,7 +1404,8 @@ class _QuizFormState extends State<QuizForm> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  color: colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.3),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(16),
                     topRight: Radius.circular(16),
@@ -1439,7 +1446,8 @@ class _QuizFormState extends State<QuizForm> {
                         ),
                         tooltip: 'Edit question',
                         style: IconButton.styleFrom(
-                          backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
+                          backgroundColor:
+                              colorScheme.primary.withValues(alpha: 0.1),
                         ),
                       ),
                   ],
@@ -1458,8 +1466,10 @@ class _QuizFormState extends State<QuizForm> {
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: question.questionType == 'multiple_choice'
-                            ? colorScheme.primaryContainer.withValues(alpha: 0.5)
-                            : colorScheme.secondaryContainer.withValues(alpha: 0.5),
+                            ? colorScheme.primaryContainer
+                                .withValues(alpha: 0.5)
+                            : colorScheme.secondaryContainer
+                                .withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(

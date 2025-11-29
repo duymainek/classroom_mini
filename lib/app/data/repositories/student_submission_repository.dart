@@ -1,7 +1,9 @@
-import 'dart:io';
+import 'dart:io' if (dart.library.html) 'package:classroom_mini/app/shared/controllers/io_stub.dart';
 import 'package:classroom_mini/app/data/models/request/assignment_request.dart';
 import 'package:classroom_mini/app/data/models/response/submission_response.dart';
 import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:typed_data';
 import '../services/api_service.dart';
 
 /// Result class for single submission operations
@@ -278,21 +280,48 @@ class StudentSubmissionRepository {
 
   /// Upload temp file for submission
   Future<TempFileUploadResult> uploadTempFile({
-    required File file,
+    File? file,
+    PlatformFile? platformFile,
   }) async {
     try {
-      final response = await _apiService.uploadSubmissionTempFile(file);
-
-      if (response.success) {
-        return TempFileUploadResult.success(
-          tempAttachmentId: response.data.attachmentId,
-          fileName: response.data.fileName,
-          fileUrl: response.data.fileUrl,
-          fileSize: response.data.fileSize,
+      if (platformFile != null) {
+        // Use PlatformFile (web compatible)
+        final bytes = platformFile.bytes ?? Uint8List(0);
+        final response = await DioClient.uploadSubmissionTempFileFromBytes(
+          bytes,
+          platformFile.name,
         );
+        if (response.success) {
+          return TempFileUploadResult.success(
+            tempAttachmentId: response.data.attachmentId,
+            fileName: response.data.fileName,
+            fileUrl: response.data.fileUrl,
+            fileSize: response.data.fileSize,
+          );
+        } else {
+          return TempFileUploadResult.failure(
+            message: response.message,
+          );
+        }
+      } else if (file != null) {
+        // Use File (mobile/desktop)
+        final response = await _apiService.uploadSubmissionTempFile(file);
+
+        if (response.success) {
+          return TempFileUploadResult.success(
+            tempAttachmentId: response.data.attachmentId,
+            fileName: response.data.fileName,
+            fileUrl: response.data.fileUrl,
+            fileSize: response.data.fileSize,
+          );
+        } else {
+          return TempFileUploadResult.failure(
+            message: response.message,
+          );
+        }
       } else {
         return TempFileUploadResult.failure(
-          message: response.message,
+          message: 'No file or platformFile provided',
         );
       }
     } on DioException catch (e) {

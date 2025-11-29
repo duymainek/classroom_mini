@@ -12,10 +12,12 @@ AssignmentSubmission _$AssignmentSubmissionFromJson(
       id: json['id'] as String?,
       assignmentId: json['assignmentId'] as String?,
       studentId: json['studentId'] as String?,
-      attemptNumber: (json['attemptNumber'] as num?)?.toInt(),
+      attemptNumber: json['attemptNumber'] as int?,
       submissionText: json['submissionText'] as String?,
-      submittedAt: DateTime.parse(json['submittedAt'] as String),
-      isLate: json['isLate'] as bool,
+      submittedAt: json['submittedAt'] == null
+          ? null
+          : DateTime.parse(json['submittedAt'] as String),
+      isLate: json['isLate'] as bool?,
       grade: (json['grade'] as num?)?.toDouble(),
       feedback: json['feedback'] as String?,
       gradedAt: json['gradedAt'] == null
@@ -46,7 +48,7 @@ Map<String, dynamic> _$AssignmentSubmissionToJson(
       'studentId': instance.studentId,
       'attemptNumber': instance.attemptNumber,
       'submissionText': instance.submissionText,
-      'submittedAt': instance.submittedAt.toIso8601String(),
+      'submittedAt': instance.submittedAt?.toIso8601String(),
       'isLate': instance.isLate,
       'grade': instance.grade,
       'feedback': instance.feedback,
@@ -64,7 +66,7 @@ SubmissionAttachment _$SubmissionAttachmentFromJson(
       id: json['id'] as String,
       fileName: json['fileName'] as String,
       fileUrl: json['fileUrl'] as String,
-      fileSize: (json['fileSize'] as num?)?.toInt(),
+      fileSize: json['fileSize'] as int?,
       fileType: json['fileType'] as String?,
       createdAt: json['createdAt'] == null
           ? null
@@ -106,9 +108,9 @@ SubmissionTrackingData _$SubmissionTrackingDataFromJson(
       email: json['email'] as String,
       groupId: json['groupId'] as String?,
       groupName: json['groupName'] as String?,
-      totalSubmissions: (json['totalSubmissions'] as num).toInt(),
-      gradedSubmissions: (json['gradedSubmissions'] as num).toInt(),
-      lateSubmissions: (json['lateSubmissions'] as num).toInt(),
+      totalSubmissions: json['totalSubmissions'] as int,
+      gradedSubmissions: json['gradedSubmissions'] as int,
+      lateSubmissions: json['lateSubmissions'] as int,
       averageGrade: (json['averageGrade'] as num?)?.toDouble(),
       latestSubmission: json['latestSubmission'] == null
           ? null

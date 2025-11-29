@@ -38,7 +38,7 @@ ChatMessageResponse _$ChatMessageResponseFromJson(Map<String, dynamic> json) =>
       status: json['status'] as String?,
       uri: json['uri'] as String?,
       name: json['name'] as String?,
-      size: (json['size'] as num?)?.toInt(),
+      size: json['size'] as int?,
       mimeType: json['mimeType'] as String?,
       width: (json['width'] as num?)?.toDouble(),
       height: (json['height'] as num?)?.toDouble(),
@@ -96,7 +96,7 @@ ConversationResponse _$ConversationResponseFromJson(
           ? null
           : ChatMessageResponse.fromJson(
               json['lastMessage'] as Map<String, dynamic>),
-      unreadCount: (json['unreadCount'] as num?)?.toInt() ?? 0,
+      unreadCount: json['unreadCount'] as int? ?? 0,
       isMuted: json['isMuted'] as bool? ?? false,
       updatedAt: _dateTimeFromJson(json['updatedAt']),
     );
@@ -127,7 +127,7 @@ ChatRoomResponse _$ChatRoomResponseFromJson(Map<String, dynamic> json) =>
               json['otherUser'] as Map<String, dynamic>),
       isMuted: json['isMuted'] as bool,
       isArchived: json['isArchived'] as bool,
-      unreadCount: (json['unreadCount'] as num).toInt(),
+      unreadCount: json['unreadCount'] as int,
       updatedAt: _dateTimeFromJson(json['updatedAt']),
     );
 
@@ -168,9 +168,9 @@ ConversationsListResponse _$ConversationsListResponseFromJson(
       conversations: (json['conversations'] as List<dynamic>)
           .map((e) => ConversationResponse.fromJson(e as Map<String, dynamic>))
           .toList(),
-      total: (json['total'] as num).toInt(),
-      limit: (json['limit'] as num).toInt(),
-      offset: (json['offset'] as num).toInt(),
+      total: json['total'] as int,
+      limit: json['limit'] as int,
+      offset: json['offset'] as int,
     );
 
 Map<String, dynamic> _$ConversationsListResponseToJson(
@@ -200,7 +200,7 @@ Map<String, dynamic> _$MessagesListResponseToJson(
 
 UnreadCountResponse _$UnreadCountResponseFromJson(Map<String, dynamic> json) =>
     UnreadCountResponse(
-      unreadCount: (json['unreadCount'] as num).toInt(),
+      unreadCount: json['unreadCount'] as int,
     );
 
 Map<String, dynamic> _$UnreadCountResponseToJson(

@@ -17,8 +17,8 @@ QuizCreateRequest _$QuizCreateRequestFromJson(Map<String, dynamic> json) =>
           ? null
           : DateTime.parse(json['lateDueDate'] as String),
       allowLateSubmission: json['allowLateSubmission'] as bool,
-      maxAttempts: (json['maxAttempts'] as num).toInt(),
-      timeLimit: (json['timeLimit'] as num?)?.toInt(),
+      maxAttempts: json['maxAttempts'] as int,
+      timeLimit: json['timeLimit'] as int?,
       shuffleQuestions: json['shuffleQuestions'] as bool,
       shuffleOptions: json['shuffleOptions'] as bool,
       showCorrectAnswers: json['showCorrectAnswers'] as bool,
@@ -65,8 +65,8 @@ QuizUpdateRequest _$QuizUpdateRequestFromJson(Map<String, dynamic> json) =>
           ? null
           : DateTime.parse(json['lateDueDate'] as String),
       allowLateSubmission: json['allowLateSubmission'] as bool?,
-      maxAttempts: (json['maxAttempts'] as num?)?.toInt(),
-      timeLimit: (json['timeLimit'] as num?)?.toInt(),
+      maxAttempts: json['maxAttempts'] as int?,
+      timeLimit: json['timeLimit'] as int?,
       shuffleQuestions: json['shuffleQuestions'] as bool?,
       shuffleOptions: json['shuffleOptions'] as bool?,
       showCorrectAnswers: json['showCorrectAnswers'] as bool?,
@@ -100,8 +100,8 @@ QuestionCreateRequest _$QuestionCreateRequestFromJson(
     QuestionCreateRequest(
       questionText: json['question_text'] as String,
       questionType: json['question_type'] as String,
-      points: (json['points'] as num?)?.toInt(),
-      orderIndex: (json['order_index'] as num?)?.toInt(),
+      points: json['points'] as int?,
+      orderIndex: json['order_index'] as int?,
       isRequired: json['is_required'] as bool?,
       options: (json['options'] as List<dynamic>?)
           ?.map((e) =>
@@ -126,8 +126,8 @@ QuestionUpdateRequest _$QuestionUpdateRequestFromJson(
       id: json['id'] as String,
       questionText: json['question_text'] as String?,
       questionType: json['question_type'] as String?,
-      points: (json['points'] as num?)?.toInt(),
-      orderIndex: (json['order_index'] as num?)?.toInt(),
+      points: json['points'] as int?,
+      orderIndex: json['order_index'] as int?,
       isRequired: json['is_required'] as bool?,
       options: (json['options'] as List<dynamic>?)
           ?.map((e) =>
@@ -152,7 +152,7 @@ QuestionOptionCreateRequest _$QuestionOptionCreateRequestFromJson(
     QuestionOptionCreateRequest(
       optionText: json['option_text'] as String,
       isCorrect: json['is_correct'] as bool,
-      orderIndex: (json['order_index'] as num?)?.toInt(),
+      orderIndex: json['order_index'] as int?,
     );
 
 Map<String, dynamic> _$QuestionOptionCreateRequestToJson(

@@ -10,8 +10,8 @@ class AssignmentSubmission {
   final String? studentId;
   final int? attemptNumber;
   final String? submissionText;
-  final DateTime submittedAt;
-  final bool isLate;
+  final DateTime? submittedAt;
+  final bool? isLate;
   final double? grade;
   final String? feedback;
   final DateTime? gradedAt;
@@ -27,20 +27,73 @@ class AssignmentSubmission {
     this.studentId,
     required this.attemptNumber,
     this.submissionText,
-    required this.submittedAt,
-    required this.isLate,
+    this.submittedAt,
+    this.isLate,
     this.grade,
     this.feedback,
     this.gradedAt,
     this.gradedBy,
-    required this.createdAt,
+    this.createdAt,
     this.updatedAt,
     this.attachments = const [],
     this.student,
   });
 
-  factory AssignmentSubmission.fromJson(Map<String, dynamic> json) =>
-      _$AssignmentSubmissionFromJson(json);
+  factory AssignmentSubmission.fromJson(Map<String, dynamic> json) {
+    // Handle both snake_case and camelCase formats
+    final normalizedJson = <String, dynamic>{};
+
+    // Copy all existing keys
+    json.forEach((key, value) {
+      normalizedJson[key] = value;
+    });
+
+    // Map snake_case to camelCase if needed
+    if (json.containsKey('assignment_id') &&
+        !json.containsKey('assignmentId')) {
+      normalizedJson['assignmentId'] = json['assignment_id'];
+    }
+    if (json.containsKey('student_id') && !json.containsKey('studentId')) {
+      normalizedJson['studentId'] = json['student_id'];
+    }
+    if (json.containsKey('attempt_number') &&
+        !json.containsKey('attemptNumber')) {
+      normalizedJson['attemptNumber'] = json['attempt_number'];
+    }
+    if (json.containsKey('submission_text') &&
+        !json.containsKey('submissionText')) {
+      normalizedJson['submissionText'] = json['submission_text'];
+    }
+    if (json.containsKey('submitted_at') && !json.containsKey('submittedAt')) {
+      normalizedJson['submittedAt'] = json['submitted_at'];
+    }
+    if (json.containsKey('is_late') && !json.containsKey('isLate')) {
+      normalizedJson['isLate'] = json['is_late'];
+    }
+    if (json.containsKey('graded_at') && !json.containsKey('gradedAt')) {
+      normalizedJson['gradedAt'] = json['graded_at'];
+    }
+    if (json.containsKey('graded_by') && !json.containsKey('gradedBy')) {
+      normalizedJson['gradedBy'] = json['graded_by'];
+    }
+    if (json.containsKey('created_at') && !json.containsKey('createdAt')) {
+      normalizedJson['createdAt'] = json['created_at'];
+    }
+    if (json.containsKey('updated_at') && !json.containsKey('updatedAt')) {
+      normalizedJson['updatedAt'] = json['updated_at'];
+    }
+
+    // Handle attachments with different field names
+    if (json.containsKey('submission_attachments') &&
+        !json.containsKey('attachments')) {
+      normalizedJson['attachments'] = json['submission_attachments'];
+    } else if (json.containsKey('submissionAttachments') &&
+        !json.containsKey('attachments')) {
+      normalizedJson['attachments'] = json['submissionAttachments'];
+    }
+
+    return _$AssignmentSubmissionFromJson(normalizedJson);
+  }
   @override
   Map<String, dynamic> toJson() => _$AssignmentSubmissionToJson(this);
 
@@ -50,7 +103,7 @@ class AssignmentSubmission {
   /// Get submission status
   SubmissionStatus get status {
     if (isGraded) return SubmissionStatus.graded;
-    if (isLate) return SubmissionStatus.late;
+    if (isLate == true) return SubmissionStatus.late;
     return SubmissionStatus.submitted;
   }
 

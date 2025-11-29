@@ -26,10 +26,10 @@ Map<String, dynamic> _$SemesterToJson(Semester instance) => <String, dynamic>{
 
 PaginationInfo _$PaginationInfoFromJson(Map<String, dynamic> json) =>
     PaginationInfo(
-      page: (json['page'] as num).toInt(),
-      limit: (json['limit'] as num).toInt(),
-      total: (json['total'] as num).toInt(),
-      pages: (json['pages'] as num).toInt(),
+      page: json['page'] as int,
+      limit: json['limit'] as int,
+      total: json['total'] as int,
+      pages: json['pages'] as int,
     );
 
 Map<String, dynamic> _$PaginationInfoToJson(PaginationInfo instance) =>

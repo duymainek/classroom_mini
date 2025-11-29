@@ -486,7 +486,7 @@ class MobileQuizDetailView extends StatelessWidget {
                         ),
                         if (s.latestSubmission != null)
                           Text(
-                            'Lần ${s.latestSubmission!.attemptNumber} - ${_formatDateTime(s.latestSubmission!.submittedAt)}',
+                            'Lần ${s.latestSubmission!.attemptNumber} - ${_formatDateTime(s.latestSubmission?.submittedAt)}',
                             style:
                                 Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: Theme.of(context)
@@ -569,7 +569,8 @@ class MobileQuizDetailView extends StatelessWidget {
     }
   }
 
-  String _formatDateTime(DateTime dateTime) {
+  String _formatDateTime(DateTime? dateTime) {
+    if (dateTime == null) return '';
     return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 

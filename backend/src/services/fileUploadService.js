@@ -13,22 +13,33 @@ class FileUploadService {
 
   /**
    * Sanitize filename for storage keys
+   * Supabase Storage requires URL-safe characters only
    * @param {string} filename - Original filename
    * @returns {string} Sanitized filename
    */
   sanitizeFilename(filename) {
     if (!filename) return 'unnamed_file';
     
-    const sanitized = filename
-      .replace(/[[\]{}]/g, '_') // Replace square and curly brackets
-      .replace(/\s+/g, '_') // Replace spaces with underscores
-      .replace(/[#<>:"/\\|?*]/g, '_') // Replace other problematic characters
+    // Extract extension
+    const ext = path.extname(filename);
+    const nameWithoutExt = path.basename(filename, ext);
+    
+    // Normalize Unicode characters and remove diacritics (accents)
+    // Then keep only safe ASCII characters: a-z, A-Z, 0-9, -, _, .
+    const sanitized = nameWithoutExt
+      .normalize('NFD') // Decompose characters (e.g., é -> e + ́)
+      .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks
+      .replace(/[^a-zA-Z0-9._-]/g, '_') // Replace any non-safe character with underscore
       .replace(/_{2,}/g, '_') // Replace multiple underscores with single
       .replace(/^_+|_+$/g, '') // Remove leading/trailing underscores
       .substring(0, 100) // Limit length to 100 chars
       || 'unnamed_file'; // Fallback if everything was replaced
     
-    return sanitized;
+    // Combine sanitized name with extension
+    const result = sanitized + ext;
+    
+    // Final check: ensure result is not empty
+    return result || 'unnamed_file';
   }
 
   /**

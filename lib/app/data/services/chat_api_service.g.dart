@@ -12,14 +12,11 @@ class _ChatApiService implements ChatApiService {
   _ChatApiService(
     this._dio, {
     this.baseUrl,
-    this.errorLogger,
   });
 
   final Dio _dio;
 
   String? baseUrl;
-
-  final ParseErrorLogger? errorLogger;
 
   @override
   Future<DataResponse<ConversationsListResponse>> getConversations({
@@ -34,7 +31,7 @@ class _ChatApiService implements ChatApiService {
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options =
+    final _result = await _dio.fetch<Map<String, dynamic>>(
         _setStreamType<DataResponse<ConversationsListResponse>>(Options(
       method: 'GET',
       headers: _headers,
@@ -50,19 +47,12 @@ class _ChatApiService implements ChatApiService {
                 baseUrl: _combineBaseUrls(
               _dio.options.baseUrl,
               baseUrl,
-            )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late DataResponse<ConversationsListResponse> _value;
-    try {
-      _value = DataResponse<ConversationsListResponse>.fromJson(
-        _result.data!,
-        (json) =>
-            ConversationsListResponse.fromJson(json as Map<String, dynamic>),
-      );
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            ))));
+    final _value = DataResponse<ConversationsListResponse>.fromJson(
+      _result.data!,
+      (json) =>
+          ConversationsListResponse.fromJson(json as Map<String, dynamic>),
+    );
     return _value;
   }
 
@@ -74,33 +64,27 @@ class _ChatApiService implements ChatApiService {
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(request.toJson());
-    final _options = _setStreamType<DataResponse<ChatRoomResponse>>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<DataResponse<ChatRoomResponse>>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/chat/rooms/direct',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late DataResponse<ChatRoomResponse> _value;
-    try {
-      _value = DataResponse<ChatRoomResponse>.fromJson(
-        _result.data!,
-        (json) => ChatRoomResponse.fromJson(json as Map<String, dynamic>),
-      );
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/chat/rooms/direct',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = DataResponse<ChatRoomResponse>.fromJson(
+      _result.data!,
+      (json) => ChatRoomResponse.fromJson(json as Map<String, dynamic>),
+    );
     return _value;
   }
 
@@ -110,33 +94,27 @@ class _ChatApiService implements ChatApiService {
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<DataResponse<ChatRoomResponse>>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<DataResponse<ChatRoomResponse>>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/chat/rooms/${roomId}',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late DataResponse<ChatRoomResponse> _value;
-    try {
-      _value = DataResponse<ChatRoomResponse>.fromJson(
-        _result.data!,
-        (json) => ChatRoomResponse.fromJson(json as Map<String, dynamic>),
-      );
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/chat/rooms/${roomId}',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = DataResponse<ChatRoomResponse>.fromJson(
+      _result.data!,
+      (json) => ChatRoomResponse.fromJson(json as Map<String, dynamic>),
+    );
     return _value;
   }
 
@@ -154,33 +132,27 @@ class _ChatApiService implements ChatApiService {
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<DataResponse<MessagesListResponse>>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<DataResponse<MessagesListResponse>>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/chat/rooms/${roomId}/messages',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late DataResponse<MessagesListResponse> _value;
-    try {
-      _value = DataResponse<MessagesListResponse>.fromJson(
-        _result.data!,
-        (json) => MessagesListResponse.fromJson(json as Map<String, dynamic>),
-      );
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/chat/rooms/${roomId}/messages',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = DataResponse<MessagesListResponse>.fromJson(
+      _result.data!,
+      (json) => MessagesListResponse.fromJson(json as Map<String, dynamic>),
+    );
     return _value;
   }
 
@@ -198,7 +170,7 @@ class _ChatApiService implements ChatApiService {
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options =
+    final _result = await _dio.fetch<Map<String, dynamic>>(
         _setStreamType<DataResponse<List<ChatMessageResponse>>>(Options(
       method: 'GET',
       headers: _headers,
@@ -214,23 +186,16 @@ class _ChatApiService implements ChatApiService {
                 baseUrl: _combineBaseUrls(
               _dio.options.baseUrl,
               baseUrl,
-            )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late DataResponse<List<ChatMessageResponse>> _value;
-    try {
-      _value = DataResponse<List<ChatMessageResponse>>.fromJson(
-        _result.data!,
-        (json) => json is List<dynamic>
-            ? json
-                .map<ChatMessageResponse>((i) =>
-                    ChatMessageResponse.fromJson(i as Map<String, dynamic>))
-                .toList()
-            : List.empty(),
-      );
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            ))));
+    final _value = DataResponse<List<ChatMessageResponse>>.fromJson(
+      _result.data!,
+      (json) => json is List<dynamic>
+          ? json
+              .map<ChatMessageResponse>((i) =>
+                  ChatMessageResponse.fromJson(i as Map<String, dynamic>))
+              .toList()
+          : List.empty(),
+    );
     return _value;
   }
 
@@ -244,30 +209,24 @@ class _ChatApiService implements ChatApiService {
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(body);
-    final _options = _setStreamType<BaseResponse>(Options(
+    final _result = await _dio
+        .fetch<Map<String, dynamic>>(_setStreamType<BaseResponse>(Options(
       method: 'PUT',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/chat/rooms/${roomId}/hide',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late BaseResponse _value;
-    try {
-      _value = BaseResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/chat/rooms/${roomId}/hide',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = BaseResponse.fromJson(_result.data!);
     return _value;
   }
 
@@ -281,30 +240,24 @@ class _ChatApiService implements ChatApiService {
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(body);
-    final _options = _setStreamType<BaseResponse>(Options(
+    final _result = await _dio
+        .fetch<Map<String, dynamic>>(_setStreamType<BaseResponse>(Options(
       method: 'PUT',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/chat/rooms/${roomId}/mute',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late BaseResponse _value;
-    try {
-      _value = BaseResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/chat/rooms/${roomId}/mute',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = BaseResponse.fromJson(_result.data!);
     return _value;
   }
 
@@ -314,30 +267,24 @@ class _ChatApiService implements ChatApiService {
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<BaseResponse>(Options(
+    final _result = await _dio
+        .fetch<Map<String, dynamic>>(_setStreamType<BaseResponse>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/chat/rooms/${roomId}/read',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late BaseResponse _value;
-    try {
-      _value = BaseResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/chat/rooms/${roomId}/read',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = BaseResponse.fromJson(_result.data!);
     return _value;
   }
 
@@ -354,7 +301,7 @@ class _ChatApiService implements ChatApiService {
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options =
+    final _result = await _dio.fetch<Map<String, dynamic>>(
         _setStreamType<DataResponse<List<SearchUserResponse>>>(Options(
       method: 'GET',
       headers: _headers,
@@ -370,23 +317,16 @@ class _ChatApiService implements ChatApiService {
                 baseUrl: _combineBaseUrls(
               _dio.options.baseUrl,
               baseUrl,
-            )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late DataResponse<List<SearchUserResponse>> _value;
-    try {
-      _value = DataResponse<List<SearchUserResponse>>.fromJson(
-        _result.data!,
-        (json) => json is List<dynamic>
-            ? json
-                .map<SearchUserResponse>((i) =>
-                    SearchUserResponse.fromJson(i as Map<String, dynamic>))
-                .toList()
-            : List.empty(),
-      );
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            ))));
+    final _value = DataResponse<List<SearchUserResponse>>.fromJson(
+      _result.data!,
+      (json) => json is List<dynamic>
+          ? json
+              .map<SearchUserResponse>(
+                  (i) => SearchUserResponse.fromJson(i as Map<String, dynamic>))
+              .toList()
+          : List.empty(),
+    );
     return _value;
   }
 
@@ -396,33 +336,27 @@ class _ChatApiService implements ChatApiService {
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<DataResponse<UnreadCountResponse>>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<DataResponse<UnreadCountResponse>>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/chat/unread-count',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late DataResponse<UnreadCountResponse> _value;
-    try {
-      _value = DataResponse<UnreadCountResponse>.fromJson(
-        _result.data!,
-        (json) => UnreadCountResponse.fromJson(json as Map<String, dynamic>),
-      );
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/chat/unread-count',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = DataResponse<UnreadCountResponse>.fromJson(
+      _result.data!,
+      (json) => UnreadCountResponse.fromJson(json as Map<String, dynamic>),
+    );
     return _value;
   }
 

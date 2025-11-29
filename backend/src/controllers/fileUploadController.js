@@ -250,7 +250,8 @@ class FileUploadController {
             file_path: uploadResult.filePath,
             file_url: uploadResult.publicUrl,
             file_size: file.size,
-            file_type: file.mimetype
+            file_type: file.mimetype,
+            attachment_type: 'assignment' // Distinguish from material/announcement attachments
           })
           .select('id, temp_id, file_name, file_url, file_size, file_type, created_at')
           .single();

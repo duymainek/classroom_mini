@@ -183,7 +183,7 @@ BulkOperationResponse _$BulkOperationResponseFromJson(
       code: json['code'] as String?,
       errors:
           (json['errors'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      affectedCount: (json['affectedCount'] as num?)?.toInt(),
+      affectedCount: json['affectedCount'] as int?,
     );
 
 Map<String, dynamic> _$BulkOperationResponseToJson(

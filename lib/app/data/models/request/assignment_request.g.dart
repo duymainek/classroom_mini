@@ -19,11 +19,11 @@ AssignmentCreateRequest _$AssignmentCreateRequestFromJson(
           ? null
           : DateTime.parse(json['lateDueDate'] as String),
       allowLateSubmission: json['allowLateSubmission'] as bool,
-      maxAttempts: (json['maxAttempts'] as num).toInt(),
+      maxAttempts: json['maxAttempts'] as int,
       fileFormats: (json['fileFormats'] as List<dynamic>)
           .map((e) => e as String)
           .toList(),
-      maxFileSize: (json['maxFileSize'] as num).toInt(),
+      maxFileSize: json['maxFileSize'] as int,
       groupIds: (json['groupIds'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
@@ -67,11 +67,11 @@ AssignmentUpdateRequest _$AssignmentUpdateRequestFromJson(
           ? null
           : DateTime.parse(json['lateDueDate'] as String),
       allowLateSubmission: json['allowLateSubmission'] as bool?,
-      maxAttempts: (json['maxAttempts'] as num?)?.toInt(),
+      maxAttempts: json['maxAttempts'] as int?,
       fileFormats: (json['fileFormats'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
-      maxFileSize: (json['maxFileSize'] as num?)?.toInt(),
+      maxFileSize: json['maxFileSize'] as int?,
       isActive: json['isActive'] as bool?,
       groupIds: (json['groupIds'] as List<dynamic>?)
           ?.map((e) => e as String)

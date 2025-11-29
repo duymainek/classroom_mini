@@ -136,7 +136,18 @@ class AssignmentController extends GetxController {
     if (_isFormMetaLoading.value) return;
     _isFormMetaLoading.value = true;
     try {
+      debugPrint('🔄 [AssignmentController] Loading courses for form...');
       final resp = await _apiService.getCourses(page: page, limit: limit);
+      debugPrint('✅ [AssignmentController] Courses response received. Success: ${resp.success}, Courses count: ${resp.data.courses.length}');
+      
+      if (resp.data.courses.isEmpty) {
+        debugPrint('⚠️ [AssignmentController] No courses found in response');
+        updateForm((s) {
+          s.courses = [];
+        });
+        return;
+      }
+      
       final courses = resp.data.courses
           .map((c) => Course(
               id: c.id,
@@ -148,10 +159,15 @@ class AssignmentController extends GetxController {
               createdAt: c.createdAt,
               updatedAt: c.updatedAt))
           .toList();
+      
+      debugPrint('✅ [AssignmentController] Parsed ${courses.length} courses');
       updateForm((s) {
         s.courses = courses;
       });
-    } catch (e) {
+      debugPrint('✅ [AssignmentController] Updated form state with courses');
+    } catch (e, stackTrace) {
+      debugPrint('❌ [AssignmentController] Error loading courses: $e');
+      debugPrint('❌ [AssignmentController] Stack trace: $stackTrace');
       _error.value = e.toString();
       Get.snackbar('Lỗi', 'Không thể tải danh sách khóa học: $e');
     } finally {

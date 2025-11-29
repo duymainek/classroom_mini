@@ -3,14 +3,16 @@ import 'package:classroom_mini/app/shared/models/uploaded_attachment.dart';
 import 'package:classroom_mini/app/data/models/response/submission_response.dart';
 import 'package:classroom_mini/app/data/services/api_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:file_picker/file_picker.dart';
-import 'dart:io';
 import 'package:dio/dio.dart' as dio;
+import 'dart:typed_data';
 
-/**
- * Shared File Attachment Controller
- * Configurable controller for handling file uploads across different modules
- */
+// Conditional import for File operations (only on mobile/desktop)
+import 'dart:io' if (dart.library.html) 'io_stub.dart' as io;
+
+/// Shared File Attachment Controller
+/// Configurable controller for handling file uploads across different modules
 class SharedFileAttachmentController extends GetxController {
   final RxList<UploadedAttachment> attachments = <UploadedAttachment>[].obs;
   final ApiService _apiService = ApiService(DioClient.dio);
@@ -78,11 +80,23 @@ class SharedFileAttachmentController extends GetxController {
         final ext = _getFileExtension(file.name);
         if (!isValidExtension(ext, allowedExtensions)) continue;
         if (attachments.length + newAttachments.length >= maxFiles) break;
+
+        // Trên mobile, nếu không có bytes, đọc từ file path
+        Uint8List? fileBytes = file.bytes;
+        if (!kIsWeb && fileBytes == null && file.path != null) {
+          try {
+            fileBytes = await _readFileBytes(file.path!);
+          } catch (e) {
+            print('Error reading file bytes: $e');
+            // Tiếp tục với fileBytes = null, sẽ xử lý trong _uploadFile
+          }
+        }
+
         final attachment = UploadedAttachment(
           id: '${DateTime.now().millisecondsSinceEpoch}_${file.name.hashCode}',
           fileName: file.name,
-          filePath: file.path ?? '',
-          fileBytes: file.bytes,
+          filePath: kIsWeb ? '' : (file.path ?? ''),
+          fileBytes: fileBytes,
           fileSize: fileSize,
           fileType: getMimeTypeFromExtension(ext),
           status: AttachmentUploadStatus.pending,
@@ -103,11 +117,8 @@ class SharedFileAttachmentController extends GetxController {
       _updateAttachment(
           attachment.copyWith(status: AttachmentUploadStatus.uploading));
 
-      // Tạo File từ filePath
-      final file = File(attachment.filePath);
-
       // Gọi API upload dựa trên configured endpoint
-      final response = await _uploadFile(file);
+      final response = await _uploadFile(attachment);
 
       if (response['success'] == true) {
         final data = response['data'];
@@ -151,51 +162,169 @@ class SharedFileAttachmentController extends GetxController {
   }
 
   /// Upload file using configured endpoint
-  Future<Map<String, dynamic>> _uploadFile(File file) async {
+  Future<Map<String, dynamic>> _uploadFile(
+      UploadedAttachment attachment) async {
     try {
+      dio.MultipartFile multipartFile;
+
+      if (kIsWeb) {
+        // Trên web, sử dụng bytes
+        if (attachment.fileBytes == null) {
+          throw Exception('File bytes are required for web platform');
+        }
+        multipartFile = dio.MultipartFile.fromBytes(
+          attachment.fileBytes!,
+          filename: attachment.fileName,
+        );
+      } else {
+        // Trên mobile/desktop, ưu tiên sử dụng bytes
+        if (attachment.fileBytes != null) {
+          multipartFile = dio.MultipartFile.fromBytes(
+            attachment.fileBytes!,
+            filename: attachment.fileName,
+          );
+        } else if (attachment.filePath.isNotEmpty) {
+          // Fallback: đọc bytes từ file path nếu không có bytes
+          try {
+            final bytes = await _readFileBytes(attachment.filePath);
+            multipartFile = dio.MultipartFile.fromBytes(
+              bytes,
+              filename: attachment.fileName,
+            );
+          } catch (e) {
+            throw Exception('Failed to read file: $e');
+          }
+        } else {
+          throw Exception(
+              'Either file bytes or file path is required for mobile/desktop platform.');
+        }
+      }
+
       // Sử dụng ApiService methods dựa trên endpoint
       if (_uploadEndpoint.contains('assignments')) {
-        final response = await _apiService.uploadTempAttachment(file);
-        return {
-          'success': true,
-          'data': {
-            'attachmentId': response.data.attachmentId,
-            'fileName': response.data.fileName,
-            'fileUrl': response.data.fileUrl,
-            'fileSize': response.data.fileSize,
-            'fileType': response.data.fileType,
-          }
-        };
-      } else if (_uploadEndpoint.contains('announcements')) {
-        final response =
-            await _apiService.uploadTempAnnouncementAttachment(file);
-        return {
-          'success': true,
-          'data': {
-            'attachmentId': response.data.attachmentId,
-            'fileName': response.data.fileName,
-            'fileUrl': response.data.fileUrl,
-            'fileSize': response.data.fileSize,
-            'fileType': response.data.fileType,
-          }
-        };
-      } else if (_uploadEndpoint.contains('materials')) {
-        final response = await _apiService.uploadTempMaterialAttachment(file);
-        return {
-          'success': true,
-          'data': {
-            'attachmentId': response.data.attachmentId,
-            'fileName': response.data.fileName,
-            'fileUrl': response.data.fileUrl,
-            'fileSize': response.data.fileSize,
-            'fileType': response.data.fileType,
-          }
-        };
-      } else if (_uploadEndpoint.contains('forum')) {
-        // Forum upload uses direct multipart upload
+        // Tạo FormData và gọi API trực tiếp vì ApiService chỉ nhận File
         final formData = dio.FormData.fromMap({
-          'file': await dio.MultipartFile.fromFile(file.path,
-              filename: file.path.split('/').last),
+          'file': multipartFile,
+        });
+
+        final response = await DioClient.dio.post(
+          '/assignments/temp-attachments',
+          data: formData,
+          options: dio.Options(
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          ),
+        );
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final data = response.data['data'] ?? response.data;
+          return {
+            'success': true,
+            'data': {
+              'attachmentId': data['attachmentId']?.toString() ??
+                  data['id']?.toString() ??
+                  '',
+              'fileName': data['fileName']?.toString() ??
+                  data['file_name']?.toString() ??
+                  attachment.fileName,
+              'fileUrl': data['fileUrl']?.toString() ??
+                  data['file_url']?.toString() ??
+                  '',
+              'fileSize': data['fileSize']?.toInt() ??
+                  data['file_size']?.toInt() ??
+                  attachment.fileSize,
+              'fileType': data['fileType']?.toString() ??
+                  data['file_type']?.toString() ??
+                  attachment.fileType,
+            }
+          };
+        } else {
+          throw Exception('Upload failed: ${response.data['message']}');
+        }
+      } else if (_uploadEndpoint.contains('announcements')) {
+        final formData = dio.FormData.fromMap({
+          'file': multipartFile,
+        });
+
+        final response = await DioClient.dio.post(
+          '/announcements/temp-attachments',
+          data: formData,
+          options: dio.Options(
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          ),
+        );
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final data = response.data['data'] ?? response.data;
+          return {
+            'success': true,
+            'data': {
+              'attachmentId': data['attachmentId']?.toString() ??
+                  data['id']?.toString() ??
+                  '',
+              'fileName': data['fileName']?.toString() ??
+                  data['file_name']?.toString() ??
+                  attachment.fileName,
+              'fileUrl': data['fileUrl']?.toString() ??
+                  data['file_url']?.toString() ??
+                  '',
+              'fileSize': data['fileSize']?.toInt() ??
+                  data['file_size']?.toInt() ??
+                  attachment.fileSize,
+              'fileType': data['fileType']?.toString() ??
+                  data['file_type']?.toString() ??
+                  attachment.fileType,
+            }
+          };
+        } else {
+          throw Exception('Upload failed: ${response.data['message']}');
+        }
+      } else if (_uploadEndpoint.contains('materials')) {
+        final formData = dio.FormData.fromMap({
+          'file': multipartFile,
+        });
+
+        final response = await DioClient.dio.post(
+          '/materials/temp-attachments',
+          data: formData,
+          options: dio.Options(
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          ),
+        );
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final data = response.data['data'] ?? response.data;
+          return {
+            'success': true,
+            'data': {
+              'attachmentId': data['attachmentId']?.toString() ??
+                  data['id']?.toString() ??
+                  '',
+              'fileName': data['fileName']?.toString() ??
+                  data['file_name']?.toString() ??
+                  attachment.fileName,
+              'fileUrl': data['fileUrl']?.toString() ??
+                  data['file_url']?.toString() ??
+                  '',
+              'fileSize': data['fileSize']?.toInt() ??
+                  data['file_size']?.toInt() ??
+                  attachment.fileSize,
+              'fileType': data['fileType']?.toString() ??
+                  data['file_type']?.toString() ??
+                  attachment.fileType,
+            }
+          };
+        } else {
+          throw Exception('Upload failed: ${response.data['message']}');
+        }
+      } else if (_uploadEndpoint.contains('forum')) {
+        final formData = dio.FormData.fromMap({
+          'file': multipartFile,
         });
 
         final response = await DioClient.dio.post(
@@ -214,10 +343,10 @@ class SharedFileAttachmentController extends GetxController {
             'success': true,
             'data': {
               'attachmentId': data['id']?.toString() ?? '',
-              'fileName': data['file_name']?.toString() ?? '',
+              'fileName': data['file_name']?.toString() ?? attachment.fileName,
               'fileUrl': data['file_url']?.toString() ?? '',
-              'fileSize': data['file_size']?.toInt() ?? 0,
-              'fileType': data['file_type']?.toString() ?? '',
+              'fileSize': data['file_size']?.toInt() ?? attachment.fileSize,
+              'fileType': data['file_type']?.toString() ?? attachment.fileType,
             }
           };
         } else {
@@ -538,5 +667,17 @@ class SharedFileAttachmentController extends GetxController {
       default:
         return Colors.grey;
     }
+  }
+
+  /// Helper function to read file bytes from path (mobile/desktop only)
+  /// This function is only called when !kIsWeb
+  Future<Uint8List> _readFileBytes(String filePath) async {
+    if (kIsWeb) {
+      throw Exception('File reading from path is not supported on web');
+    }
+    // ignore: avoid_dynamic_calls
+    final file = io.File(filePath);
+    final bytes = await file.readAsBytes();
+    return Uint8List.fromList(bytes);
   }
 }

@@ -12,6 +12,7 @@ router.put('/:assignmentId', authenticateToken, requireInstructor, assignmentCon
 router.delete('/:assignmentId', authenticateToken, requireInstructor, assignmentController.deleteAssignment);
 
 // Assignment attachment routes
+router.post('/temp-attachments', authenticateToken, requireInstructor, fileUploadController.uploadTempAttachment);
 router.post('/:assignmentId/attachments', authenticateToken, requireInstructor, fileUploadController.uploadAssignmentAttachments);
 router.get('/:assignmentId/attachments', authenticateToken, requireAuthenticated, fileUploadController.getAssignmentAttachments);
 router.delete('/attachments/:attachmentId', authenticateToken, requireInstructor, fileUploadController.deleteAssignmentAttachment);

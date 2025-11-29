@@ -28,7 +28,7 @@ AttachmentUploadData _$AttachmentUploadDataFromJson(
       attachments: (json['attachments'] as List<dynamic>)
           .map((e) => AttachmentFile.fromJson(e as Map<String, dynamic>))
           .toList(),
-      uploadCount: (json['uploadCount'] as num).toInt(),
+      uploadCount: json['uploadCount'] as int,
     );
 
 Map<String, dynamic> _$AttachmentUploadDataToJson(
@@ -59,7 +59,7 @@ AttachmentListData _$AttachmentListDataFromJson(Map<String, dynamic> json) =>
       attachments: (json['attachments'] as List<dynamic>)
           .map((e) => AttachmentFile.fromJson(e as Map<String, dynamic>))
           .toList(),
-      count: (json['count'] as num).toInt(),
+      count: json['count'] as int,
     );
 
 Map<String, dynamic> _$AttachmentListDataToJson(AttachmentListData instance) =>
@@ -73,7 +73,7 @@ AttachmentFile _$AttachmentFileFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String,
       fileName: json['fileName'] as String,
       fileUrl: json['fileUrl'] as String,
-      fileSize: (json['fileSize'] as num).toInt(),
+      fileSize: json['fileSize'] as int,
       fileType: json['fileType'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
@@ -109,7 +109,7 @@ TempAttachmentData _$TempAttachmentDataFromJson(Map<String, dynamic> json) =>
       attachmentId: json['attachmentId'] as String,
       fileName: json['fileName'] as String,
       fileUrl: json['fileUrl'] as String,
-      fileSize: (json['fileSize'] as num).toInt(),
+      fileSize: json['fileSize'] as int,
       fileType: json['fileType'] as String,
     );
 

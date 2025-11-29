@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class EnhancedEditSemesterDialog extends StatefulWidget {
   final dynamic semester;
   final Function(Map<String, dynamic>) onSave;
 
   const EnhancedEditSemesterDialog({
-    Key? key,
+    super.key,
     required this.semester,
     required this.onSave,
-  }) : super(key: key);
+  });
 
   @override
   State<EnhancedEditSemesterDialog> createState() =>
@@ -25,11 +24,8 @@ class _EnhancedEditSemesterDialogState extends State<EnhancedEditSemesterDialog>
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _codeController = TextEditingController();
-  final _descriptionController = TextEditingController();
 
   bool _isActive = true;
-  DateTime? _startDate;
-  DateTime? _endDate;
 
   @override
   void initState() {
@@ -41,10 +37,7 @@ class _EnhancedEditSemesterDialogState extends State<EnhancedEditSemesterDialog>
   void _initializeData() {
     _nameController.text = widget.semester.name ?? '';
     _codeController.text = widget.semester.code ?? '';
-    _descriptionController.text = widget.semester.description ?? '';
     _isActive = widget.semester.isActive ?? true;
-    _startDate = widget.semester.startDate;
-    _endDate = widget.semester.endDate;
   }
 
   void _setupAnimations() {
@@ -77,7 +70,6 @@ class _EnhancedEditSemesterDialogState extends State<EnhancedEditSemesterDialog>
     _animationController.dispose();
     _nameController.dispose();
     _codeController.dispose();
-    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -167,8 +159,6 @@ class _EnhancedEditSemesterDialogState extends State<EnhancedEditSemesterDialog>
           children: [
             _buildBasicInfoSection(),
             const SizedBox(height: 24),
-            _buildDateSection(),
-            const SizedBox(height: 24),
             _buildStatusSection(),
           ],
         ),
@@ -203,41 +193,6 @@ class _EnhancedEditSemesterDialogState extends State<EnhancedEditSemesterDialog>
             }
             return null;
           },
-        ),
-        const SizedBox(height: 16),
-        _buildTextField(
-          controller: _descriptionController,
-          label: 'Mô tả',
-          hint: 'Mô tả chi tiết về học kỳ...',
-          maxLines: 3,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDateSection() {
-    return _buildSection(
-      title: 'Thời gian',
-      icon: Icons.schedule,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: _buildDateField(
-                label: 'Ngày bắt đầu',
-                date: _startDate,
-                onTap: () => _selectDate(context, true),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildDateField(
-                label: 'Ngày kết thúc',
-                date: _endDate,
-                onTap: () => _selectDate(context, false),
-              ),
-            ),
-          ],
         ),
       ],
     );
@@ -385,77 +340,6 @@ class _EnhancedEditSemesterDialogState extends State<EnhancedEditSemesterDialog>
     );
   }
 
-  Widget _buildDateField({
-    required String label,
-    required DateTime? date,
-    required VoidCallback onTap,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
-        ),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(12),
-              color: Colors.grey.shade50,
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.calendar_today,
-                    color: Colors.grey.shade600, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    date != null
-                        ? '${date.day}/${date.month}/${date.year}'
-                        : 'Chọn ngày',
-                    style: TextStyle(
-                      color:
-                          date != null ? Colors.black87 : Colors.grey.shade500,
-                    ),
-                  ),
-                ),
-                Icon(Icons.arrow_drop_down, color: Colors.grey.shade600),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _selectDate(BuildContext context, bool isStartDate) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: isStartDate
-          ? (_startDate ?? DateTime.now())
-          : (_endDate ?? DateTime.now()),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-    );
-
-    if (picked != null) {
-      setState(() {
-        if (isStartDate) {
-          _startDate = picked;
-        } else {
-          _endDate = picked;
-        }
-      });
-    }
-  }
-
   Widget _buildActions() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -504,10 +388,7 @@ class _EnhancedEditSemesterDialogState extends State<EnhancedEditSemesterDialog>
       final data = {
         'name': _nameController.text,
         'code': _codeController.text,
-        'description': _descriptionController.text,
         'isActive': _isActive,
-        'startDate': _startDate,
-        'endDate': _endDate,
       };
 
       widget.onSave(data);

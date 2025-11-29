@@ -498,7 +498,6 @@ abstract class ApiService {
   Future<auth_response.SimpleResponse> deleteMaterialAttachment(
     @Path('attachmentId') String attachmentId,
   );
-
 }
 
 class DioClient {
@@ -579,6 +578,45 @@ class DioClient {
 
   static Map<String, dynamic> getCacheStats() {
     return CacheManager.getStats();
+  }
+
+  static Future<attachment_resp.TempAttachmentResponse>
+      uploadSubmissionTempFileFromBytes(
+    List<int> bytes,
+    String fileName,
+  ) async {
+    final formData = dio_pkg.FormData.fromMap({
+      'file': dio_pkg.MultipartFile.fromBytes(
+        bytes,
+        filename: fileName,
+      ),
+    });
+
+    final response = await dio.post(
+      '/student/submissions/upload',
+      data: formData,
+    );
+
+    return attachment_resp.TempAttachmentResponse.fromJson(response.data);
+  }
+
+  static Future<AvatarUploadResponse> uploadAvatarFromBytes(
+    List<int> bytes,
+    String fileName,
+  ) async {
+    final formData = dio_pkg.FormData.fromMap({
+      'avatar': dio_pkg.MultipartFile.fromBytes(
+        bytes,
+        filename: fileName,
+      ),
+    });
+
+    final response = await dio.post(
+      '/profile/avatar',
+      data: formData,
+    );
+
+    return AvatarUploadResponse.fromJson(response.data);
   }
 }
 

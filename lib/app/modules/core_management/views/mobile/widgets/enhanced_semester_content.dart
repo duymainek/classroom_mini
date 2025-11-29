@@ -64,9 +64,12 @@ class EnhancedSemesterContent extends StatelessWidget {
       builder: (context) => EnhancedEditSemesterDialog(
         semester: semester,
         onSave: (data) {
-          // TODO: Implement save logic in controller
-          // controller.updateSemester(semester.id, data);
-          debugPrint('Save semester data: $data');
+          controller.updateSemester(
+            semester.id,
+            data['code'] as String,
+            data['name'] as String,
+            data['isActive'] as bool,
+          );
         },
       ),
     );

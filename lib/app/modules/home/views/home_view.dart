@@ -13,6 +13,85 @@ class HomeView extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final isDesktop = width >= 1024;
+        final isTablet = width >= 768 && width < 1024;
+
+        if (isDesktop || isTablet) {
+          return _buildDesktopLayout(context, isDesktop);
+        } else {
+          return _buildMobileLayout(context);
+        }
+      },
+    );
+  }
+
+  Widget _buildDesktopLayout(BuildContext context, bool isDesktop) {
+    return Scaffold(
+      body: Row(
+        children: [
+          Obx(() => NavigationRail(
+                selectedIndex: controller.selectedIndex.value,
+                onDestinationSelected: controller.changeTabIndex,
+                labelType: isDesktop
+                    ? NavigationRailLabelType.selected
+                    : NavigationRailLabelType.none,
+                destinations: const [
+                  NavigationRailDestination(
+                    icon: Icon(Icons.dashboard_outlined),
+                    selectedIcon: Icon(Icons.dashboard),
+                    label: Text('Dashboard'),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.forum_outlined),
+                    selectedIcon: Icon(Icons.forum),
+                    label: Text('Forum'),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.chat_bubble_outline),
+                    selectedIcon: Icon(Icons.chat_bubble),
+                    label: Text('Chat'),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.notifications_outlined),
+                    selectedIcon: Icon(Icons.notifications),
+                    label: Text('Notifications'),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.person_outline),
+                    selectedIcon: Icon(Icons.person),
+                    label: Text('Profile'),
+                  ),
+                ],
+              )),
+          const VerticalDivider(thickness: 1, width: 1),
+          Expanded(
+            child: Column(
+              children: [
+                const SyncStatusBar(),
+                Expanded(
+                  child: Obx(() => IndexedStack(
+                        index: controller.selectedIndex.value,
+                        children: const [
+                          ResponsiveDashboardPage(),
+                          ForumListView(),
+                          ChatListView(),
+                          NotificationView(),
+                          ProfileView(),
+                        ],
+                      )),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileLayout(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [

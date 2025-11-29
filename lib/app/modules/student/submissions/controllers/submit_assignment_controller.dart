@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:classroom_mini/app/data/models/response/assignment_response.dart';
 import 'package:classroom_mini/app/data/models/response/submission_response.dart';
 import 'package:classroom_mini/app/data/repositories/student_submission_repository.dart';
@@ -15,7 +14,7 @@ class SubmitAssignmentController extends GetxController {
   final Rx<Assignment?> assignment = Rx<Assignment?>(null);
   final RxList<AssignmentSubmission> mySubmissions =
       <AssignmentSubmission>[].obs;
-  final RxList<File> selectedFiles = <File>[].obs;
+  final RxList<PlatformFile> selectedFiles = <PlatformFile>[].obs;
   final RxList<String> tempAttachmentIds = <String>[].obs;
   final RxList<String> uploadedFileNames = <String>[].obs;
   final RxString submissionText = ''.obs;
@@ -140,12 +139,10 @@ class SubmitAssignmentController extends GetxController {
       );
 
       if (result != null && result.files.isNotEmpty) {
-        final files = result.files.map((f) => File(f.path!)).toList();
-
         // Validate files
-        final validFiles = <File>[];
-        for (final file in files) {
-          if (await _validateFile(file)) {
+        final validFiles = <PlatformFile>[];
+        for (final file in result.files) {
+          if (await _validatePlatformFile(file)) {
             validFiles.add(file);
           }
         }
@@ -173,13 +170,13 @@ class SubmitAssignmentController extends GetxController {
   }
 
   /// Validate file against assignment requirements
-  Future<bool> _validateFile(File file) async {
+  Future<bool> _validatePlatformFile(PlatformFile file) async {
     if (assignment.value == null) return false;
 
     // Get file info
-    final fileName = file.path.split('/').last;
+    final fileName = file.name;
     final fileExtension = fileName.split('.').last.toLowerCase();
-    final fileSize = await file.length();
+    final fileSize = file.size;
 
     // Check file format
     if (assignment.value!.fileFormats.isNotEmpty &&
@@ -235,17 +232,17 @@ class SubmitAssignmentController extends GetxController {
       var uploadedCount = 0;
 
       for (final file in selectedFiles) {
-        final result = await _repository.uploadTempFile(file: file);
+        final result = await _repository.uploadTempFile(platformFile: file);
 
         if (result.success && result.tempAttachmentId != null) {
           tempAttachmentIds.add(result.tempAttachmentId!);
-          uploadedFileNames.add(result.fileName ?? file.path.split('/').last);
+          uploadedFileNames.add(result.fileName ?? file.name);
           uploadedCount++;
           uploadProgress.value = uploadedCount / totalFiles;
         } else {
           Get.snackbar(
             'Upload Failed',
-            'Failed to upload ${file.path.split('/').last}: ${result.message}',
+            'Failed to upload ${file.name}: ${result.message}',
             snackPosition: SnackPosition.BOTTOM,
             backgroundColor: Colors.red[100],
             colorText: Colors.red[900],

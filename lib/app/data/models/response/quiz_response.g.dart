@@ -18,8 +18,8 @@ Quiz _$QuizFromJson(Map<String, dynamic> json) => Quiz(
           ? null
           : DateTime.parse(json['lateDueDate'] as String),
       allowLateSubmission: json['allowLateSubmission'] as bool,
-      maxAttempts: (json['maxAttempts'] as num).toInt(),
-      timeLimit: (json['timeLimit'] as num?)?.toInt(),
+      maxAttempts: json['maxAttempts'] as int,
+      timeLimit: json['timeLimit'] as int?,
       shuffleQuestions: json['shuffleQuestions'] as bool,
       shuffleOptions: json['shuffleOptions'] as bool,
       showCorrectAnswers: json['showCorrectAnswers'] as bool,
@@ -38,7 +38,7 @@ Quiz _$QuizFromJson(Map<String, dynamic> json) => Quiz(
       questions: (json['questions'] as List<dynamic>?)
           ?.map((e) => QuizQuestion.fromJson(e as Map<String, dynamic>))
           .toList(),
-      questionCount: (json['questionCount'] as num?)?.toInt(),
+      questionCount: json['questionCount'] as int?,
     );
 
 Map<String, dynamic> _$QuizToJson(Quiz instance) => <String, dynamic>{
@@ -87,8 +87,8 @@ QuizQuestion _$QuizQuestionFromJson(Map<String, dynamic> json) => QuizQuestion(
       quizId: json['quizId'] as String,
       questionText: json['questionText'] as String,
       questionType: json['questionType'] as String,
-      points: (json['points'] as num).toInt(),
-      orderIndex: (json['orderIndex'] as num).toInt(),
+      points: json['points'] as int,
+      orderIndex: json['orderIndex'] as int,
       isRequired: json['isRequired'] as bool,
       options: (json['options'] as List<dynamic>?)
           ?.map((e) => QuizQuestionOption.fromJson(e as Map<String, dynamic>))
@@ -113,7 +113,7 @@ QuizQuestionOption _$QuizQuestionOptionFromJson(Map<String, dynamic> json) =>
       questionId: json['questionId'] as String,
       optionText: json['optionText'] as String,
       isCorrect: json['isCorrect'] as bool,
-      orderIndex: (json['orderIndex'] as num).toInt(),
+      orderIndex: json['orderIndex'] as int,
     );
 
 Map<String, dynamic> _$QuizQuestionOptionToJson(QuizQuestionOption instance) =>
@@ -228,7 +228,7 @@ Map<String, dynamic> _$QuizSubmissionResponseToJson(
 QuizSubmissionData _$QuizSubmissionDataFromJson(Map<String, dynamic> json) =>
     QuizSubmissionData(
       submissionId: json['submissionId'] as String,
-      attemptNumber: (json['attemptNumber'] as num).toInt(),
+      attemptNumber: json['attemptNumber'] as int,
       isLate: json['isLate'] as bool,
       status: json['status'] as String,
       totalScore: (json['totalScore'] as num?)?.toDouble(),
@@ -369,7 +369,7 @@ QuizSubmissionDetail _$QuizSubmissionDetailFromJson(
       id: json['id'] as String,
       quizId: json['quizId'] as String,
       studentId: json['studentId'] as String,
-      attemptNumber: (json['attemptNumber'] as num).toInt(),
+      attemptNumber: json['attemptNumber'] as int,
       submittedAt: DateTime.parse(json['submittedAt'] as String),
       isLate: json['isLate'] as bool,
       totalScore: (json['totalScore'] as num?)?.toDouble(),
@@ -469,8 +469,8 @@ StudentQuizSubmissionsData _$StudentQuizSubmissionsDataFromJson(
       submissions: (json['submissions'] as List<dynamic>)
           .map((e) => StudentQuizSubmission.fromJson(e as Map<String, dynamic>))
           .toList(),
-      maxAttempts: (json['maxAttempts'] as num).toInt(),
-      currentAttempts: (json['currentAttempts'] as num).toInt(),
+      maxAttempts: json['maxAttempts'] as int,
+      currentAttempts: json['currentAttempts'] as int,
     );
 
 Map<String, dynamic> _$StudentQuizSubmissionsDataToJson(
@@ -487,7 +487,7 @@ StudentQuizSubmission _$StudentQuizSubmissionFromJson(
       id: json['id'] as String,
       quizId: json['quizId'] as String,
       studentId: json['studentId'] as String,
-      attemptNumber: (json['attemptNumber'] as num).toInt(),
+      attemptNumber: json['attemptNumber'] as int,
       submittedAt: DateTime.parse(json['submittedAt'] as String),
       isLate: json['isLate'] as bool,
       totalScore: (json['totalScore'] as num?)?.toDouble(),

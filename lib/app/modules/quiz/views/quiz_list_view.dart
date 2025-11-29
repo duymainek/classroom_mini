@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../controllers/quiz_controller.dart';
+import 'package:classroom_mini/app/core/widgets/responsive_container.dart';
 
 class QuizListView extends GetView<QuizController> {
   const QuizListView({super.key});
@@ -23,47 +24,61 @@ class QuizListView extends GetView<QuizController> {
               foregroundColor: colorScheme.onPrimary,
             )
           : const SizedBox.shrink(),
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 120,
-            floating: false,
-            pinned: true,
-            backgroundColor: colorScheme.surface,
-            surfaceTintColor: colorScheme.surfaceTint,
-            elevation: 0,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                'Quizzes',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      colorScheme.primaryContainer.withValues(alpha: 0.3),
-                      colorScheme.secondaryContainer.withValues(alpha: 0.1),
-                    ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final maxWidth = width < 768
+              ? double.infinity
+              : width < 1024
+                  ? 900.0
+                  : 1200.0;
+          final horizontalPadding = width > maxWidth ? (width - maxWidth) / 2 : 0.0;
+
+          return CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                sliver: SliverAppBar(
+                  expandedHeight: 120,
+                  floating: false,
+                  pinned: true,
+                  backgroundColor: colorScheme.surface,
+                  surfaceTintColor: colorScheme.surfaceTint,
+                  elevation: 0,
+                  flexibleSpace: FlexibleSpaceBar(
+                    title: Text(
+                      'Quizzes',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    background: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            colorScheme.primaryContainer.withValues(alpha: 0.3),
+                            colorScheme.secondaryContainer.withValues(alpha: 0.1),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
+                  actions: [
+                    IconButton(
+                      icon: Icon(Icons.search, color: colorScheme.onSurface),
+                      onPressed: () => _showSearchDialog(context),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.filter_list, color: colorScheme.onSurface),
+                      onPressed: () => _showFilterDialog(context),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            actions: [
-              IconButton(
-                icon: Icon(Icons.search, color: colorScheme.onSurface),
-                onPressed: () => _showSearchDialog(context),
-              ),
-              IconButton(
-                icon: Icon(Icons.filter_list, color: colorScheme.onSurface),
-                onPressed: () => _showFilterDialog(context),
-              ),
-            ],
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                    16 + horizontalPadding, 16, 16 + horizontalPadding, 16),
             sliver: Obx(() {
               if (controller.isLoading.value && controller.quizzes.isEmpty) {
                 return SliverToBoxAdapter(
@@ -93,8 +108,10 @@ class QuizListView extends GetView<QuizController> {
                 ),
               );
             }),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }

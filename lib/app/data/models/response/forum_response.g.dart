@@ -39,7 +39,7 @@ ForumAttachment _$ForumAttachmentFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String,
       fileName: json['file_name'] as String,
       fileUrl: json['file_url'] as String,
-      fileSize: (json['file_size'] as num).toInt(),
+      fileSize: json['file_size'] as int,
       fileType: json['file_type'] as String,
       createdAt: json['created_at'] == null
           ? null
@@ -62,7 +62,7 @@ ForumReply _$ForumReplyFromJson(Map<String, dynamic> json) => ForumReply(
       parentReplyId: json['parentReplyId'] as String?,
       content: json['content'] as String,
       author: ForumAuthor.fromJson(json['author'] as Map<String, dynamic>),
-      likeCount: (json['likeCount'] as num).toInt(),
+      likeCount: json['likeCount'] as int,
       isLiked: json['isLiked'] as bool,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
@@ -94,8 +94,8 @@ ForumTopic _$ForumTopicFromJson(Map<String, dynamic> json) => ForumTopic(
       title: json['title'] as String,
       content: json['content'] as String,
       author: ForumAuthor.fromJson(json['author'] as Map<String, dynamic>),
-      replyCount: (json['replyCount'] as num).toInt(),
-      viewCount: (json['viewCount'] as num).toInt(),
+      replyCount: json['replyCount'] as int,
+      viewCount: json['viewCount'] as int,
       isPinned: json['isPinned'] as bool,
       isLocked: json['isLocked'] as bool,
       createdAt: DateTime.parse(json['createdAt'] as String),

@@ -69,7 +69,7 @@ Material _$MaterialFromJson(Map<String, dynamic> json) => Material(
       files: (json['files'] as List<dynamic>)
           .map((e) => MaterialFile.fromJson(e as Map<String, dynamic>))
           .toList(),
-      viewCount: (json['viewCount'] as num).toInt(),
+      viewCount: json['viewCount'] as int,
     );
 
 Map<String, dynamic> _$MaterialToJson(Material instance) => <String, dynamic>{
@@ -116,7 +116,7 @@ MaterialFile _$MaterialFileFromJson(Map<String, dynamic> json) => MaterialFile(
       id: json['id'] as String,
       fileName: json['fileName'] as String,
       fileUrl: json['fileUrl'] as String,
-      fileSize: (json['fileSize'] as num).toInt(),
+      fileSize: json['fileSize'] as int,
       fileType: json['fileType'] as String?,
     );
 
@@ -151,7 +151,7 @@ StudentTracking _$StudentTrackingFromJson(Map<String, dynamic> json) =>
       viewedAt: json['viewedAt'] == null
           ? null
           : DateTime.parse(json['viewedAt'] as String),
-      viewCount: (json['viewCount'] as num).toInt(),
+      viewCount: json['viewCount'] as int,
     );
 
 Map<String, dynamic> _$StudentTrackingToJson(StudentTracking instance) =>
@@ -165,9 +165,9 @@ Map<String, dynamic> _$StudentTrackingToJson(StudentTracking instance) =>
 
 TrackingSummary _$TrackingSummaryFromJson(Map<String, dynamic> json) =>
     TrackingSummary(
-      total: (json['total'] as num).toInt(),
-      viewed: (json['viewed'] as num).toInt(),
-      notViewed: (json['notViewed'] as num).toInt(),
+      total: json['total'] as int,
+      viewed: json['viewed'] as int,
+      notViewed: json['notViewed'] as int,
     );
 
 Map<String, dynamic> _$TrackingSummaryToJson(TrackingSummary instance) =>
@@ -183,7 +183,7 @@ FileTrackingData _$FileTrackingDataFromJson(Map<String, dynamic> json) =>
       downloads: (json['downloads'] as List<dynamic>)
           .map((e) => FileDownload.fromJson(e as Map<String, dynamic>))
           .toList(),
-      totalDownloads: (json['totalDownloads'] as num).toInt(),
+      totalDownloads: json['totalDownloads'] as int,
     );
 
 Map<String, dynamic> _$FileTrackingDataToJson(FileTrackingData instance) =>
@@ -196,7 +196,7 @@ Map<String, dynamic> _$FileTrackingDataToJson(FileTrackingData instance) =>
 FileDownload _$FileDownloadFromJson(Map<String, dynamic> json) => FileDownload(
       student: MaterialUser.fromJson(json['student'] as Map<String, dynamic>),
       downloadedAt: DateTime.parse(json['downloadedAt'] as String),
-      downloadCount: (json['downloadCount'] as num).toInt(),
+      downloadCount: json['downloadCount'] as int,
     );
 
 Map<String, dynamic> _$FileDownloadToJson(FileDownload instance) =>
@@ -236,10 +236,10 @@ Map<String, dynamic> _$MaterialGroupToJson(MaterialGroup instance) =>
     };
 
 Pagination _$PaginationFromJson(Map<String, dynamic> json) => Pagination(
-      page: (json['page'] as num).toInt(),
-      limit: (json['limit'] as num).toInt(),
-      total: (json['total'] as num).toInt(),
-      pages: (json['pages'] as num).toInt(),
+      page: json['page'] as int,
+      limit: json['limit'] as int,
+      total: json['total'] as int,
+      pages: json['pages'] as int,
     );
 
 Map<String, dynamic> _$PaginationToJson(Pagination instance) =>

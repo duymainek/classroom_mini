@@ -7,6 +7,7 @@ import 'package:classroom_mini/app/routes/app_routes.dart';
 import 'package:classroom_mini/app/data/services/connectivity_service.dart';
 import '../../widgets/material_card.dart';
 import '../../widgets/material_form.dart';
+import 'package:classroom_mini/app/core/widgets/responsive_container.dart';
 
 /**
  * Material List View
@@ -119,7 +120,9 @@ class _MaterialListViewState extends State<MaterialListView> {
 
           // Materials list
           Expanded(
-            child: Obx(() {
+            child: ResponsiveContainer(
+              padding: EdgeInsets.zero,
+              child: Obx(() {
               if (controller.isLoading.value && controller.materials.isEmpty) {
                 return const Center(child: CircularProgressIndicator());
               }
@@ -156,6 +159,7 @@ class _MaterialListViewState extends State<MaterialListView> {
                 ),
               );
             }),
+            ),
           ),
         ],
       ),

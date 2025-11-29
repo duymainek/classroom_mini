@@ -7,6 +7,7 @@ import '../views/enhanced_edit_student_sheet.dart';
 import '../views/enhanced_student_detail_view.dart';
 import '../../../data/models/response/course_response.dart';
 import '../../../data/models/response/group_response.dart';
+import 'package:classroom_mini/app/core/widgets/responsive_container.dart';
 
 class ResponsiveStudentManagementPage
     extends GetView<StudentManagementController> {
@@ -15,7 +16,10 @@ class ResponsiveStudentManagementPage
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _MobileView(controller: controller),
+      body: ResponsiveContainer(
+        padding: EdgeInsets.zero,
+        child: _MobileView(controller: controller),
+      ),
       floatingActionButton: _FabActions(controller: controller),
     );
   }
@@ -43,41 +47,55 @@ class _MobileView extends StatelessWidget {
 
       final data = controller.filteredStudents;
 
-      return RefreshIndicator(
-        onRefresh: controller.refreshStudents,
-        child: CustomScrollView(
-          slivers: [
-            // SliverAppBar per Material 3 guide
-            SliverAppBar(
-              expandedHeight: 120,
-              floating: false,
-              pinned: true,
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              surfaceTintColor: Theme.of(context).colorScheme.surfaceTint,
-              elevation: 0,
-              flexibleSpace: FlexibleSpaceBar(
-                title: const Text('Quản lý Sinh viên'),
-                background: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Theme.of(context)
-                            .colorScheme
-                            .primaryContainer
-                            .withValues(alpha: 0.3),
-                        Theme.of(context)
-                            .colorScheme
-                            .secondaryContainer
-                            .withValues(alpha: 0.1),
-                      ],
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final maxWidth = width < 768
+              ? double.infinity
+              : width < 1024
+                  ? 900.0
+                  : 1200.0;
+          final horizontalPadding = width > maxWidth ? (width - maxWidth) / 2 : 0.0;
+
+          return RefreshIndicator(
+            onRefresh: controller.refreshStudents,
+            child: CustomScrollView(
+              slivers: [
+                // SliverAppBar per Material 3 guide
+                SliverPadding(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                  sliver: SliverAppBar(
+                    expandedHeight: 120,
+                    floating: false,
+                    pinned: true,
+                    backgroundColor: Theme.of(context).colorScheme.surface,
+                    surfaceTintColor: Theme.of(context).colorScheme.surfaceTint,
+                    elevation: 0,
+                    flexibleSpace: FlexibleSpaceBar(
+                      title: const Text('Quản lý Sinh viên'),
+                      background: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer
+                                  .withValues(alpha: 0.3),
+                              Theme.of(context)
+                                  .colorScheme
+                                  .secondaryContainer
+                                  .withValues(alpha: 0.1),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
             // Search Section
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              padding: EdgeInsets.fromLTRB(
+                  16 + horizontalPadding, 16, 16 + horizontalPadding, 8),
               sliver: SliverToBoxAdapter(
                 child: TextField(
                   onChanged: controller.setQuery,
@@ -121,7 +139,8 @@ class _MobileView extends StatelessWidget {
 
             // Filter Section
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              padding: EdgeInsets.fromLTRB(
+                  16 + horizontalPadding, 0, 16 + horizontalPadding, 8),
               sliver: SliverToBoxAdapter(
                 child: Obx(() => Column(
                       children: [
@@ -186,11 +205,13 @@ class _MobileView extends StatelessWidget {
 
             // Empty State
             if (data.isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
+              SliverPadding(
+                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                sliver: SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -248,11 +269,13 @@ class _MobileView extends StatelessWidget {
                     ),
                   ),
                 ),
+                ),
               )
             else
               // Student Cards
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                padding: EdgeInsets.fromLTRB(
+                    16 + horizontalPadding, 0, 16 + horizontalPadding, 100),
                 sliver: SliverList.separated(
                   itemBuilder: (_, i) {
                     final s = data[i];
@@ -266,8 +289,10 @@ class _MobileView extends StatelessWidget {
                   itemCount: data.length,
                 ),
               ),
-          ],
-        ),
+              ],
+            ),
+          );
+        },
       );
     });
   }

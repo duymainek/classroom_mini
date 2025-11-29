@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../controllers/chat_list_controller.dart';
 import '../../../data/models/response/chat_response.dart';
 import '../../../data/services/connectivity_service.dart';
+import 'package:classroom_mini/app/core/widgets/responsive_container.dart';
 
 class ChatListView extends StatelessWidget {
   const ChatListView({super.key});
@@ -54,7 +55,9 @@ class ChatListView extends StatelessWidget {
           ),
         ],
       ),
-      body: Obx(() {
+      body: ResponsiveContainer(
+        padding: EdgeInsets.zero,
+        child: Obx(() {
         if (controller.isLoading.value && controller.conversations.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -93,7 +96,8 @@ class ChatListView extends StatelessWidget {
             },
           ),
         );
-      }),
+        }),
+      ),
       floatingActionButton: Obx(() {
         final connectivityService = Get.find<ConnectivityService>();
         if (!connectivityService.isOnline.value) {

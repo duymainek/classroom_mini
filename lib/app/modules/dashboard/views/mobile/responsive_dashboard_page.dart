@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../shared/semester_selector_widget.dart';
 import '../../../../routes/app_routes.dart';
+import '../../../../core/widgets/responsive_container.dart';
 
 class ResponsiveDashboardPage extends StatelessWidget {
   const ResponsiveDashboardPage({super.key});
@@ -29,83 +30,86 @@ class ResponsiveDashboardPage extends StatelessWidget {
           ),
         ],
       ),
-      body: Obx(() {
-        debugPrint('🖥️ [DashboardView] Rebuilding UI');
-        debugPrint('   - isLoading: ${controller.isLoading.value}');
-        debugPrint('   - isRefreshing: ${controller.isRefreshing.value}');
-        debugPrint('   - isInstructor: ${controller.isInstructorRx.value}');
-        debugPrint(
-            '   - instructorDashboardData: ${controller.instructorDashboardData.value != null}');
-        debugPrint(
-            '   - studentDashboardData: ${controller.studentDashboardData.value != null}');
-        debugPrint('   - errorMessage: "${controller.errorMessage.value}"');
-
-        if (controller.instructorDashboardData.value != null) {
-          final data = controller.instructorDashboardData.value!;
-          debugPrint('   📊 Instructor Data:');
-          debugPrint('      - stats.courses: ${data.statistics.totalCourses}');
+      body: ResponsiveContainer(
+        padding: EdgeInsets.zero,
+        child: Obx(() {
+          debugPrint('🖥️ [DashboardView] Rebuilding UI');
+          debugPrint('   - isLoading: ${controller.isLoading.value}');
+          debugPrint('   - isRefreshing: ${controller.isRefreshing.value}');
+          debugPrint('   - isInstructor: ${controller.isInstructorRx.value}');
           debugPrint(
-              '      - stats.students: ${data.statistics.totalStudents}');
-          debugPrint('      - recentActivity: ${data.recentActivity.length}');
-        }
-
-        if (controller.studentDashboardData.value != null) {
-          final data = controller.studentDashboardData.value!;
-          debugPrint('   📊 Student Data:');
-          debugPrint('      - enrolledCourses: ${data.enrolledCourses.length}');
+              '   - instructorDashboardData: ${controller.instructorDashboardData.value != null}');
           debugPrint(
-              '      - upcomingAssignments: ${data.upcomingAssignments.length}');
-        }
+              '   - studentDashboardData: ${controller.studentDashboardData.value != null}');
+          debugPrint('   - errorMessage: "${controller.errorMessage.value}"');
 
-        if (controller.isLoading.value &&
-            controller.instructorDashboardData.value == null &&
-            controller.studentDashboardData.value == null) {
-          debugPrint('🔄 [DashboardView] Showing LOADING state');
-          return _buildLoadingState(context);
-        }
+          if (controller.instructorDashboardData.value != null) {
+            final data = controller.instructorDashboardData.value!;
+            debugPrint('   📊 Instructor Data:');
+            debugPrint('      - stats.courses: ${data.statistics.totalCourses}');
+            debugPrint(
+                '      - stats.students: ${data.statistics.totalStudents}');
+            debugPrint('      - recentActivity: ${data.recentActivity.length}');
+          }
 
-        if (controller.errorMessage.value.isNotEmpty) {
-          debugPrint(
-              '❌ [DashboardView] Showing ERROR state: ${controller.errorMessage.value}');
-          return _buildErrorState(context, controller);
-        }
+          if (controller.studentDashboardData.value != null) {
+            final data = controller.studentDashboardData.value!;
+            debugPrint('   📊 Student Data:');
+            debugPrint('      - enrolledCourses: ${data.enrolledCourses.length}');
+            debugPrint(
+                '      - upcomingAssignments: ${data.upcomingAssignments.length}');
+          }
 
-        debugPrint('✅ [DashboardView] Showing CONTENT state');
+          if (controller.isLoading.value &&
+              controller.instructorDashboardData.value == null &&
+              controller.studentDashboardData.value == null) {
+            debugPrint('🔄 [DashboardView] Showing LOADING state');
+            return _buildLoadingState(context);
+          }
 
-        return RefreshIndicator(
-          onRefresh: controller.refreshDashboard,
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              // Welcome header
-              _buildWelcomeHeader(context, controller),
+          if (controller.errorMessage.value.isNotEmpty) {
+            debugPrint(
+                '❌ [DashboardView] Showing ERROR state: ${controller.errorMessage.value}');
+            return _buildErrorState(context, controller);
+          }
 
-              // Quick actions for instructors
-              if (controller.isInstructorRx.value) ...[
-                _buildQuickActions(context, controller),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 24),
-                        _buildInstructorDashboard(context, controller),
-                      ],
+          debugPrint('✅ [DashboardView] Showing CONTENT state');
+
+          return RefreshIndicator(
+            onRefresh: controller.refreshDashboard,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                // Welcome header
+                _buildWelcomeHeader(context, controller),
+
+                // Quick actions for instructors
+                if (controller.isInstructorRx.value) ...[
+                  _buildQuickActions(context, controller),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 24),
+                          _buildInstructorDashboard(context, controller),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ] else
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: _buildStudentDashboard(context, controller),
+                ] else
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _buildStudentDashboard(context, controller),
+                    ),
                   ),
-                ),
-            ],
-          ),
-        );
-      }),
+              ],
+            ),
+          );
+        }),
+      ),
     );
   }
 

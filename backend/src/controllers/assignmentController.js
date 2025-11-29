@@ -488,22 +488,7 @@ class AssignmentController {
       throw new AppError('Assignment not found or access denied', 404, 'ASSIGNMENT_NOT_FOUND');
     }
 
-    // Check if assignment has submissions
-    const { data: submissions } = await supabase
-      .from('assignment_submissions')
-      .select('id')
-      .eq('assignment_id', assignmentId)
-      .limit(1);
-
-    if (submissions && submissions.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot delete assignment with existing submissions',
-        code: 'ASSIGNMENT_HAS_SUBMISSIONS'
-      });
-    }
-
-    // Delete assignment (cascade will handle related records)
+    // Delete assignment (cascade will handle related records including submissions)
     const { error } = await supabase
       .from('assignments')
       .delete()
@@ -648,7 +633,7 @@ class AssignmentController {
     const trackingData = uniqueStudents.map(student => {
       const studentSubmissions = submissions?.filter(sub => sub.student_id === student.id) || [];
       const latestSubmission = studentSubmissions.length > 0 
-        ? studentSubmissions.toSorted((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))[0]
+        ? [...studentSubmissions].sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))[0]
         : null;
 
       // Calculate submission statistics
@@ -995,7 +980,7 @@ class AssignmentController {
     const trackingData = allStudents.map(student => {
       const studentSubmissions = submissions?.filter(sub => sub.student_id === student.id) || [];
       const latestSubmission = studentSubmissions.length > 0 
-        ? studentSubmissions.toSorted((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))[0]
+        ? [...studentSubmissions].sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))[0]
         : null;
 
       const gradedSubmissions = studentSubmissions.filter(sub => sub.grade !== null);

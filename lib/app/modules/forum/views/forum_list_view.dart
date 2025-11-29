@@ -6,6 +6,8 @@ import 'package:classroom_mini/app/modules/forum/widgets/forum_topic_card.dart';
 import 'package:classroom_mini/app/modules/forum/widgets/forum_topic_form.dart';
 import 'package:classroom_mini/app/modules/forum/design/forum_design_system.dart';
 import 'package:classroom_mini/app/data/services/connectivity_service.dart';
+import 'package:classroom_mini/app/core/widgets/responsive_app_bar.dart';
+import 'package:classroom_mini/app/core/widgets/responsive_container.dart';
 
 /// Enhanced Forum List View
 /// Implements responsive design and improved UX patterns
@@ -92,14 +94,17 @@ class _ForumListViewState extends State<ForumListView>
     return Scaffold(
       backgroundColor: ForumDesignSystem.getSurfaceColor(context),
       appBar: _buildAppBar(context, isTablet),
-      body: _buildBody(context, isTablet),
+      body: ResponsiveContainer(
+        padding: EdgeInsets.zero,
+        child: _buildBody(context, isTablet),
+      ),
       floatingActionButton: _buildFloatingActionButton(context),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context, bool isTablet) {
-    return AppBar(
+    return ResponsiveAppBar(
       backgroundColor:
           ForumDesignSystem.getSurfaceColor(context, isElevated: true),
       elevation: ForumDesignSystem.elevationSM,

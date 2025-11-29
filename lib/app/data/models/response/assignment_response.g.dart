@@ -18,11 +18,11 @@ Assignment _$AssignmentFromJson(Map<String, dynamic> json) => Assignment(
           ? null
           : DateTime.parse(json['lateDueDate'] as String),
       allowLateSubmission: json['allowLateSubmission'] as bool,
-      maxAttempts: (json['maxAttempts'] as num).toInt(),
+      maxAttempts: json['maxAttempts'] as int,
       fileFormats: (json['fileFormats'] as List<dynamic>)
           .map((e) => e as String)
           .toList(),
-      maxFileSize: (json['maxFileSize'] as num).toInt(),
+      maxFileSize: json['maxFileSize'] as int,
       isActive: json['isActive'] as bool,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
@@ -72,7 +72,7 @@ AssignmentAttachment _$AssignmentAttachmentFromJson(
       id: json['id'] as String,
       fileName: json['fileName'] as String,
       fileUrl: json['fileUrl'] as String,
-      fileSize: (json['fileSize'] as num?)?.toInt(),
+      fileSize: json['fileSize'] as int?,
       fileType: json['fileType'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
     );

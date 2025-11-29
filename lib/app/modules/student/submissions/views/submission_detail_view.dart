@@ -32,9 +32,11 @@ class SubmissionDetailView extends StatelessWidget {
             const SizedBox(height: 16),
             _buildSubmissionInfo(context, submission, colorScheme, theme),
             const SizedBox(height: 16),
-            if (submission.submissionText != null && submission.submissionText!.isNotEmpty)
+            if (submission.submissionText != null &&
+                submission.submissionText!.isNotEmpty)
               _buildSubmissionText(context, submission, colorScheme, theme),
-            if (submission.submissionText != null && submission.submissionText!.isNotEmpty)
+            if (submission.submissionText != null &&
+                submission.submissionText!.isNotEmpty)
               const SizedBox(height: 16),
             if (submission.attachments.isNotEmpty)
               _buildAttachments(context, submission, colorScheme, theme),
@@ -159,7 +161,8 @@ class SubmissionDetailView extends StatelessWidget {
                     color: colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.info_outline, color: colorScheme.primary, size: 20),
+                  child: Icon(Icons.info_outline,
+                      color: colorScheme.primary, size: 20),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -183,17 +186,21 @@ class SubmissionDetailView extends StatelessWidget {
                   context,
                   icon: Icons.calendar_today,
                   label: 'Thời gian nộp',
-                  value: DateFormat('dd/MM/yyyy HH:mm').format(submission.submittedAt),
+                  value: DateFormat('dd/MM/yyyy HH:mm')
+                      .format(submission.submittedAt!),
                   colorScheme: colorScheme,
                   theme: theme,
                 ),
                 const SizedBox(height: 16),
                 _buildInfoRow(
                   context,
-                  icon: submission.isLate ? Icons.warning : Icons.check_circle,
+                  icon: submission.isLate == true
+                      ? Icons.warning
+                      : Icons.check_circle,
                   label: 'Trạng thái',
-                  value: submission.isLate ? 'Nộp trễ' : 'Đúng hạn',
-                  valueColor: submission.isLate ? Colors.orange : Colors.green,
+                  value: submission.isLate == true ? 'Nộp trễ' : 'Đúng hạn',
+                  valueColor:
+                      submission.isLate == true ? Colors.orange : Colors.green,
                   colorScheme: colorScheme,
                   theme: theme,
                 ),
@@ -203,7 +210,8 @@ class SubmissionDetailView extends StatelessWidget {
                     context,
                     icon: Icons.event_available,
                     label: 'Thời gian chấm',
-                    value: DateFormat('dd/MM/yyyy HH:mm').format(submission.gradedAt!),
+                    value: DateFormat('dd/MM/yyyy HH:mm')
+                        .format(submission.gradedAt!),
                     colorScheme: colorScheme,
                     theme: theme,
                   ),
@@ -293,7 +301,8 @@ class SubmissionDetailView extends StatelessWidget {
                     color: colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.article, color: colorScheme.primary, size: 20),
+                  child:
+                      Icon(Icons.article, color: colorScheme.primary, size: 20),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -315,7 +324,8 @@ class SubmissionDetailView extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                color:
+                    colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -371,7 +381,8 @@ class SubmissionDetailView extends StatelessWidget {
                     color: colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.attach_file, color: colorScheme.primary, size: 20),
+                  child: Icon(Icons.attach_file,
+                      color: colorScheme.primary, size: 20),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -526,7 +537,8 @@ class SubmissionDetailView extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: gradeColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: gradeColor.withValues(alpha: 0.3)),
+                    border:
+                        Border.all(color: gradeColor.withValues(alpha: 0.3)),
                   ),
                   child: Column(
                     children: [
@@ -547,13 +559,15 @@ class SubmissionDetailView extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (submission.feedback != null && submission.feedback!.isNotEmpty) ...[
+                if (submission.feedback != null &&
+                    submission.feedback!.isNotEmpty) ...[
                   const SizedBox(height: 20),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                      color: colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -561,7 +575,8 @@ class SubmissionDetailView extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.comment, size: 16, color: colorScheme.primary),
+                            Icon(Icons.comment,
+                                size: 16, color: colorScheme.primary),
                             const SizedBox(width: 8),
                             Text(
                               'Nhận xét',

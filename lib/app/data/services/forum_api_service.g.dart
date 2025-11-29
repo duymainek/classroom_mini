@@ -12,14 +12,11 @@ class _ForumApiService implements ForumApiService {
   _ForumApiService(
     this._dio, {
     this.baseUrl,
-    this.errorLogger,
   });
 
   final Dio _dio;
 
   String? baseUrl;
-
-  final ParseErrorLogger? errorLogger;
 
   @override
   Future<DataResponse<ForumTopic>> createTopic(
@@ -29,33 +26,27 @@ class _ForumApiService implements ForumApiService {
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(request.toJson());
-    final _options = _setStreamType<DataResponse<ForumTopic>>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<DataResponse<ForumTopic>>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/forum/topics',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late DataResponse<ForumTopic> _value;
-    try {
-      _value = DataResponse<ForumTopic>.fromJson(
-        _result.data!,
-        (json) => ForumTopic.fromJson(json as Map<String, dynamic>),
-      );
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/forum/topics',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = DataResponse<ForumTopic>.fromJson(
+      _result.data!,
+      (json) => ForumTopic.fromJson(json as Map<String, dynamic>),
+    );
     return _value;
   }
 
@@ -74,38 +65,32 @@ class _ForumApiService implements ForumApiService {
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<DataResponse<List<ForumTopic>>>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<DataResponse<List<ForumTopic>>>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/forum/topics',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late DataResponse<List<ForumTopic>> _value;
-    try {
-      _value = DataResponse<List<ForumTopic>>.fromJson(
-        _result.data!,
-        (json) => json is List<dynamic>
-            ? json
-                .map<ForumTopic>(
-                    (i) => ForumTopic.fromJson(i as Map<String, dynamic>))
-                .toList()
-            : List.empty(),
-      );
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/forum/topics',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = DataResponse<List<ForumTopic>>.fromJson(
+      _result.data!,
+      (json) => json is List<dynamic>
+          ? json
+              .map<ForumTopic>(
+                  (i) => ForumTopic.fromJson(i as Map<String, dynamic>))
+              .toList()
+          : List.empty(),
+    );
     return _value;
   }
 
@@ -115,33 +100,27 @@ class _ForumApiService implements ForumApiService {
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<DataResponse<TopicDetailResponse>>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<DataResponse<TopicDetailResponse>>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/forum/topics/${id}',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late DataResponse<TopicDetailResponse> _value;
-    try {
-      _value = DataResponse<TopicDetailResponse>.fromJson(
-        _result.data!,
-        (json) => TopicDetailResponse.fromJson(json as Map<String, dynamic>),
-      );
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/forum/topics/${id}',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = DataResponse<TopicDetailResponse>.fromJson(
+      _result.data!,
+      (json) => TopicDetailResponse.fromJson(json as Map<String, dynamic>),
+    );
     return _value;
   }
 
@@ -155,33 +134,27 @@ class _ForumApiService implements ForumApiService {
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(request.toJson());
-    final _options = _setStreamType<DataResponse<ForumTopic>>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<DataResponse<ForumTopic>>(Options(
       method: 'PUT',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/forum/topics/${id}',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late DataResponse<ForumTopic> _value;
-    try {
-      _value = DataResponse<ForumTopic>.fromJson(
-        _result.data!,
-        (json) => ForumTopic.fromJson(json as Map<String, dynamic>),
-      );
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/forum/topics/${id}',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = DataResponse<ForumTopic>.fromJson(
+      _result.data!,
+      (json) => ForumTopic.fromJson(json as Map<String, dynamic>),
+    );
     return _value;
   }
 
@@ -191,30 +164,24 @@ class _ForumApiService implements ForumApiService {
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<BaseResponse>(Options(
+    final _result = await _dio
+        .fetch<Map<String, dynamic>>(_setStreamType<BaseResponse>(Options(
       method: 'DELETE',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/forum/topics/${id}',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late BaseResponse _value;
-    try {
-      _value = BaseResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/forum/topics/${id}',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = BaseResponse.fromJson(_result.data!);
     return _value;
   }
 
@@ -224,30 +191,24 @@ class _ForumApiService implements ForumApiService {
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<BaseResponse>(Options(
+    final _result = await _dio
+        .fetch<Map<String, dynamic>>(_setStreamType<BaseResponse>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/forum/topics/${id}/views',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late BaseResponse _value;
-    try {
-      _value = BaseResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/forum/topics/${id}/views',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = BaseResponse.fromJson(_result.data!);
     return _value;
   }
 
@@ -257,38 +218,32 @@ class _ForumApiService implements ForumApiService {
     final queryParameters = <String, dynamic>{r'q': query};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<DataResponse<List<ForumTopic>>>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<DataResponse<List<ForumTopic>>>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/forum/topics/search',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late DataResponse<List<ForumTopic>> _value;
-    try {
-      _value = DataResponse<List<ForumTopic>>.fromJson(
-        _result.data!,
-        (json) => json is List<dynamic>
-            ? json
-                .map<ForumTopic>(
-                    (i) => ForumTopic.fromJson(i as Map<String, dynamic>))
-                .toList()
-            : List.empty(),
-      );
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/forum/topics/search',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = DataResponse<List<ForumTopic>>.fromJson(
+      _result.data!,
+      (json) => json is List<dynamic>
+          ? json
+              .map<ForumTopic>(
+                  (i) => ForumTopic.fromJson(i as Map<String, dynamic>))
+              .toList()
+          : List.empty(),
+    );
     return _value;
   }
 
@@ -298,38 +253,32 @@ class _ForumApiService implements ForumApiService {
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<DataResponse<List<ForumReply>>>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<DataResponse<List<ForumReply>>>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/forum/topics/${topicId}/replies',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late DataResponse<List<ForumReply>> _value;
-    try {
-      _value = DataResponse<List<ForumReply>>.fromJson(
-        _result.data!,
-        (json) => json is List<dynamic>
-            ? json
-                .map<ForumReply>(
-                    (i) => ForumReply.fromJson(i as Map<String, dynamic>))
-                .toList()
-            : List.empty(),
-      );
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/forum/topics/${topicId}/replies',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = DataResponse<List<ForumReply>>.fromJson(
+      _result.data!,
+      (json) => json is List<dynamic>
+          ? json
+              .map<ForumReply>(
+                  (i) => ForumReply.fromJson(i as Map<String, dynamic>))
+              .toList()
+          : List.empty(),
+    );
     return _value;
   }
 
@@ -343,33 +292,27 @@ class _ForumApiService implements ForumApiService {
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(request.toJson());
-    final _options = _setStreamType<DataResponse<ForumReply>>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<DataResponse<ForumReply>>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/forum/topics/${topicId}/replies',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late DataResponse<ForumReply> _value;
-    try {
-      _value = DataResponse<ForumReply>.fromJson(
-        _result.data!,
-        (json) => ForumReply.fromJson(json as Map<String, dynamic>),
-      );
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/forum/topics/${topicId}/replies',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = DataResponse<ForumReply>.fromJson(
+      _result.data!,
+      (json) => ForumReply.fromJson(json as Map<String, dynamic>),
+    );
     return _value;
   }
 
@@ -383,33 +326,27 @@ class _ForumApiService implements ForumApiService {
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(request.toJson());
-    final _options = _setStreamType<DataResponse<ForumReply>>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<DataResponse<ForumReply>>(Options(
       method: 'PUT',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/forum/replies/${id}',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late DataResponse<ForumReply> _value;
-    try {
-      _value = DataResponse<ForumReply>.fromJson(
-        _result.data!,
-        (json) => ForumReply.fromJson(json as Map<String, dynamic>),
-      );
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/forum/replies/${id}',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = DataResponse<ForumReply>.fromJson(
+      _result.data!,
+      (json) => ForumReply.fromJson(json as Map<String, dynamic>),
+    );
     return _value;
   }
 
@@ -419,30 +356,24 @@ class _ForumApiService implements ForumApiService {
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<BaseResponse>(Options(
+    final _result = await _dio
+        .fetch<Map<String, dynamic>>(_setStreamType<BaseResponse>(Options(
       method: 'DELETE',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/forum/replies/${id}',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late BaseResponse _value;
-    try {
-      _value = BaseResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/forum/replies/${id}',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = BaseResponse.fromJson(_result.data!);
     return _value;
   }
 
@@ -452,33 +383,27 @@ class _ForumApiService implements ForumApiService {
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<DataResponse<LikeResponse>>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<DataResponse<LikeResponse>>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
     )
-        .compose(
-          _dio.options,
-          '/forum/replies/${id}/like',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late DataResponse<LikeResponse> _value;
-    try {
-      _value = DataResponse<LikeResponse>.fromJson(
-        _result.data!,
-        (json) => LikeResponse.fromJson(json as Map<String, dynamic>),
-      );
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
+            .compose(
+              _dio.options,
+              '/forum/replies/${id}/like',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final _value = DataResponse<LikeResponse>.fromJson(
+      _result.data!,
+      (json) => LikeResponse.fromJson(json as Map<String, dynamic>),
+    );
     return _value;
   }
 

@@ -3,6 +3,7 @@ const { validateSubmissionCreation } = require('../models/assignment');
 const { AppError, catchAsync } = require('../middleware/errorHandler');
 const { buildResponse } = require('../utils/response');
 const fileUploadService = require('../services/fileUploadService');
+const notificationController = require('./notificationController');
 
 class SubmissionController {
   /**
@@ -19,6 +20,7 @@ class SubmissionController {
       .select(`
         id, title, due_date, late_due_date, allow_late_submission,
         max_attempts, start_date, is_active, file_formats, max_file_size,
+        instructor_id,
         assignment_groups!inner(
           groups!inner(
             student_enrollments!inner(student_id)
@@ -231,6 +233,46 @@ class SubmissionController {
       `)
       .eq('id', newSubmission.id)
       .single();
+
+    // Get student info for notification
+    const { data: studentInfo, error: studentInfoError } = await supabase
+      .from('users')
+      .select('full_name')
+      .eq('id', studentId)
+      .single();
+
+    // Create notification for instructor
+    if (assignment.instructor_id && studentInfo) {
+      try {
+        console.log('[Assignment Submission] Creating notification for instructor:', assignment.instructor_id);
+        const result = await notificationController.createNotification(assignment.instructor_id, {
+          type: 'submission',
+          title: 'New Assignment Submission',
+          body: `${studentInfo.full_name} has submitted "${assignment.title}" (Attempt #${nextAttemptNumber}${isLate ? ' - Late' : ''})`,
+          data: {
+            assignmentId: assignmentId,
+            assignmentTitle: assignment.title,
+            submissionId: newSubmission.id,
+            studentId: studentId,
+            studentName: studentInfo.full_name,
+            attemptNumber: nextAttemptNumber,
+            isLate: isLate,
+            action_url: `/assignments/${assignmentId}/submissions`
+          }
+        });
+        console.log('[Assignment Submission] Notification creation result:', result);
+      } catch (notificationError) {
+        console.error('[Assignment Submission] Error creating notification:', notificationError);
+        console.error('[Assignment Submission] Error stack:', notificationError.stack);
+      }
+    } else {
+      if (!assignment.instructor_id) {
+        console.error('[Assignment Submission] Assignment has no instructor_id:', assignment);
+      }
+      if (!studentInfo) {
+        console.error('[Assignment Submission] Student info not found:', studentInfoError);
+      }
+    }
 
     const message = isLate 
       ? 'Assignment submitted successfully (late submission)' 

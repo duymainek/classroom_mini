@@ -25,7 +25,7 @@ SendMessageRequest _$SendMessageRequestFromJson(Map<String, dynamic> json) =>
       type: json['type'] as String,
       uri: json['uri'] as String?,
       name: json['name'] as String?,
-      size: (json['size'] as num?)?.toInt(),
+      size: json['size'] as int?,
       mimeType: json['mime_type'] as String?,
       width: (json['width'] as num?)?.toDouble(),
       height: (json['height'] as num?)?.toDouble(),

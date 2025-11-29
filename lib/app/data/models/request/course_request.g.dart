@@ -10,7 +10,7 @@ CourseCreateRequest _$CourseCreateRequestFromJson(Map<String, dynamic> json) =>
     CourseCreateRequest(
       code: json['code'] as String,
       name: json['name'] as String,
-      sessionCount: (json['sessionCount'] as num).toInt(),
+      sessionCount: json['sessionCount'] as int,
       semesterId: json['semesterId'] as String,
     );
 
@@ -27,7 +27,7 @@ CourseUpdateRequest _$CourseUpdateRequestFromJson(Map<String, dynamic> json) =>
     CourseUpdateRequest(
       code: json['code'] as String?,
       name: json['name'] as String?,
-      sessionCount: (json['sessionCount'] as num?)?.toInt(),
+      sessionCount: json['sessionCount'] as int?,
       semesterId: json['semesterId'] as String?,
       isActive: json['isActive'] as bool?,
     );

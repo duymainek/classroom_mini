@@ -10,6 +10,7 @@ import 'widgets/enhanced_fab.dart';
 import 'widgets/enhanced_create_semester_sheet.dart';
 import 'widgets/enhanced_create_course_sheet.dart';
 import 'widgets/enhanced_create_group_sheet.dart';
+import 'package:classroom_mini/app/core/widgets/responsive_container.dart';
 
 class EnhancedCoreManagementPage extends StatefulWidget {
   const EnhancedCoreManagementPage({Key? key}) : super(key: key);
@@ -49,7 +50,9 @@ class _EnhancedCoreManagementPageState extends State<EnhancedCoreManagementPage>
       builder: (controller) => Scaffold(
         key: ValueKey(controller.currentTab),
         appBar: const EnhancedAppBar(),
-        body: Column(
+        body: ResponsiveContainer(
+          padding: EdgeInsets.zero,
+          child: Column(
           children: [
             // Tab Bar
             EnhancedTabBar(
@@ -69,6 +72,7 @@ class _EnhancedCoreManagementPageState extends State<EnhancedCoreManagementPage>
               ),
             ),
           ],
+          ),
         ),
         floatingActionButton: EnhancedFAB(
           currentTab: controller.currentTab,

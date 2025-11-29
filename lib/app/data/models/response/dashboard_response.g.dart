@@ -8,12 +8,12 @@ part of 'dashboard_response.dart';
 
 DashboardStats _$DashboardStatsFromJson(Map<String, dynamic> json) =>
     DashboardStats(
-      totalCourses: (json['totalCourses'] as num).toInt(),
-      totalGroups: (json['totalGroups'] as num).toInt(),
-      totalStudents: (json['totalStudents'] as num).toInt(),
-      totalAssignments: (json['totalAssignments'] as num).toInt(),
-      totalQuizzes: (json['totalQuizzes'] as num).toInt(),
-      totalAnnouncements: (json['totalAnnouncements'] as num).toInt(),
+      totalCourses: json['totalCourses'] as int,
+      totalGroups: json['totalGroups'] as int,
+      totalStudents: json['totalStudents'] as int,
+      totalAssignments: json['totalAssignments'] as int,
+      totalQuizzes: json['totalQuizzes'] as int,
+      totalAnnouncements: json['totalAnnouncements'] as int,
     );
 
 Map<String, dynamic> _$DashboardStatsToJson(DashboardStats instance) =>
@@ -78,9 +78,9 @@ Map<String, dynamic> _$EnrolledCourseToJson(EnrolledCourse instance) =>
 
 StudyProgressItem _$StudyProgressItemFromJson(Map<String, dynamic> json) =>
     StudyProgressItem(
-      total: (json['total'] as num).toInt(),
-      completed: (json['completed'] as num).toInt(),
-      pending: (json['pending'] as num).toInt(),
+      total: json['total'] as int,
+      completed: json['completed'] as int,
+      pending: json['pending'] as int,
     );
 
 Map<String, dynamic> _$StudyProgressItemToJson(StudyProgressItem instance) =>

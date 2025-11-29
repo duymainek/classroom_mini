@@ -28,20 +28,11 @@ class AuthController {
       });
     }
 
-    // Check if admin credentials
-    if (username !== 'admin') {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials'
-      });
-    }
-
-    // Get instructor from database
+    // Get user from database (allow both instructor and student for testing)
     const { data: user, error } = await supabase
       .from('users')
       .select('*')
-      .eq('username', 'admin')
-      .eq('role', 'instructor')
+      .eq('username', username)
       .eq('is_active', true)
       .single();
 

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../controllers/notification_controller.dart';
 import 'package:classroom_mini/app/data/models/response/notification_response.dart'
     show NotificationModel;
+import 'package:classroom_mini/app/core/widgets/responsive_container.dart';
 
 class NotificationView extends GetView<NotificationController> {
   const NotificationView({super.key});
@@ -11,15 +12,36 @@ class NotificationView extends GetView<NotificationController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: () => controller.refreshNotifications(),
-        child: CustomScrollView(
-          slivers: [
-            _buildAppBar(context),
-            _buildFilterBar(context),
-            _buildNotificationsList(context),
-          ],
-        ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final maxWidth = width < 768
+              ? double.infinity
+              : width < 1024
+                  ? 900.0
+                  : 1200.0;
+          final horizontalPadding = width > maxWidth ? (width - maxWidth) / 2 : 0.0;
+
+          return RefreshIndicator(
+            onRefresh: () => controller.refreshNotifications(),
+            child: CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                  sliver: _buildAppBar(context),
+                ),
+                SliverPadding(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                  sliver: _buildFilterBar(context),
+                ),
+                SliverPadding(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                  sliver: _buildNotificationsList(context),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

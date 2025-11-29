@@ -6,6 +6,7 @@ import 'package:classroom_mini/app/data/models/response/submission_response.dart
 import 'package:classroom_mini/app/routes/app_routes.dart';
 import '../../controllers/assignment_controller.dart';
 import 'package:classroom_mini/app/core/app_config.dart';
+import 'package:classroom_mini/app/core/widgets/responsive_container.dart';
 
 class MobileAssignmentDetailView extends StatelessWidget {
   final Assignment assignment;
@@ -32,92 +33,96 @@ class MobileAssignmentDetailView extends StatelessWidget {
       },
       builder: (controller) {
         return Scaffold(
-          body: CustomScrollView(
-            slivers: [
-              SliverAppBar(
-                expandedHeight: 120,
-                floating: false,
-                pinned: true,
-                backgroundColor: colorScheme.surface,
-                surfaceTintColor: colorScheme.surfaceTint,
-                elevation: 0,
-                flexibleSpace: FlexibleSpaceBar(
-                  title: Text(
-                    assignment.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
+          body: ResponsiveContainer(
+            padding: EdgeInsets.zero,
+            child: CustomScrollView(
+              slivers: [
+                SliverAppBar(
+                  expandedHeight: 120,
+                  floating: false,
+                  pinned: true,
+                  backgroundColor: colorScheme.surface,
+                  surfaceTintColor: colorScheme.surfaceTint,
+                  elevation: 0,
+                  flexibleSpace: FlexibleSpaceBar(
+                    title: Text(
+                      assignment.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
                     ),
-                  ),
-                  background: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          colorScheme.primaryContainer.withValues(alpha: 0.3),
-                          colorScheme.secondaryContainer.withValues(alpha: 0.1),
-                        ],
+                    background: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            colorScheme.primaryContainer.withValues(alpha: 0.3),
+                            colorScheme.secondaryContainer
+                                .withValues(alpha: 0.1),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-                actions: [
-                  if (isInstructor) ...[
-                    IconButton(
-                      icon:
-                          Icon(Icons.track_changes, color: colorScheme.primary),
-                      onPressed: () {
-                        Get.toNamed(
-                          Routes.ASSIGNMENTS_TRACKING,
-                          arguments: {
-                            'assignmentId': assignment.id,
-                            'assignmentTitle': assignment.title,
-                          },
-                        );
-                      },
-                      tooltip: 'Theo dõi nộp bài',
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.edit, color: colorScheme.primary),
-                      onPressed: () async {
-                        final result = await Get.toNamed(
-                            Routes.ASSIGNMENTS_EDIT,
-                            arguments: assignment);
-                        if (result == true) {
-                          controller.loadAssignments(refresh: true);
-                        }
-                      },
-                    ),
-                  ],
-                ],
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.all(16),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    _buildHeader(context),
-                    const SizedBox(height: 16),
-                    _buildAttachments(context),
-                    const SizedBox(height: 16),
-                    _buildTimeInfo(context),
-                    const SizedBox(height: 16),
-                    _buildSubmissionSettings(context),
-                    // Chỉ hiển thị tracking và submissions cho instructor
+                  actions: [
                     if (isInstructor) ...[
-                      const SizedBox(height: 16),
-                      _buildGroupFilter(context, controller),
-                      const SizedBox(height: 16),
-                      _buildTrackingOverview(context, controller),
-                      const SizedBox(height: 16),
-                      _buildSubmissions(context, controller),
+                      IconButton(
+                        icon: Icon(Icons.track_changes,
+                            color: colorScheme.primary),
+                        onPressed: () {
+                          Get.toNamed(
+                            Routes.ASSIGNMENTS_TRACKING,
+                            arguments: {
+                              'assignmentId': assignment.id,
+                              'assignmentTitle': assignment.title,
+                            },
+                          );
+                        },
+                        tooltip: 'Theo dõi nộp bài',
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.edit, color: colorScheme.primary),
+                        onPressed: () async {
+                          final result = await Get.toNamed(
+                              Routes.ASSIGNMENTS_EDIT,
+                              arguments: assignment);
+                          if (result == true) {
+                            controller.loadAssignments(refresh: true);
+                          }
+                        },
+                      ),
                     ],
-                    // Thêm khoảng trống cho nút nộp bài của student
-                    if (!isInstructor) const SizedBox(height: 80),
-                  ]),
+                  ],
                 ),
-              ),
-            ],
+                SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      _buildHeader(context),
+                      const SizedBox(height: 16),
+                      _buildAttachments(context),
+                      const SizedBox(height: 16),
+                      _buildTimeInfo(context),
+                      const SizedBox(height: 16),
+                      _buildSubmissionSettings(context),
+                      // Chỉ hiển thị tracking và submissions cho instructor
+                      if (isInstructor) ...[
+                        const SizedBox(height: 16),
+                        _buildGroupFilter(context, controller),
+                        const SizedBox(height: 16),
+                        _buildTrackingOverview(context, controller),
+                        const SizedBox(height: 16),
+                        _buildSubmissions(context, controller),
+                      ],
+                      // Thêm khoảng trống cho nút nộp bài của student
+                      if (!isInstructor) const SizedBox(height: 80),
+                    ]),
+                  ),
+                ),
+              ],
+            ),
           ),
           // Thêm nút nộp bài cho student
           floatingActionButton: !isInstructor
@@ -526,7 +531,7 @@ class MobileAssignmentDetailView extends StatelessWidget {
                       ),
                       if (s.latestSubmission != null)
                         Text(
-                          'Lần ${s.latestSubmission!.attemptNumber} - ${_formatDateTime(s.latestSubmission!.submittedAt)}',
+                          'Lần ${s.latestSubmission!.attemptNumber} - ${_formatDateTime(s.latestSubmission!.submittedAt!)}',
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: Theme.of(context)
@@ -742,7 +747,10 @@ class MobileAssignmentDetailView extends StatelessWidget {
     }
   }
 
-  String _formatDateTime(DateTime dateTime) {
+  String _formatDateTime(DateTime? dateTime) {
+    if (dateTime == null) {
+      return '';
+    }
     return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 

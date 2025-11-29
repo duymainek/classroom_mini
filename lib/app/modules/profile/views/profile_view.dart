@@ -8,6 +8,7 @@ import '../../../data/services/sync_service.dart';
 import '../../../routes/app_routes.dart';
 import '../controllers/profile_controller.dart';
 import 'edit_profile_view.dart';
+import 'package:classroom_mini/app/core/widgets/responsive_container.dart';
 
 class ProfileView extends GetView<ProfileController> {
   const ProfileView({Key? key}) : super(key: key);
@@ -29,7 +30,9 @@ class ProfileView extends GetView<ProfileController> {
           ),
         ],
       ),
-      body: Obx(() {
+      body: ResponsiveContainer(
+        padding: EdgeInsets.zero,
+        child: Obx(() {
         if (controller.isLoading.value && controller.user.value == null) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -59,7 +62,8 @@ class ProfileView extends GetView<ProfileController> {
             _buildSyncQueueCard(),
           ],
         );
-      }),
+        }),
+      ),
     );
   }
 

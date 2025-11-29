@@ -5,6 +5,7 @@ import 'package:classroom_mini/app/data/services/connectivity_service.dart';
 import 'package:classroom_mini/app/core/app_config.dart';
 import '../../controllers/announcement_controller.dart';
 import '../../widgets/announcement_card.dart';
+import 'package:classroom_mini/app/core/widgets/responsive_container.dart';
 
 /// Mobile Announcement List View
 /// Displays list of announcements with modern UI design
@@ -20,12 +21,15 @@ class MobileAnnouncementListView extends StatelessWidget {
       init: AnnouncementController(),
       builder: (controller) {
         return Scaffold(
-          body: CustomScrollView(
+          body: ResponsiveContainer(
+            padding: EdgeInsets.zero,
+            child: CustomScrollView(
             slivers: [
               _buildAppBar(context, controller),
               _buildFilterBar(context, controller),
               _buildAnnouncementsList(context, controller),
             ],
+            ),
           ),
         );
       },

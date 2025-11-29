@@ -1,9 +1,12 @@
-import 'dart:io';
+import 'dart:io' if (dart.library.html) 'package:classroom_mini/app/shared/controllers/io_stub.dart';
 import 'package:classroom_mini/app/data/models/request/profile_request.dart';
 import 'package:classroom_mini/app/data/models/response/user_response.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:typed_data';
 import '../../../data/services/profile_api_service.dart';
+import '../../../data/services/api_service.dart';
 
 class ProfileController extends GetxController {
   final ProfileApiService _apiService;
@@ -60,14 +63,30 @@ class ProfileController extends GetxController {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
         isLoading.value = true;
-        final File imageFile = File(image.path);
-        final response = await _apiService.uploadAvatar(imageFile);
-        if (response.success) {
-          // Refresh profile to get the new avatar URL
-          await getProfile();
-          Get.snackbar('Success', 'Avatar uploaded successfully');
+        
+        // On web, use bytes directly; on mobile, use file path
+        if (kIsWeb) {
+          final Uint8List imageBytes = await image.readAsBytes();
+          final String fileName = image.name;
+          final response = await DioClient.uploadAvatarFromBytes(
+            imageBytes,
+            fileName,
+          );
+          if (response.success) {
+            await getProfile();
+            Get.snackbar('Success', 'Avatar uploaded successfully');
+          } else {
+            Get.snackbar('Error', response.message);
+          }
         } else {
-          Get.snackbar('Error', response.message);
+          final File imageFile = File(image.path);
+          final response = await _apiService.uploadAvatar(imageFile);
+          if (response.success) {
+            await getProfile();
+            Get.snackbar('Success', 'Avatar uploaded successfully');
+          } else {
+            Get.snackbar('Error', response.message);
+          }
         }
       }
     } catch (e) {
