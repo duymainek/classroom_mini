@@ -54,6 +54,7 @@ import '../modules/forum/views/forum_detail_view.dart';
 import '../modules/chat/views/chat_list_view.dart';
 import '../modules/chat/views/chat_room_view.dart';
 import '../modules/chat/views/new_chat_view.dart';
+import '../modules/chat/views/ai_chat_view.dart';
 import '../modules/chat/bindings/chat_binding.dart';
 
 // Profile imports
@@ -516,6 +517,12 @@ class AppPages {
     GetPage(
       name: Routes.CHAT_NEW,
       page: () => const NewChatView(),
+      binding: ChatBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.CHAT_AI,
+      page: () => const AiChatView(),
       binding: ChatBinding(),
       transition: Transition.rightToLeft,
     ),

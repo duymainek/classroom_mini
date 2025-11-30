@@ -76,6 +76,7 @@ class Routes {
   static const String CHAT_LIST = '/chat';
   static const String CHAT_ROOM = '/chat/room';
   static const String CHAT_NEW = '/chat/new';
+  static const String CHAT_AI = '/chat/ai';
 
   // Notification routes
   static const String NOTIFICATIONS = '/notifications';

@@ -5,6 +5,7 @@ import 'package:classroom_mini/app/data/services/api_service.dart';
 import '../controllers/chat_list_controller.dart';
 import '../controllers/chat_room_controller.dart';
 import '../controllers/new_chat_controller.dart';
+import '../controllers/ai_chat_controller.dart';
 
 class ChatBinding extends Bindings {
   @override
@@ -48,6 +49,10 @@ class ChatBinding extends Bindings {
     
     Get.lazyPut<NewChatController>(
       () => NewChatController(Get.find<ChatApiService>()),
+    );
+    
+    Get.lazyPut<AiChatController>(
+      () => AiChatController(),
     );
   }
 }

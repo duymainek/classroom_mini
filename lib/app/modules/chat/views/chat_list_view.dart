@@ -5,6 +5,7 @@ import '../controllers/chat_list_controller.dart';
 import '../../../data/models/response/chat_response.dart';
 import '../../../data/services/connectivity_service.dart';
 import 'package:classroom_mini/app/core/widgets/responsive_container.dart';
+import 'package:classroom_mini/app/routes/app_routes.dart';
 
 class ChatListView extends StatelessWidget {
   const ChatListView({super.key});
@@ -84,9 +85,14 @@ class ChatListView extends StatelessWidget {
         return RefreshIndicator(
           onRefresh: () => controller.loadConversations(refresh: true),
           child: ListView.builder(
-            itemCount: controller.conversations.length,
+            itemCount: controller.conversations.length + 1,
             itemBuilder: (context, index) {
-              final conversation = controller.conversations[index];
+              if (index == 0) {
+                return _AiChatBotTile(
+                  onTap: () => Get.toNamed(Routes.CHAT_AI),
+                );
+              }
+              final conversation = controller.conversations[index - 1];
               return _ConversationTile(
                 conversation: conversation,
                 onTap: () => controller.openChatRoom(conversation),
@@ -197,6 +203,47 @@ class _ConversationTile extends StatelessWidget {
       ),
       onTap: onTap,
       onLongPress: onLongPress,
+    );
+  }
+}
+
+class _AiChatBotTile extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _AiChatBotTile({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: Colors.blue,
+        child: Icon(Icons.smart_toy, color: Colors.white),
+      ),
+      title: Row(
+        children: [
+          const Expanded(
+            child: Text(
+              'AI Chat bot',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+          Container(
+            width: 8,
+            height: 8,
+            decoration: const BoxDecoration(
+              color: Colors.green,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ],
+      ),
+      subtitle: const Text(
+        'Hỗ trợ học tập với AI',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(color: Colors.grey),
+      ),
+      onTap: onTap,
     );
   }
 }
